@@ -63,7 +63,11 @@ _wenv_task_show() {
 }
 
 _wenv_new() {
-    _wenv_comp "-i -d"
+    if [[ ${prev} == "-i" ]] ; then
+        _show_aliases
+    elif [[ ${word} == -* ]] ; then
+        _wenv_comp "-i -d"
+    fi
 }
 
 _wenv() {
