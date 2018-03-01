@@ -339,21 +339,24 @@ wenv_rename() {
 wenv_tmux_layout() {
     layout="$1"
     shift
-    dev_cmd=$@
     case "$layout" in
         dev)
             wenv_tmux_split v
             tmux resize-pane -y 7
-            [[ -n "$dev_cmd" ]] && tmux send-keys "$dev_cmd" 'Enter'
+            [[ -n "$@" ]] && tmux send-keys "$@" 'Enter'
             tmux select-pane -U
             ;;
         devloop)
-            wenv_tmux_layout 'dev' "monitor git $dev_cmd"
+            watch='git'
+            [[ "$1" == '-w' ]] && watch="$2" && shift 2
+            wenv_tmux_layout 'dev' "monitor $watch $*"
             ;;
         dev-tasks)
+            watch='git'
+            [[ "$1" == '-w' ]] && watch="$2" && shift 2
             wenv_tmux_split v
             tmux resize-pane -y 7
-            [[ -n "$dev_cmd" ]] && tmux send-keys "monitor git $dev_cmd" 'Enter'
+            [[ -n "$@" ]] && tmux send-keys "monitor $watch $@" 'Enter'
             wenv_tmux_split h
             tmux send-keys 'wenv task show' 'Enter'
             tmux select-pane -L

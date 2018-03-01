@@ -1,0 +1,11 @@
+#!/bin/zsh
+
+wenv_setup() {
+    WENV_DIR=""
+    WENV_ALIASES=()
+    WENV_PROJECT=''
+    WENV_BRANCH='master'
+    WENV_TASK=''
+    wenv_init() { }
+    wenv_shutdown() { }
+}
