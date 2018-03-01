@@ -55,7 +55,7 @@ wenv() {
 }
 
 wenv_start() {
-    if [[ $# == 0 || ! -f "$ALIASES/$1_aliases" ]]; then
+    if [[ $# == 0 || ! -f "$ALIASES/$1" ]]; then
         print_aliases
         return 1
     fi
@@ -211,7 +211,7 @@ wenv_new() {
     while getopts ":di:" opt; do
         case $opt in
             d) flag_d=1 ;;
-            i) [[ ! -z "$OPTARG" ]] && src="$ALIASES/${OPTARG}_aliases" ;;
+            i) [[ ! -z "$OPTARG" ]] && src="$ALIASES/${OPTARG}" ;;
             --) break ;;
             *) echo "invalid flag: $1" ; exit 1 ;;
         esac
@@ -223,10 +223,10 @@ wenv_new() {
 
     # generalize/clean this up
     if [[ $flag_d -eq 1 ]]; then
-        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$src") > "$ALIASES/${wenv}_aliases"
+        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$src") > "$ALIASES/${wenv}"
     else
         # this case shouldn't be exclusive from previous
-        cp "$src" "$ALIASES/${wenv}_aliases"
+        cp "$src" "$ALIASES/${wenv}"
     fi
     edit_alias "$wenv"
 }
@@ -247,7 +247,7 @@ wenv_remove() {
         return 1
     fi
     wenv="$1"
-    wenv_file="$ALIASES/${wenv}_aliases"
+    wenv_file="$ALIASES/${wenv}"
     if [[ ! -f "$wenv_file" ]]; then
         echo "WENV $wenv does not exist."
         return 1
@@ -330,8 +330,8 @@ wenv_source_aliases() {
 
 wenv_rename() {
     [[ $# != 2 ]] && return 1
-    old="$1_aliases"
-    new="$2_aliases"
+    old="$1"
+    new="$2"
 
     mv "$ALIASES/$old" "$ALIASES/$new"
 }
