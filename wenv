@@ -323,8 +323,12 @@ wenv_tasks_add() {
 }
 
 wenv_source_aliases() {  
+    if [[ "$#" -eq 0 ]]; then
+        source_alias "$WENV" >/dev/null
+        return
+    fi
     for wenv_alias in $@; do
-        source_alias "$wenv_alias" > /dev/null
+        source_alias "$wenv_alias" >/dev/null
     done
 }
 
