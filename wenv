@@ -55,12 +55,20 @@ wenv() {
 }
 
 wenv_start() {
+    flag_f=0
+    while getopts ":f" opt; do
+        case $opt in
+            f) flag_f=1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
     if [[ $# == 0 || ! -f "$ALIASES/$1" ]]; then
         print_aliases
         return 1
     fi
 
-    if [[ -z "$TMUX" ]]; then
+    if [[ -z "$TMUX" && ! $flag_f -eq 1 ]]; then
         printf "Most WENVs use TMUX. Start anyway? y/N: "
         read -q choice
         [[ "$choice" == 'n' ]] && return 1
