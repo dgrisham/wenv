@@ -362,6 +362,18 @@ wenv_tmux_layout() {
             tmux select-pane -L
             tmux select-pane -U
             ;;
+        tasks)
+            wenv_tmux_split v
+            tmux resize-pane -y 7
+            tmux send-keys 'wenv task show' 'Enter'
+            tmux select-pane -U
+            ;;
+        split-tasks)
+            wenv_tmux_layout tasks
+            wenv_tmux_split h
+            [[ -n "$@" ]] && tmux send-keys "$@" 'Enter'
+            tmux select-pane -L
+            ;;
         *)
             return 1
             ;;
@@ -370,8 +382,10 @@ wenv_tmux_layout() {
 
 wenv_tmux_split() {
     wenv_init_cmd='ZSH_INIT="unset WENV; wenv exec -cn \"$WENV\"" zsh -i'
+    direction="$1"
+    shift
     user_cmd=$@
-    case "$1" in
+    case "$direction" in
         h)
             tmux split-window -h -c "#{pane_current_path}" "$wenv_init_cmd"
             ;;
