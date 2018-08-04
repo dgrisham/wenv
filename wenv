@@ -36,7 +36,7 @@ wenv() {
         edit)
             wenv_edit $@
             ;;
-        remove)
+        rm|remove)
             wenv_remove $@
             ;;
         source_aliases)
@@ -138,13 +138,15 @@ wenv_stop() {
     flag_f=0
     while getopts ":f" opt; do
         case $opt in
-            f) flag_f=1 ;;
+            # force stop, regardless of git working tree state
+            f) flag_f=1
+               ;;
         esac
     done
     shift $((OPTIND - 1))
 
-    # -f -> force stop, regardless of working tree state
-    if [[ $flag_f -ne 1 ]]; then
+    # make sure we're in a git repo and the force flag isn't set
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [[ $flag_f -ne 1 ]]; then
         git diff-index --quiet HEAD -- 2>/dev/null
         [[ $? -ne 0 ]] && [[ $? -ne 128 ]] && { echo "Error: Dirty working tree. Please clean up and try again." ; return 1 }
     fi
@@ -185,6 +187,9 @@ wenv_cd() {
     if [[ -z "$1" ]]; then
         [[ ! -z "$WENV_DIR" ]] && cd "$WENV_DIR" &> /dev/null
         return 0
+    fi
+    if ! is_wenv "$1"; then
+        return 1
     fi
     wenv="$1"
 
@@ -254,12 +259,12 @@ wenv_remove() {
         print_aliases
         return 1
     fi
-    wenv="$1"
-    wenv_file="$ALIASES/${wenv}"
-    if [[ ! -f "$wenv_file" ]]; then
-        echo "WENV $wenv does not exist."
+    if ! is_wenv "$1"; then
+        echo "WENV $1 does not exist."
         return 1
     fi
+    wenv="$1"
+    wenv_file="$ALIASES/${wenv}"
     read "choice?Delete WENV $wenv? "
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         rm -f "$wenv_file"
@@ -355,7 +360,7 @@ wenv_tmux_layout() {
         dev)
             wenv_tmux_split v
             tmux resize-pane -y 7
-            [[ -n "$@" ]] && tmux send-keys "$@" 'Enter'
+            [[ -n "$@" ]] && tmux send-keys "$*" 'Enter'
             tmux select-pane -U
             ;;
         devloop)
@@ -413,6 +418,17 @@ wenv_tmux_split() {
     esac
 
     tmux send-keys "$user_cmd" 'Enter'
+}
+
+is_wenv() {
+    if [[ -z "$1" ]]; then
+        return 1
+    fi
+    wenv_file="$ALIASES/$1"
+    if [[ ! -f "$wenv_file" ]]; then
+        return 1
+    fi
+    return 0
 }
 
 unset_quiet() {
