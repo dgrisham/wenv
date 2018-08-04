@@ -18,6 +18,10 @@ _wenv_cd() {
     _show_aliases
 }
 
+_wenv_rm() {
+    _wenv_remove
+}
+
 _wenv_remove() {
     _show_aliases
 }
