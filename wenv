@@ -24,7 +24,7 @@ wenv() {
         reset)
             wenv_reset $@
             ;;
-        task) # TODO: "tasks?"
+        task)
             wenv_tasks $@
             ;;
         'cd')
@@ -64,7 +64,6 @@ wenv_start() {
     shift $((OPTIND - 1))
 
     if [[ $# == 0 || ! -f "$ALIASES/$1" ]]; then
-        print_aliases
         return 1
     fi
 
@@ -248,7 +247,6 @@ wenv_edit() {
     wenv="$1"
     [[ -z "$wenv" ]] && wenv="$WENV"
     if [[ -z "$wenv" ]]; then
-        print_aliases
         return 1
     fi
     edit_alias "$wenv"
@@ -256,7 +254,6 @@ wenv_edit() {
 
 wenv_remove() {
     if [[ -z "$1" ]]; then
-        print_aliases
         return 1
     fi
     if ! is_wenv "$1"; then
@@ -335,7 +332,7 @@ wenv_tasks_add() {
     unset wenv
 }
 
-wenv_source_aliases() {  
+wenv_source_aliases() {
     if [[ "$#" -eq 0 ]]; then
         source_alias "$WENV" >/dev/null
         return
