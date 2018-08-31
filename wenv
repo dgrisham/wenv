@@ -55,10 +55,12 @@ wenv() {
 }
 
 wenv_start() {
-    flag_f=0
-    while getopts ":f" opt; do
+    flag_t=1
+    flag_n=0
+    while getopts ":tn" opt; do
         case $opt in
-            f) flag_f=1 ;;
+            t) flag_t=0 ;;
+            n) flag_n=1 ;;
         esac
     done
     shift $((OPTIND - 1))
@@ -66,32 +68,38 @@ wenv_start() {
     if [[ $# == 0 || ! -f "$ALIASES/$1" ]]; then
         return 1
     fi
+    wenv="$1"
 
-    if [[ -z "$TMUX" && ! $flag_f -eq 1 ]]; then
-        printf "Most WENVs use TMUX. Start anyway? y/N: "
-        read -q choice
-        [[ "$choice" == 'n' ]] && return 1
+    if [[ -n "$DISPLAY" ]]; then
+        autoload -Uz add-zsh-hook
+        precmd (){xdotool set_window --name "$USER@$(hostname) #$WENV" $(xdotool getactivewindow)}
     fi
 
-    wenv_stop
-    wenv_exec $@ || return 1
+    if [[ $flag_t -eq 0 ]]; then
+        wenv_stop
+        wenv_exec $@ || return 1
+        wenv_init
+        unset_quiet -f wenv_init
+        return 0
+    fi
 
-    if [[ -n "$TMUX" ]]; then
+    tmux new-session -d -s "$wenv"
+    tmux send -t "$wenv" '{
+        wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
-        tmux rename-window "$WENV"
-    fi
-
-    wenv_init
-    unset_quiet -f wenv_init
+        wenv_init
+        unset_quiet -f wenv_init
+        clear
+        [[ '"$flag_n"' -eq 1 ]] || wenv task show
+        }' ENTER
+    tmux attach-session -t "$wenv"
 }
 
 wenv_exec() {
     flag_c=1
-    flag_n=1
-    while getopts ":cn" opt; do
+    while getopts ":c" opt; do
         case $opt in
             c) flag_c=0 ;;
-            n) flag_n=0 ;;
         esac
     done
     shift $((OPTIND - 1))
@@ -126,7 +134,6 @@ wenv_exec() {
 
     wenv_source_aliases "$WENV_ALIASES"
     [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
-    [[ $flag_n -eq 1 ]] && wenv_tasks_show
 
     export PS1="($WENV) $ORIGINAL_PS1"
 }
@@ -180,6 +187,9 @@ wenv_clean_up() {
         tmux rename-window ''
     fi
     export PS1="$ORIGINAL_PS1"
+
+    # load the old precmd (TODO: better way to do this?)
+    source "$ZDOTDIR/.zshrc"
 }
 
 wenv_cd() {
