@@ -55,15 +55,15 @@ wenv() {
 }
 
 wenv_start() {
-    flag_t=1
     flag_n=0
-    while getopts ":tn" opt; do
+    flag_q=0
+    while getopts ":nq" opt; do
         case $opt in
-            t) flag_t=0 ;;
             n) flag_n=1 ;;
+            q) flag_q=1 ;;
         esac
     done
-    shift $((OPTIND - 1))
+    shift $((OPTIND-1))
 
     if [[ $# == 0 || ! -f "$ALIASES/$1" ]]; then
         return 1
@@ -75,11 +75,12 @@ wenv_start() {
         set_window_name "$USER@$(hostname) #$WENV"
     fi
 
-    if [[ $flag_t -eq 0 ]]; then
+    if [[ $flag_n -eq 1 ]]; then
         wenv_stop
         wenv_exec $@ || return 1
         wenv_init
         unset_quiet -f wenv_init
+        [[ $flag_q -eq 1 ]] || wenv task show
         return 0
     fi
 
@@ -90,7 +91,7 @@ wenv_start() {
         wenv_init
         unset_quiet -f wenv_init
         clear
-        [[ '"$flag_n"' -eq 1 ]] || wenv task show
+        [[ '"$flag_q"' -eq 1 ]] || wenv task show
         }' ENTER
     tmux attach-session -t "$wenv"
 }
@@ -102,7 +103,7 @@ wenv_exec() {
             c) flag_c=0 ;;
         esac
     done
-    shift $((OPTIND - 1))
+    shift $((OPTIND-1))
 
     [[ -z "$1" ]] && return 1
     export WENV="$1"
@@ -145,11 +146,10 @@ wenv_stop() {
     while getopts ":f" opt; do
         case $opt in
             # force stop, regardless of git working tree state
-            f) flag_f=1
-               ;;
+            f) flag_f=1 ;;
         esac
     done
-    shift $((OPTIND - 1))
+    shift $((OPTIND-1))
 
     # make sure we're in a git repo and the force flag isn't set
     if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [[ $flag_f -ne 1 ]]; then
