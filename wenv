@@ -56,9 +56,11 @@ wenv() {
 
 wenv_start() {
     flag_n=0
-    while getopts ":n" opt; do
+    flag_q=0
+    while getopts ":nq" opt; do
         case $opt in
             n) flag_n=1 ;;
+            q) flag_q=1 ;;
         esac
     done
     shift $((OPTIND-1))
@@ -78,6 +80,7 @@ wenv_start() {
         wenv_exec $@ || return 1
         wenv_init
         unset_quiet -f wenv_init
+        [[ $flag_q -eq 1 ]] || wenv task show
         return 0
     fi
 
@@ -88,7 +91,7 @@ wenv_start() {
         wenv_init
         unset_quiet -f wenv_init
         clear
-        [[ '"$flag_n"' -eq 1 ]] || wenv task show
+        [[ '"$flag_q"' -eq 1 ]] || wenv task show
         }' ENTER
     tmux attach-session -t "$wenv"
 }
