@@ -71,8 +71,7 @@ wenv_start() {
     wenv="$1"
 
     if [[ -n "$DISPLAY" ]]; then
-        autoload -Uz add-zsh-hook
-        set_window_name "$USER@$(hostname) #$WENV"
+        set_window_name "$USER@$(hostname) #$wenv"
     fi
 
     if [[ $flag_n -eq 1 ]]; then
