@@ -2,7 +2,7 @@
 
 wenv_setup() {
     WENV_DIR=''
-    WENV_ALIASES=''
+    WENV_ALIASES=('x')
     WENV_PROJECT='wenv'
     WENV_TASK=''
     WENV_BRANCH='master'
@@ -72,7 +72,7 @@ wenv_start() {
 
     if [[ -n "$DISPLAY" ]]; then
         autoload -Uz add-zsh-hook
-        precmd (){xdotool set_window --name "$USER@$(hostname) #$WENV" $(xdotool getactivewindow)}
+        set_window_name "$USER@$(hostname) #$WENV"
     fi
 
     if [[ $flag_t -eq 0 ]]; then
