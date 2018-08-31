@@ -55,15 +55,13 @@ wenv() {
 }
 
 wenv_start() {
-    flag_t=1
     flag_n=0
-    while getopts ":tn" opt; do
+    while getopts ":n" opt; do
         case $opt in
-            t) flag_t=0 ;;
             n) flag_n=1 ;;
         esac
     done
-    shift $((OPTIND - 1))
+    shift $((OPTIND-1))
 
     if [[ $# == 0 || ! -f "$ALIASES/$1" ]]; then
         return 1
@@ -75,7 +73,7 @@ wenv_start() {
         precmd (){xdotool set_window --name "$USER@$(hostname) #$WENV" $(xdotool getactivewindow)}
     fi
 
-    if [[ $flag_t -eq 0 ]]; then
+    if [[ $flag_n -eq 1 ]]; then
         wenv_stop
         wenv_exec $@ || return 1
         wenv_init
@@ -102,7 +100,7 @@ wenv_exec() {
             c) flag_c=0 ;;
         esac
     done
-    shift $((OPTIND - 1))
+    shift $((OPTIND-1))
 
     [[ -z "$1" ]] && return 1
     export WENV="$1"
@@ -145,11 +143,10 @@ wenv_stop() {
     while getopts ":f" opt; do
         case $opt in
             # force stop, regardless of git working tree state
-            f) flag_f=1
-               ;;
+            f) flag_f=1 ;;
         esac
     done
-    shift $((OPTIND - 1))
+    shift $((OPTIND-1))
 
     # make sure we're in a git repo and the force flag isn't set
     if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [[ $flag_f -ne 1 ]]; then
