@@ -92,6 +92,7 @@ wenv_start() {
         clear
         [[ '"$flag_q"' -eq 1 ]] || wenv task show
         }' ENTER
+    unset wenv
     tmux attach-session -t "$wenv"
 }
 
@@ -188,7 +189,7 @@ wenv_clean_up() {
     export PS1="$ORIGINAL_PS1"
 
     # load the old precmd (TODO: better way to do this?)
-    source "$ZDOTDIR/.zshrc"
+    [[ -n "$DISPLAY" ]] && set_default_window_name
 }
 
 wenv_cd() {
@@ -208,6 +209,7 @@ wenv_cd() {
 
     # reload the wenv that was previously running
     wenv_load "$WENV"
+    unset wenv
     unset_quiet -f wenv_init
 }
 
@@ -218,6 +220,7 @@ wenv_load() {
     wenv="$1"
     source_alias "$wenv" > /dev/null
     wenv_setup
+    unset wenv
 }
 
 warn_uncommitted_changes() {
@@ -250,6 +253,7 @@ wenv_new() {
         cp "$src" "$ALIASES/${wenv}"
     fi
     edit_alias "$wenv"
+    unset wenv
 }
 
 wenv_edit() {
@@ -259,6 +263,7 @@ wenv_edit() {
         return 1
     fi
     edit_alias "$wenv"
+    unset wenv
 }
 
 wenv_remove() {
@@ -275,6 +280,7 @@ wenv_remove() {
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         rm -f "$wenv_file"
     fi
+    unset wenv
 }
 
 wenv_reset() {
