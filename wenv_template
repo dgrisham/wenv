@@ -2,10 +2,12 @@
 
 wenv_setup() {
     WENV_DIR=""
-    WENV_ALIASES=()
+    WENV_DEPS=()
     WENV_PROJECT=''
     WENV_BRANCH='master'
     WENV_TASK=''
+    WENV_GITDIR=""
+
     wenv_init() { }
     wenv_shutdown() { }
 }

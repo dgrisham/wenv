@@ -226,7 +226,7 @@ warn_uncommitted_changes() {
 }
 
 wenv_new() {
-    src="$SRC/wenv/wenv_template"
+    src="$WENV_DIR/wenv_template"
     flag_d=0
     while getopts ":di:" opt; do
         case $opt in
