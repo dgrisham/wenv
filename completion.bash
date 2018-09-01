@@ -7,11 +7,15 @@ _wenv_comp() {
 }
 
 _show_aliases() {
-    ls "$ALIASES" | sed 's/_aliases//g'
+    ls "$WENVS"
 }
 
 _wenv_start() {
-    _show_aliases
+    if [[ $word == -* ]] ; then
+        _wenv_comp "-n -q"
+    else
+        _show_aliases
+    fi
 }
 
 _wenv_cd() {
