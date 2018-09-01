@@ -215,7 +215,7 @@ wenv_cd() {
 wenv_load() {
     [[ -z "$1" ]] && return 1
     local wenv="$1"
-    source_wenv "$wenv" > /dev/null
+    wenv_source "$wenv" > /dev/null
     wenv_setup
 }
 
@@ -269,7 +269,7 @@ wenv_remove() {
         return 1
     fi
     local wenv="$1"
-    wenv_file="$WENVS/${wenv}"
+    local wenv_file="$WENVS/${wenv}"
     read "choice?Delete WENV $wenv? "
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         rm -f "$wenv_file"
@@ -338,11 +338,11 @@ wenv_tasks_add() {
 
 wenv_source() {
     if [[ "$#" -eq 0 ]]; then
-        source "$WENV" >/dev/null
+        source "$WENVS/$WENV" >/dev/null
     fi
     local wenv
     for wenv in $@; do
-        source "$wenv" >/dev/null
+        source "$WENVS/$wenv" >/dev/null
     done
 }
 
@@ -425,7 +425,7 @@ is_wenv() {
     if [[ -z "$1" ]]; then
         return 1
     fi
-    wenv_file="$WENVS/$1"
+    local wenv_file="$WENVS/$1"
     if [[ ! -f "$wenv_file" ]]; then
         return 1
     fi
