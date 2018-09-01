@@ -88,7 +88,7 @@ _wenv() {
     case "${COMP_CWORD}" in
         1)
             local opts="start stop reset task cd new edit rm remove \
-                        source_aliases exec mv"
+                        source exec mv"
             COMPREPLY=( $(compgen -W "${opts}" -- ${word}) );;
         2)
             local command="${COMP_WORDS[1]}"
