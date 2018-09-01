@@ -30,6 +30,10 @@ _wenv_remove() {
     _show_aliases
 }
 
+_wenv_source() {
+    _show_aliases
+}
+
 _wenv_edit() {
     _show_aliases
 }
