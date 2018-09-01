@@ -1,11 +1,12 @@
 #!/usr/bin/zsh
 
 wenv_setup() {
-    WENV_DIR=''
+    WENV_DIR="$SRC/wenv"
     WENV_ALIASES=('x')
     WENV_PROJECT='wenv'
     WENV_TASK=''
     WENV_BRANCH='master'
+    WENV_GITDIR=''
 
     wenv_init() { }
     wenv_shutdown() { }
@@ -68,15 +69,12 @@ wenv_start() {
     if [[ $# == 0 || ! -f "$ALIASES/$1" ]]; then
         return 1
     fi
-    wenv="$1"
-
-    if [[ -n "$DISPLAY" ]]; then
-        set_window_name "$USER@$(hostname) #$wenv"
-    fi
+    local wenv="$1"
 
     if [[ $flag_n -eq 1 ]]; then
         wenv_stop
         wenv_exec $@ || return 1
+        [[ -n "$DISPLAY" ]] && set_window_name "$USER@$(hostname) #$wenv"
         wenv_init
         unset_quiet -f wenv_init
         [[ $flag_q -eq 1 ]] || wenv task show
@@ -87,12 +85,12 @@ wenv_start() {
     tmux send -t "$wenv" '{
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
+        [[ -n "$DISPLAY" ]] && set_window_name "$USER@$(hostname) #'"$wenv"'"
         wenv_init
         unset_quiet -f wenv_init
         clear
         [[ '"$flag_q"' -eq 1 ]] || wenv task show
         }' ENTER
-    unset wenv
     tmux attach-session -t "$wenv"
 }
 
@@ -200,7 +198,7 @@ wenv_cd() {
     if ! is_wenv "$1"; then
         return 1
     fi
-    wenv="$1"
+    local wenv="$1"
 
     # TODO: need a better way to do this
     # load and cd to input wenv
@@ -209,7 +207,6 @@ wenv_cd() {
 
     # reload the wenv that was previously running
     wenv_load "$WENV"
-    unset wenv
     unset_quiet -f wenv_init
 }
 
@@ -217,10 +214,9 @@ wenv_cd() {
 # function. wenv_setup defines the wenv's environment variables and functions.
 wenv_load() {
     [[ -z "$1" ]] && return 1
-    wenv="$1"
+    local wenv="$1"
     source_alias "$wenv" > /dev/null
     wenv_setup
-    unset wenv
 }
 
 warn_uncommitted_changes() {
@@ -243,7 +239,7 @@ wenv_new() {
     shift $((OPTIND-1))
 
     [[ -z "$1" ]] && return 1
-    wenv="$1"
+    local wenv="$1"
 
     # generalize/clean this up
     if [[ $flag_d -eq 1 ]]; then
@@ -253,17 +249,15 @@ wenv_new() {
         cp "$src" "$ALIASES/${wenv}"
     fi
     edit_alias "$wenv"
-    unset wenv
 }
 
 wenv_edit() {
-    wenv="$1"
-    [[ -z "$wenv" ]] && wenv="$WENV"
+    local wenv="$1"
+    [[ -z "$wenv" ]] && local wenv="$WENV"
     if [[ -z "$wenv" ]]; then
         return 1
     fi
     edit_alias "$wenv"
-    unset wenv
 }
 
 wenv_remove() {
@@ -274,13 +268,12 @@ wenv_remove() {
         echo "WENV $1 does not exist."
         return 1
     fi
-    wenv="$1"
+    local wenv="$1"
     wenv_file="$ALIASES/${wenv}"
     read "choice?Delete WENV $wenv? "
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         rm -f "$wenv_file"
     fi
-    unset wenv
 }
 
 wenv_reset() {
@@ -304,11 +297,11 @@ wenv_tasks() {
 }
 
 wenv_tasks_show() {
-    wenv="$WENV_PROJECT"
+    local wenv="$WENV_PROJECT"
     flag_w=0
     while getopts ":w:" opt; do
         case $opt in
-            w) [[ ! -z "$OPTARG" ]] && wenv="$OPTARG" ;;
+            w) [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG" ;;
             --) break ;;
             *) echo "invalid flag: $1" ; return 1 ;;
         esac
@@ -320,18 +313,16 @@ wenv_tasks_show() {
 
     echo "$wenv"
     task "$report" project:"$wenv"
-
-    unset wenv
 }
 
 wenv_tasks_add() {
     [[ -z "$@" ]] && return 1
 
-    wenv="$WENV_PROJECT"
+    local wenv="$WENV_PROJECT"
     flag_w=0
     while getopts ":w:" opt; do
         case $opt in
-            w) [[ ! -z "$OPTARG" ]] && wenv="$OPTARG" ;;
+            w) [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG" ;;
             --) break ;;
             *) echo "invalid flag: $1" ; return 1 ;;
         esac
@@ -343,8 +334,6 @@ wenv_tasks_add() {
     # all other args are passed to task warrior (yeah, this is ugly)
     task_args=${@:1:$(($# - 1))}
     task add project:"$wenv" tags:"$WENV" "$task_args" -- "$desc"
-
-    unset wenv
 }
 
 wenv_source_aliases() {
