@@ -74,23 +74,27 @@ wenv_start() {
     if [[ $flag_n -eq 1 ]]; then
         wenv_stop
         wenv_exec $@ || return 1
-        [[ -n "$DISPLAY" ]] && set_window_name "$USER@$(hostname) #$wenv"
         wenv_init
         unset_quiet -f wenv_init
+        [[ -n "$DISPLAY" ]] && precmd() {} && echo -ne "\033]0;$USER@$(hostname) #$wenv\007"
         [[ $flag_q -eq 1 ]] || wenv task show
         return 0
     fi
 
     tmux new-session -d -s "$wenv"
+    tmux set-environment ORIGINAL_TITLE "$(tmux show-options -gv set-titles-string)"
     tmux send -t "$wenv" '{
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
-        [[ -n "$DISPLAY" ]] && set_window_name "$USER@$(hostname) #'"$wenv"'"
         wenv_init
         unset_quiet -f wenv_init
+        tmux set-option set-titles on
+        tmux set-option set-titles-string "$USER@$(hostname) #'"$wenv"'"
+        tmux set-option set-titles off
         clear
         [[ '"$flag_q"' -eq 1 ]] || wenv task show
-        }' ENTER
+    }' ENTER
+
     tmux attach-session -t "$wenv"
 }
 
@@ -182,7 +186,9 @@ wenv_clean_up() {
 
     if [[ -n "$TMUX" ]]; then
         tmux set-environment WENV ''
-        tmux rename-window ''
+        tmux rename-session $(tmux display-message -p '#{session_id}' | tr -d '$')
+        tmux set-option set-titles on
+        tmux set-option set-titles-string "$(cut -d "=" -f 2 <<< $(tmux show-environment ORIGINAL_TITLE))"
     fi
     export PS1="$ORIGINAL_PS1"
 
