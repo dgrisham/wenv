@@ -13,7 +13,7 @@ wenv_setup() {
 }
 
 wenv() {
-    wenv_command="$1"
+    local wenv_command="$1"
     shift
     case "$wenv_command" in
         start)
@@ -56,8 +56,8 @@ wenv() {
 }
 
 wenv_start() {
-    flag_n=0
-    flag_q=0
+    local flag_n=0
+    local flag_q=0
     while getopts ":nq" opt; do
         case $opt in
             n) flag_n=1 ;;
@@ -95,7 +95,7 @@ wenv_start() {
 }
 
 wenv_exec() {
-    flag_c=1
+    local flag_c=1
     while getopts ":c" opt; do
         case $opt in
             c) flag_c=0 ;;
@@ -106,7 +106,11 @@ wenv_exec() {
     [[ -z "$1" ]] && return 1
     export WENV="$1"
 
-    wenv_load "$WENV"
+    wenv_load
+
+    export PS1="($WENV) $ORIGINAL_PS1"
+
+    [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
     if [[ $flag_c -eq 1 ]]; then
         if [[ -n "$WENV_GIT_DIR" ]]; then
@@ -118,7 +122,7 @@ wenv_exec() {
             cd "$WENV_DIR" &> /dev/null
         fi
         if [[ -n "$WENV_BRANCH" ]]; then
-            current_branch=$(git branch | grep '*' | sed 's/* //')
+            local current_branch=$(git branch | grep '*' | sed 's/* //')
             if [[ ! -z "$current_branch" && "$WENV_BRANCH" != "$current_branch" ]]; then
                 git diff-index --quiet HEAD -- 2>/dev/null
                 # more scalable solution to the below line? don't want to just say -ne 1 because other errors may matter.
@@ -130,17 +134,12 @@ wenv_exec() {
         # if we previously cd'd into git repo dir, go to project dir now
         [[ -n "$WENV_GIT_DIR" ]] && cd "$WENV_DIR" &> /dev/null
     fi
-
-    wenv_source "$WENV_DEPS"
-    [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
-
-    export PS1="($WENV) $ORIGINAL_PS1"
 }
 
 wenv_stop() {
     [[ -z "$WENV" ]] && return 1
 
-    flag_f=0
+    local flag_f=0
     while getopts ":f" opt; do
         case $opt in
             # force stop, regardless of git working tree state
@@ -210,13 +209,21 @@ wenv_cd() {
     unset_quiet -f wenv_init
 }
 
-# Loads the aliases associated with the input wenv, and runs its wenv_setup
-# function. wenv_setup defines the wenv's environment variables and functions.
+# load either the input wenv, or the active WENV + its dependencies
 wenv_load() {
-    [[ -z "$1" ]] && return 1
-    local wenv="$1"
+    local wenv
+    if is_wenv "$1"; then
+        wenv="$1"
+    elif [[ -n "$WENV" ]]; then
+        wenv="$WENV"
+        # load dependencies first in case the wenv overrides any of them
+        wenv_source "$WENV_DEPS"
+    else
+        return 1
+    fi
     wenv_source "$wenv" > /dev/null
     wenv_setup
+    unset -f wenv_setup
 }
 
 warn_uncommitted_changes() {
@@ -226,8 +233,8 @@ warn_uncommitted_changes() {
 }
 
 wenv_new() {
-    src="$WENV_DIR/wenv_template"
-    flag_d=0
+    local src="$WENV_DIR/wenv_template"
+    local flag_d=0
     while getopts ":di:" opt; do
         case $opt in
             d) flag_d=1 ;;
@@ -253,7 +260,7 @@ wenv_new() {
 
 wenv_edit() {
     local wenv="$1"
-    [[ -z "$wenv" ]] && local wenv="$WENV"
+    [[ -z "$wenv" ]] && wenv="$WENV"
     if [[ -z "$wenv" ]]; then
         return 1
     fi
@@ -281,7 +288,7 @@ wenv_reset() {
 }
 
 wenv_tasks() {
-    arg="$1"
+    local arg="$1"
     shift 2> /dev/null
     case "$arg" in
         s|show)
@@ -298,17 +305,17 @@ wenv_tasks() {
 
 wenv_tasks_show() {
     local wenv="$WENV_PROJECT"
-    flag_w=0
+    local flag_w=0
     while getopts ":w:" opt; do
         case $opt in
-            w) [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG" ;;
+            w) [[ ! -z "$OPTARG" ]] && wenv="$OPTARG" ;;
             --) break ;;
             *) echo "invalid flag: $1" ; return 1 ;;
         esac
     done
     shift $((OPTIND-1))
 
-    report="$1"
+    local report="$1"
     [[ -z "$report" ]] && report="project"
 
     echo "$wenv"
@@ -319,7 +326,7 @@ wenv_tasks_add() {
     [[ -z "$@" ]] && return 1
 
     local wenv="$WENV_PROJECT"
-    flag_w=0
+    local flag_w=0
     while getopts ":w:" opt; do
         case $opt in
             w) [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG" ;;
@@ -330,14 +337,15 @@ wenv_tasks_add() {
     shift $((OPTIND-1))
 
     # last passed argument is description (usually quoted string)
-    desc="${@[$#]}"
+    local desc="${@[$#]}"
     # all other args are passed to task warrior (yeah, this is ugly)
-    task_args=${@:1:$(($# - 1))}
+    local task_args=${@:1:$(($# - 1))}
     task add project:"$wenv" tags:"$WENV" "$task_args" -- "$desc"
 }
 
 wenv_source() {
-    if [[ "$#" -eq 0 ]]; then
+    if [[ "$#" -eq 0 && -n "$WENV" ]]; then
+        wenv_source "$WENV_DEPS"
         source "$WENVS/$WENV" >/dev/null
     fi
     local wenv
@@ -348,14 +356,14 @@ wenv_source() {
 
 wenv_rename() {
     [[ $# != 2 ]] && return 1
-    old="$1"
-    new="$2"
+    local old="$1"
+    local new="$2"
 
     mv "$WENVS/$old" "$WENVS/$new"
 }
 
 wenv_tmux_layout() {
-    layout="$1"
+    local layout="$1"
     shift
     case "$layout" in
         dev)
@@ -365,12 +373,12 @@ wenv_tmux_layout() {
             tmux select-pane -U
             ;;
         devloop)
-            watch='git'
+            local watch='git'
             [[ "$1" == '-w' ]] && watch="$2" && shift 2
             wenv_tmux_layout 'dev' "monitor $watch $*"
             ;;
         dev-tasks)
-            watch='git'
+            local watch='git'
             [[ "$1" == '-w' ]] && watch="$2" && shift 2
             wenv_tmux_split v
             tmux resize-pane -y 7
@@ -399,10 +407,10 @@ wenv_tmux_layout() {
 }
 
 wenv_tmux_split() {
-    wenv_init_cmd='ZSH_INIT="unset WENV; wenv exec -cn \"$WENV\"" zsh -i'
-    direction="$1"
+    local wenv_init_cmd='ZSH_INIT="unset WENV; wenv exec -cn \"$WENV\"" zsh -i'
+    local direction="$1"
     shift
-    user_cmd=$@
+    local user_cmd=$@
     case "$direction" in
         h)
             tmux split-window -h -c "#{pane_current_path}" "$wenv_init_cmd"
