@@ -106,7 +106,7 @@ wenv_exec() {
     [[ -z "$1" ]] && return 1
     export WENV="$1"
 
-    wenv_load
+    wenv_load || return 1
 
     export PS1="($WENV) $ORIGINAL_PS1"
 
@@ -134,6 +134,8 @@ wenv_exec() {
         # if we previously cd'd into git repo dir, go to project dir now
         [[ -n "$WENV_GIT_DIR" ]] && cd "$WENV_DIR" &> /dev/null
     fi
+
+    return 0
 }
 
 wenv_stop() {
@@ -207,6 +209,8 @@ wenv_cd() {
     # reload the wenv that was previously running
     wenv_load "$WENV"
     unset_quiet -f wenv_init
+
+    return 0
 }
 
 # load either the input wenv, or the active WENV + its dependencies
@@ -228,8 +232,8 @@ wenv_load() {
 
 warn_uncommitted_changes() {
     [[ -z "$1" ]] && return 1
-    WENV_BRANCH="$1"
-    echo "Error: Uncommitted changes, cannot switch to branch $WENV_BRANCH. Please clean up and try again."
+    local branch="$1"
+    echo "Error: Uncommitted changes, cannot switch to branch $branch. Please clean up and try again."
 }
 
 wenv_new() {
@@ -255,14 +259,13 @@ wenv_new() {
         # this case shouldn't be exclusive from previous
         cp "$src" "$WENVS/${wenv}"
     fi
-    edit_alias "$wenv"
+    wenv_edit "$wenv"
 }
 
 wenv_edit() {
     # nice bash syntax for setting var to first non-empty variable
     local wenv="${1:-${WENV}}"
-    [[ -z "$wenv" ]] && return 1
-    edit_alias "$wenv"
+    [[ -f "$WENVS/$wenv" ]] && "$EDITOR" "$WENVS/$wenv"
 }
 
 wenv_remove() {
@@ -405,7 +408,7 @@ wenv_tmux_layout() {
 }
 
 wenv_tmux_split() {
-    local wenv_init_cmd='ZSH_INIT="unset WENV; wenv exec -cn \"$WENV\"" zsh -i'
+    local wenv_init_cmd='ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
     local direction="$1"
     shift
     local user_cmd=$@
