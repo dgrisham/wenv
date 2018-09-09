@@ -259,11 +259,9 @@ wenv_new() {
 }
 
 wenv_edit() {
-    local wenv="$1"
-    [[ -z "$wenv" ]] && wenv="$WENV"
-    if [[ -z "$wenv" ]]; then
-        return 1
-    fi
+    # nice bash syntax for setting var to first non-empty variable
+    local wenv="${1:-${WENV}}"
+    [[ -z "$wenv" ]] && return 1
     edit_alias "$wenv"
 }
 
