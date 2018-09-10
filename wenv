@@ -215,18 +215,14 @@ wenv_cd() {
 
 # load either the input wenv, or the active WENV + its dependencies
 wenv_load() {
-    local wenv
-    if is_wenv "$1"; then
-        wenv="$1"
-    elif [[ -n "$WENV" ]]; then
-        wenv="$WENV"
-        # load dependencies first in case the wenv overrides any of them
-        wenv_source "$WENV_DEPS"
-    else
+    local wenv="${1:-${WENV}}"
+    if ! is_wenv "$wenv"; then
         return 1
     fi
-    wenv_source "$wenv" > /dev/null
+    eval "$(source $WENVS/$wenv && declare -f wenv_setup)"
+    declare -f wenv_setup >/dev/null || return 1
     wenv_setup
+    wenv_source "$wenv"
     unset -f wenv_setup
 }
 
