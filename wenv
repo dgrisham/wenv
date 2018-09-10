@@ -138,6 +138,12 @@ wenv_exec() {
     return 0
 }
 
+warn_uncommitted_changes() {
+    [[ -z "$1" ]] && return 1
+    local branch="$1"
+    echo "Error: Uncommitted changes, cannot switch to branch $branch. Please clean up and try again."
+}
+
 wenv_stop() {
     [[ -z "$WENV" ]] && return 1
 
@@ -215,21 +221,26 @@ wenv_cd() {
 
 # load either the input wenv, or the active WENV + its dependencies
 wenv_load() {
-    local wenv="${1:-${WENV}}"
-    if ! is_wenv "$wenv"; then
+    if [[ -n "$1" ]]; then
+        local wenv="$1"
+        run_wenv_setup "$wenv"
+        wenv_source "$wenv"
+    elif [[ -n "$WENV" ]]; then
+        run_wenv_setup "$WENV"
+        wenv_setup
+        wenv_source
+    else
         return 1
     fi
-    eval "$(source $WENVS/$wenv && declare -f wenv_setup)"
-    declare -f wenv_setup >/dev/null || return 1
-    wenv_setup
-    wenv_source "$wenv"
     unset -f wenv_setup
 }
 
-warn_uncommitted_changes() {
+run_wenv_setup() {
     [[ -z "$1" ]] && return 1
-    local branch="$1"
-    echo "Error: Uncommitted changes, cannot switch to branch $branch. Please clean up and try again."
+    local wenv="$1"
+    eval "$(source $WENVS/$wenv && declare -f wenv_setup)"
+    declare -f wenv_setup >/dev/null || return 1
+    wenv_setup
 }
 
 wenv_new() {
