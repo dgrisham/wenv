@@ -6,7 +6,7 @@ _wenv_comp() {
     fi
 }
 
-_show_aliases() {
+_show_wenvs() {
     ls "$WENVS"
 }
 
@@ -14,12 +14,12 @@ _wenv_start() {
     if [[ $word == -* ]] ; then
         _wenv_comp "-n -q"
     else
-        _show_aliases
+        _show_wenvs
     fi
 }
 
 _wenv_cd() {
-    _show_aliases
+    _show_wenvs
 }
 
 _wenv_rm() {
@@ -27,19 +27,19 @@ _wenv_rm() {
 }
 
 _wenv_remove() {
-    _show_aliases
+    _show_wenvs
 }
 
 _wenv_source() {
-    _show_aliases
+    _show_wenvs
 }
 
 _wenv_edit() {
-    _show_aliases
+    _show_wenvs
 }
 
 _wenv_rename() {
-    _show_aliases
+    _show_wenvs
 }
 
 _wenv_mv() {
@@ -50,7 +50,7 @@ _wenv_exec() {
     if [[ $word == -* ]] ; then
         _wenv_comp "-c -n"
     else
-        _show_aliases
+        _show_wenvs
     fi
 }
 
@@ -60,7 +60,7 @@ _wenv_task() {
 
 _wenv_task_add() {
     if [[ ${prev} == "-w" ]] ; then
-        _show_aliases
+        _show_wenvs
     elif [[ ${word} == -* ]] ; then
         _wenv_comp "-w"
     fi
@@ -68,7 +68,7 @@ _wenv_task_add() {
 
 _wenv_task_show() {
     if [[ ${prev} == "-w" ]] ; then
-        _show_aliases
+        _show_wenvs
     elif [[ ${word} == -* ]] ; then
         _wenv_comp "-w"
     fi
@@ -76,7 +76,7 @@ _wenv_task_show() {
 
 _wenv_new() {
     if [[ ${prev} == "-i" ]] ; then
-        _show_aliases
+        _show_wenvs
     elif [[ ${word} == -* ]] ; then
         _wenv_comp "-i -d"
     fi
