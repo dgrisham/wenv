@@ -200,6 +200,16 @@ wenv_clean_up() {
 }
 
 wenv_cd() {
+    local flag_r=0
+    while getopts ":r" opt; do
+        case $opt in
+            r) flag_r=1 ;;
+            --) break ;;
+            *) echo "invalid flag: $1" ; exit 1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
     if [[ -z "$1" ]]; then
         [[ ! -z "$WENV_DIR" ]] && cd "$WENV_DIR" &> /dev/null
         return 0
@@ -208,6 +218,8 @@ wenv_cd() {
         return 1
     fi
     local wenv="$1"
+
+    (( flag_r == 1 )) && tmux rename-window "$wenv"
 
     # TODO: need a better way to do this
     # load and cd to input wenv
