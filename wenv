@@ -367,7 +367,7 @@ wenv_tasks_add() {
 
 wenv_source() {
     if [[ "$#" -eq 0 && -n "$WENV" ]]; then
-        [[ -v WENV_DEPS[@] ]] && wenv_source "${WENV_DEPS[@]}"
+        (( ${#WENV_DEPS[@]} == 0)) && wenv_source "${WENV_DEPS[@]}"
         source "$WENVS/$WENV" >/dev/null
     fi
     local wenv
