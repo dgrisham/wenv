@@ -112,7 +112,7 @@ wenv_exec() {
 
     [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
-    cd "$WENV_DIR" &> /dev/null
+    (( flag_c == 1 )) && cd "$WENV_DIR" &> /dev/null
 
     # if [[ $flag_c -eq 1 ]]; then
     #     if [[ -n "$WENV_GIT_DIR" ]]; then
