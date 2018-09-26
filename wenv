@@ -326,13 +326,14 @@ wenv_tasks() {
 }
 
 wenv_tasks_show() {
-    local wenv="$WENV_PROJECT"
+    local wenv="${WENV_PROJECT:-${WENV}}"
+    [[ -z "$wenv" ]] && return 1
     local flag_w=0
     while getopts ":w:" opt; do
         case $opt in
-            w) [[ ! -z "$OPTARG" ]] && wenv="$OPTARG" ;;
+            w)  [[ ! -z "$OPTARG" ]] && wenv="$OPTARG" ;;
             --) break ;;
-            *) echo "invalid flag: $1" ; return 1 ;;
+            *)  echo "invalid flag: $1" ; return 1 ;;
         esac
     done
     shift $((OPTIND-1))
@@ -346,14 +347,13 @@ wenv_tasks_show() {
 
 wenv_tasks_add() {
     [[ -z "$@" ]] && return 1
-
-    local wenv="$WENV_PROJECT"
+    local wenv="${WENV_PROJECT:-${WENV}}"
     local flag_w=0
     while getopts ":w:" opt; do
         case $opt in
-            w) [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG" ;;
+            w)  [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG" ;;
             --) break ;;
-            *) echo "invalid flag: $1" ; return 1 ;;
+            *)  echo "invalid flag: $1" ; return 1 ;;
         esac
     done
     shift $((OPTIND-1))
