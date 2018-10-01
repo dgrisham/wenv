@@ -58,10 +58,12 @@ wenv() {
 wenv_start() {
     local flag_n=0
     local flag_q=0
-    while getopts ":nq" opt; do
+    local flag_i=1
+    while getopts ":nqi" opt; do
         case $opt in
             n) flag_n=1 ;;
             q) flag_q=1 ;;
+            i) flag_i=0 ;;
         esac
     done
     shift $((OPTIND-1))
@@ -74,10 +76,10 @@ wenv_start() {
     if [[ $flag_n -eq 1 ]]; then
         wenv_stop
         wenv_exec $@ || return 1
-        wenv_init
+        (( flag_i == 1 )) && wenv_init
         unset_quiet -f wenv_init
         [[ -n "$DISPLAY" ]] && precmd() {} && echo -ne "\033]0;$USER@$(hostname) #$wenv\007"
-        [[ $flag_q -eq 1 ]] || wenv task show
+        (( flag_q == 1 )) || wenv task show
         return 0
     fi
 
@@ -85,10 +87,10 @@ wenv_start() {
     tmux send -t "$wenv" '{
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
-        wenv_init
+        (( '"$flag_i"' == 1 )) && wenv_init
         unset_quiet -f wenv_init
         clear
-        [[ '"$flag_q"' -eq 1 ]] || wenv task show
+        (( '"$flag_q"' == 1 )) || wenv task show
     }' ENTER
 
     tmux attach-session -t "$wenv"
