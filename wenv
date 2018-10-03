@@ -431,25 +431,34 @@ wenv_tmux_layout() {
 }
 
 wenv_tmux_split() {
+    while getopts ":n:" opt; do
+        case $opt in
+            n) [[ ! -z "$OPTARG" ]] && local name="$OPTARG" ;;
+            *) echo "invalid flag: $opt" ; exit 1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
     local wenv_init_cmd='ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
     local direction="$1"
     shift
     local user_cmd=$@
     case "$direction" in
-        h)
-            tmux split-window -h -c "#{pane_current_path}" "$wenv_init_cmd"
+        h|horizontal)
+            split_args=('split-window' '-h')
             ;;
-        v)
-            tmux split-window -c "#{pane_current_path}" "$wenv_init_cmd"
+        v|vertical)
+            split_args=('split-window')
             ;;
-        c)
-            tmux new-window -c "#{pane_current_path}" "$wenv_init_cmd"
+        c|window)
+            split_args=('new-window')
+            [[ -n "$name" ]] && split_args+=('-n' "$name")
             ;;
         *)
             return 1
             ;;
     esac
-
+    tmux $split_args -c "#{pane_current_path}" "$wenv_init_cmd"
     tmux send-keys "$user_cmd" 'Enter'
 }
 
