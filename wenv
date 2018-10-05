@@ -76,10 +76,10 @@ wenv_start() {
     if [[ $flag_n -eq 1 ]]; then
         wenv_stop
         wenv_exec $@ || return 1
-        (( flag_i == 1 )) && wenv_init
+        ((flag_i == 1)) && wenv_init
         unset_quiet -f wenv_init
         [[ -n "$DISPLAY" ]] && precmd() {} && echo -ne "\033]0;$USER@$(hostname) #$wenv\007"
-        (( flag_q == 1 )) || wenv task show
+        ((flag_q == 1)) || wenv task show
         return 0
     fi
 
@@ -87,10 +87,10 @@ wenv_start() {
     tmux send -t "$wenv" '{
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
-        (( '"$flag_i"' == 1 )) && wenv_init
+        (('"$flag_i"' == 1)) && wenv_init
         unset_quiet -f wenv_init
         clear
-        (( '"$flag_q"' == 1 )) || wenv task show
+        (('"$flag_q"' == 1)) || wenv task show
     }' ENTER
 
     tmux attach-session -t "$wenv"
@@ -114,7 +114,7 @@ wenv_exec() {
 
     [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
-    (( flag_c == 1 )) && cd "$WENV_DIR" &> /dev/null
+    ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
     # if [[ $flag_c -eq 1 ]]; then
     #     if [[ -n "$WENV_GIT_DIR" ]]; then
@@ -152,10 +152,12 @@ wenv_stop() {
     [[ -z "$WENV" ]] && return 1
 
     local flag_f=0
-    while getopts ":f" opt; do
+    local flag_s=1
+    while getopts ":fe" opt; do
         case $opt in
             # force stop, regardless of git working tree state
-            f) flag_f=1 ;;
+            f) flag_f=0 ;;
+            e) flag_s=0 ;;
         esac
     done
     shift $((OPTIND-1))
@@ -180,7 +182,7 @@ wenv_stop() {
         #git checkout master
     #fi
 
-    wenv_shutdown &> /dev/null # TODO: decide when is best to run this
+    ((flag_s == 1)) && wenv_shutdown &> /dev/null # TODO: decide when is best to run this
     wenv_clean_up
 }
 
@@ -221,7 +223,7 @@ wenv_cd() {
     fi
     local wenv="$1"
 
-    (( flag_r == 1 )) && tmux rename-window "$wenv"
+    ((flag_r == 1)) && tmux rename-window "$wenv"
 
     # TODO: need a better way to do this
     # load and cd to input wenv
