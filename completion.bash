@@ -18,6 +18,11 @@ _wenv_start() {
     fi
 }
 
+_wenv_stop() {
+    # show option since there are no more args
+    _wenv_comp "-s"
+}
+
 _wenv_cd() {
     _show_wenvs
 }
