@@ -461,7 +461,7 @@ wenv_tmux_split() {
             ;;
     esac
     tmux $split_args -c "#{pane_current_path}" "$wenv_init_cmd"
-    tmux send-keys "$user_cmd" 'Enter'
+    [[ -n "$user_cmd" ]] && tmux send-keys "$user_cmd" 'Enter'
 }
 
 is_wenv() {
