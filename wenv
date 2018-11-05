@@ -34,6 +34,9 @@ wenv() {
         new)
             wenv_new $@
             ;;
+        bootstrap)
+            _wenv_bootstrap $@
+            ;;
         edit)
             wenv_edit $@
             ;;
@@ -53,6 +56,19 @@ wenv() {
             echo "Unrecognized command: '$wenv_command'"
             ;;
     esac
+}
+
+# TODO: figure out naming convention (preceding _ is so wenvs can define their
+# own wenv_bootstrap function without conflict)
+_wenv_bootstrap() {
+    if ! is_wenv "$1"; then
+        return 1
+    fi
+    local wenv="$1"
+    run_wenv_setup "$wenv"
+    ! function_exists wenv_bootstrap && return 0
+    wenv_bootstrap
+    unset_quiet -f wenv_bootstrap
 }
 
 wenv_start() {
@@ -251,13 +267,14 @@ wenv_load() {
         return 1
     fi
     unset -f wenv_setup
+    unset_quiet -f wenv_bootstrap
 }
 
 run_wenv_setup() {
     [[ -z "$1" ]] && return 1
     local wenv="$1"
     eval "$(source $WENVS/$wenv && declare -f wenv_setup)"
-    declare -f wenv_setup >/dev/null || return 1
+    function_exists wenv_setup || return 1
     wenv_setup
 }
 
@@ -476,5 +493,9 @@ is_wenv() {
 }
 
 unset_quiet() {
-    unset $@ &>/dev/null
+    unset $@ 2>/dev/null
+}
+
+function_exists() {
+    declare -f "$1" >/dev/null
 }
