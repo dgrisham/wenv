@@ -8,6 +8,7 @@ wenv_setup() {
     WENV_TASK=''
     WENV_GITDIR=""
 
+    wenv_bootstrap() {}
     wenv_init() {}
     wenv_shutdown() {}
 }
