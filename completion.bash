@@ -96,7 +96,7 @@ _wenv() {
 
     case "${COMP_CWORD}" in
         1)
-            local opts="start stop reset task cd new edit rm remove \
+            local opts="start stop reset task cd new bootstrap edit rm remove \
                         source exec mv"
             COMPREPLY=( $(compgen -W "${opts}" -- ${word}) );;
         2)
