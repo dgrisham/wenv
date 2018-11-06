@@ -19,7 +19,6 @@ _wenv_start() {
 }
 
 _wenv_stop() {
-    # show option since there are no more args
     _wenv_comp "-s"
 }
 
