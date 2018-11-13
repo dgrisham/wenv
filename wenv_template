@@ -35,3 +35,55 @@ c() {
     fi
     cd "$dir"
 }
+
+_c() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "${COMP_CWORD}" in
+        1)
+            local opts=""
+            COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+            ;;
+    esac
+}
+complete -F _c c
+
+edit() {
+    local flag_r=0
+    while getopts ":r" opt; do
+        case $opt in
+            r) flag_r=1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local input="$1"
+    shift
+    case "$input" in
+        *)
+            return 1
+            ;;
+    esac
+    (( flag_r == 1 )) && tmux rename-window "$input"
+    eval $EDITOR $@ "$WENV_DIR/$files"
+}
+
+_edit() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "${COMP_CWORD}" in
+        1)
+            local opts=""
+            COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+            ;;
+    esac
+}
+complete -F _edit edit
