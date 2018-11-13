@@ -35,7 +35,6 @@ c() {
     fi
     cd "$dir"
 }
-
 _c() {
     COMPREPLY=()
     complete +o default
@@ -43,12 +42,12 @@ _c() {
     local word="${COMP_WORDS[COMP_CWORD]}"
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    case "${COMP_CWORD}" in
-        1)
-            local opts=""
-            COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
-            ;;
-    esac
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="" # insert custom completion terms here
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
 }
 complete -F _c c
 
@@ -71,7 +70,6 @@ edit() {
     (( flag_r == 1 )) && tmux rename-window "$input"
     eval $EDITOR $@ "$WENV_DIR/$files"
 }
-
 _edit() {
     COMPREPLY=()
     complete +o default
@@ -79,11 +77,11 @@ _edit() {
     local word="${COMP_WORDS[COMP_CWORD]}"
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    case "${COMP_CWORD}" in
-        1)
-            local opts=""
-            COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
-            ;;
-    esac
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="" # insert custom completion terms here
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
 }
 complete -F _edit edit
