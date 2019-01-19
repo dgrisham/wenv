@@ -12,3 +12,76 @@ wenv_setup() {
     wenv_init() {}
     wenv_shutdown() {}
 }
+
+c() {
+    local flag_r=0
+    while getopts ":r" opt; do
+        case $opt in
+            r) flag_r=1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local input="$1"
+    shift
+    case "$input" in
+        *)
+            return 1
+            ;;
+    esac
+    if (( flag_r == 1 )); then
+        [[ ! -v wname ]] && local wname="$input"
+        tmux rename-window "$wname"
+    fi
+    cd "$dir"
+}
+_c() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="" # insert custom completion terms here
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _c c
+
+edit() {
+    local flag_r=0
+    while getopts ":r" opt; do
+        case $opt in
+            r) flag_r=1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local input="$1"
+    shift
+    case "$input" in
+        *)
+            return 1
+            ;;
+    esac
+    (( flag_r == 1 )) && tmux rename-window "$input"
+    eval $EDITOR $@ "$WENV_DIR/$files"
+}
+_edit() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="" # insert custom completion terms here
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _edit edit
