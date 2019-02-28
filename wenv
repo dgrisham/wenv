@@ -2,7 +2,7 @@
 
 wenv_setup() {
     WENV_DIR="$SRC/wenv"
-    WENV_DEPS=('x')
+    WENV_DEPS=()
     WENV_PROJECT='wenv'
     WENV_TASK=''
     WENV_BRANCH='master'
@@ -94,7 +94,6 @@ wenv_start() {
         wenv_exec $@ || return 1
         ((flag_i == 1)) && wenv_init
         unset_quiet -f wenv_init
-        [[ -n "$DISPLAY" ]] && precmd() {} && echo -ne "\033]0;$USER@$(hostname) #$wenv\007"
         ((flag_q == 1)) || wenv task show
         return 0
     fi
@@ -126,7 +125,7 @@ wenv_exec() {
 
     wenv_load || return 1
 
-    export PS1="($WENV) $ORIGINAL_PS1"
+    [[ -n "$ORIGINAL_PS1" ]] && export PS1="($WENV) $ORIGINAL_PS1"
 
     [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
@@ -179,9 +178,6 @@ wenv_clean_up() {
     if [[ -n "$TMUX" ]]; then
         tmux set-environment WENV ''
         tmux rename-session $(tmux display-message -p '#{session_id}' | tr -d '$')
-    else
-        # load the old precmd (TODO: better way to do this?)
-        [[ -n "$DISPLAY" ]] && set_default_window_name
     fi
     export PS1="$ORIGINAL_PS1"
 }
