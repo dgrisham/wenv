@@ -132,29 +132,6 @@ wenv_exec() {
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
-    # if [[ $flag_c -eq 1 ]]; then
-    #     if [[ -n "$WENV_GIT_DIR" ]]; then
-    #         # cd into git repo base dir if available. this option is available to
-    #         # avoid trying to cd into a dir that's only in the WENV's branch of
-    #         # the repo (which will fail if we're not in the branch)
-    #         cd "$WENV_GIT_DIR" &> /dev/null
-    #     else
-    #         cd "$WENV_DIR" &> /dev/null
-    #     fi
-    #     if [[ -n "$WENV_BRANCH" ]]; then
-    #         local current_branch=$(git branch | grep '*' | sed 's/* //')
-    #         if [[ ! -z "$current_branch" && "$WENV_BRANCH" != "$current_branch" ]]; then
-    #             git diff-index --quiet HEAD -- 2>/dev/null
-    #             # more scalable solution to the below line? don't want to just say -ne 1 because other errors may matter.
-    #             # also, checking for value in zsh array is ugly
-    #             [[ $? -ne 0 ]] && [[ $? -ne 128 ]] && { warn_uncommitted_changes "$WENV_BRANCH" ; wenv_clean_up ; return 1 }
-    #         fi
-    #         git checkout "$WENV_BRANCH"
-    #     fi
-    #     # if we previously cd'd into git repo dir, go to project dir now
-    #     [[ -n "$WENV_GIT_DIR" ]] && cd "$WENV_DIR" &> /dev/null
-    # fi
-
     return 0
 }
 
@@ -187,16 +164,6 @@ wenv_stop() {
     wenv_cd
 
     [[ -n "$WENV_TASK" ]] && task "$WENV_TASK" stop
-
-    # disabling this for now
-    #if [[ -n "$WENV_BRANCH" ]]; then
-        #git commit -am "$WENV_BRANCH: rebase me"
-        #if [[ `git log -2 | grep "$WENV_BRANCH: rebase me" | wc -l` == '2' ]]; then
-            #git reset --soft HEAD~2
-            #git commit -am "$WENV_BRANCH: rebase me"
-        #fi
-        #git checkout master
-    #fi
 
     ((flag_s == 1)) && wenv_shutdown &> /dev/null # TODO: decide when is best to run this
     wenv_clean_up
