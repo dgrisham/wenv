@@ -10,15 +10,15 @@ terminal. A WENV for a given project defines 1. what commands should be run to
 start the project, and 2. the project-specific environment that should be
 loaded.
 
+Currently, WENVs required Zsh as the primary shell. They are also most useful
+with tmux, though some of the functionality can be used without tmux.
+
 **Note**: This framework was written on the fly to implement the features I
 (@dgrisham) wanted while working on projects. I did not research many solutions
 to this (aside from trying
 [`tmux-resurrect`](https://github.com/tmux-plugins/tmux-resurrect) for a short
 time), and as such I do not have the experience or knowledge to compare it to
 existing tools.
-
-TODO: make a note that tmux is not required, but it does provide a lot of the
-useful functionality
 
 ### Example
 
@@ -29,37 +29,39 @@ TODO: gif webm movie thing
 
 ## Installation
 
-Clone this repository (TODO: deal with the $SRC thing, that should change)
+For now, the installation is manual -- fortunately, it's also relatively
+painless. The following steps (or variations on them) should get the job done:
+
+1.  Clone this repository.
+2.  Put the `wenv` file in a directory that's in your `PATH` (e.g.
+    `$HOME/.local/bin`). `wenv` is a Zsh script that defines all of the relevant
+     functionality.
+3.  Make sure the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`)
+    exists, and put the `template` file there.
+4.  In order for WENVs to work with `tmux`, the following line should be added
+    to your `zshrc`:
+
+    ```
+    eval "$WENV_EXEC"
+    ```
+
+    This makes it so that the WENV associated with a given tmux session can be
+    loaded whenever a new pane or window is opened within that session.
+5.  Put the `completion.bash` file wherever you like, and source it in one of
+    your Zsh startup files. For example, you can add the following lines to your
+    Zsh profile:
+
+    ```
+    autoload bashcompinit
+    bashcompinit
+    source <path-to-completion.bash>
+    ```
 
 The environment variable `WENVS` is used to specify the directory where all
-projects' WENV files are stored. Create the directory and define the `WENVS`
-variable in your `zsh` profile.
-
-If you want the name of the active WENV to be prepended to your prompt, add
-the following lines to your `.zshrc`
-
-    ```
-    eval ZSH_INIT
-    ORIGINAL_PS1="$PS1"
-    ```
-
-TODO: example of this happening
-
-In order to run WENVs in `tmux` sessions (which is the intended use), the
-following command should be run whenever a new pane or window is opened:
-`"#{pane_current_path}" 'ZSH_INIT="unset WENV; wenv exec -c "$WENV"" zsh -i'`.
-So, for example, your `tmux.conf` should have lines that look like:
-
-    ```
-    ## set window split
-    bind-key - split-window -c "#{pane_current_path}" 'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
-    bind-key \ split-window -h -c "#{pane_current_path}" 'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
-    ## set window creation
-    bind-key c new-window -c "#{pane_current_path}" 'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
-    ```
-
-These will make it so that every pane and window in a given `tmux` session
-associated with a WENV will load that WENV.
+projects' WENV files are stored. This can be overriden by setting the `WENVS`
+value in your Zsh profile. `WENVS` will default to
+`"${XDG_CONFIG_HOME}/wenv/wenvs` if `XDG_CONFIG_HOME` is set; otherwise, it's
+set to`$HOME/.config/wenv/wenvs`.
 
 ### dependencies (optional or not)
 
@@ -67,4 +69,5 @@ associated with a WENV will load that WENV.
 
 ## Usage
 
+**TODO: output usage from wenv functions themselves**
 
