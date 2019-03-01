@@ -3,7 +3,8 @@ WENV -- A Simple **W**orking **Env**ironment Framework
 
 Perpetual WIP, likely to have bugs.
 
-## Introduction
+Introduction
+------------
 
 Working environments (WENVs) are a tool for streamlining workflow in the
 terminal. A WENV for a given project defines 1. what commands should be run to
@@ -20,14 +21,16 @@ to this (aside from trying
 time), and as such I do not have the experience or knowledge to compare it to
 existing tools.
 
-### Example
+Example
+~~~~~~~
 
 A given project's WENV is defined by `zsh` functions and environment variables.
 As an example,
 
 TODO: gif webm movie thing
 
-## Installation
+Installation
+------------
 
 For now, the installation is manual -- fortunately, it's also relatively
 painless. The following steps (or variations on them) should get the job done:
@@ -63,11 +66,13 @@ value in your Zsh profile. `WENVS` will default to
 `"${XDG_CONFIG_HOME}/wenv/wenvs` if `XDG_CONFIG_HOME` is set; otherwise, it's
 set to`$HOME/.config/wenv/wenvs`.
 
-### dependencies (optional or not)
+dependencies (optional or not)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -   taskwarrior (currently required)
 
-## Usage
+Usage
+~~~~~
 
 **TODO: output usage from wenv functions themselves**
 
