@@ -12,6 +12,8 @@ wenv_setup() {
     wenv_shutdown() { }
 }
 
+export WENVS="${WENVS:-${XDG_CONFIG_HOME:-$HOME/.config}/wenv/wenvs}"
+
 wenv() {
     local wenv_command="$1"
     shift
@@ -102,9 +104,9 @@ wenv_start() {
     tmux send -t "$wenv" '{
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
-        tmux bind-key - split-window -c "#{pane_current_path}" '"'"'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
-        tmux bind-key \\ split-window -h -c "#{pane_current_path}" '"'"'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
-        tmux bind-key c new-window -c "#{pane_current_path}" '"'"'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key - split-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key \\ split-window -h -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key c new-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
         (('"$flag_i"' == 1)) && wenv_init
         unset_quiet -f wenv_init
         clear
@@ -128,7 +130,8 @@ wenv_exec() {
 
     wenv_load || return 1
 
-    [[ -n "$ORIGINAL_PS1" ]] && export PS1="($WENV) $ORIGINAL_PS1"
+    export ORIGINAL_PS1="$PS1"
+    export PS1="($WENV) $ORIGINAL_PS1"
 
     [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
@@ -425,7 +428,7 @@ wenv_tmux_split() {
     done
     shift $((OPTIND-1))
 
-    local wenv_init_cmd='ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
+    local wenv_init_cmd='WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
     local direction="$1"
     shift
     local user_cmd=$@
