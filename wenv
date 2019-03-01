@@ -102,6 +102,9 @@ wenv_start() {
     tmux send -t "$wenv" '{
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
+        tmux bind-key - split-window -c "#{pane_current_path}" '"'"'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key \\ split-window -h -c "#{pane_current_path}" '"'"'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key c new-window -c "#{pane_current_path}" '"'"'ZSH_INIT="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
         (('"$flag_i"' == 1)) && wenv_init
         unset_quiet -f wenv_init
         clear
