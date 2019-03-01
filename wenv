@@ -243,12 +243,12 @@ run_wenv_setup() {
 }
 
 wenv_new() {
-    local src="$SRC/wenv/wenv_template"
+    local template="${XDG_CONFIG_HOME:-$HOME/.config}/wenv/template"
     local flag_d=0
     while getopts ":di:" opt; do
         case $opt in
             d) flag_d=1 ;;
-            i) [[ ! -z "$OPTARG" ]] && src="$WENVS/${OPTARG}" ;;
+            i) [[ ! -z "$OPTARG" ]] && template="$WENVS/${OPTARG}" ;;
             --) break ;;
             *) echo "invalid flag: $1" ; exit 1 ;;
         esac
@@ -260,10 +260,10 @@ wenv_new() {
 
     # generalize/clean this up
     if [[ $flag_d -eq 1 ]]; then
-        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$src") > "$WENVS/${wenv}"
+        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$template") > "$WENVS/${wenv}"
     else
         # this case shouldn't be exclusive from previous
-        cp "$src" "$WENVS/${wenv}"
+        cp "$template" "$WENVS/${wenv}"
     fi
     wenv_edit "$wenv"
 }

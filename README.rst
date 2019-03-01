@@ -10,6 +10,13 @@ terminal. A WENV for a given project defines 1. what commands should be run to
 start the project, and 2. the project-specific environment that should be
 loaded.
 
+**Note**: This framework was written on the fly to implement the features I
+(@dgrisham) wanted while working on projects. I did not research many solutions
+to this (aside from trying
+[`tmux-resurrect`](https://github.com/tmux-plugins/tmux-resurrect) for a short
+time), and as such I do not have the experience or knowledge to compare it to
+existing tools.
+
 TODO: make a note that tmux is not required, but it does provide a lot of the
 useful functionality
 
@@ -17,8 +24,6 @@ useful functionality
 
 A given project's WENV is defined by `zsh` functions and environment variables.
 As an example,
-
-TODO: oH SHIT the `wenv` WENV is dependent on the `x` wenv.
 
 TODO: gif webm movie thing
 
@@ -60,6 +65,6 @@ associated with a WENV will load that WENV.
 
 -   taskwarrior (currently required)
 
-## Commands
+## Usage
 
 
