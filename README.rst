@@ -46,9 +46,10 @@ painless. The following steps (or variations on them) should get the job done:
 4.  In order for WENVs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
-    .. literal::
+    ::
 
         eval "$WENV_EXEC"
+
 
     This makes it so that the WENV associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
@@ -56,7 +57,7 @@ painless. The following steps (or variations on them) should get the job done:
     your Zsh startup files. For example, you can add the following lines to your
     Zsh profile:
 
-    .. literal::
+    ::
 
         autoload bashcompinit
         bashcompinit
