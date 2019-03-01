@@ -1,5 +1,5 @@
-WENV -- A Simple **W**orking **Env**ironment Framework
-======================================================
+WENV -- A Simple Working Environment Framework
+==============================================
 
 Perpetual WIP, likely to have bugs.
 
