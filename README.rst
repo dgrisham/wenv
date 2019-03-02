@@ -20,10 +20,9 @@ useful with tmux, though some of the functionality can be used without tmux.
 
 **Note**: This framework was written on the fly to implement the features I
 (@dgrisham) wanted while working on projects. I didn't research many solutions to
-this (aside from trying
-[`tmux-resurrect`](https://github.com/tmux-plugins/tmux-resurrect) for a short
-time), and as such I do not have the experience or knowledge to compare it to
-existing tools.
+this (aside from trying `tmux-resurrect
+<https://github.com/tmux-plugins/tmux-resurrect>`_ for a short time), and as
+such I do not have the experience or knowledge to compare it to existing tools.
 
 Example
 ~~~~~~~
