@@ -7,7 +7,7 @@ _wenv_comp() {
 }
 
 _show_wenvs() {
-    ls "$WENVS"
+    ls "$WENV_CFG/wenvs"
 }
 
 _wenv_start() {
