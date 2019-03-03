@@ -23,7 +23,7 @@ in `this answer on Stack Overflow
 sequence of tmux commands as a function that starts your desired development
 environment. However, as I worked on projects, I found that I'd want different
 tmux layouts depending on the project. I also wanted to be able to run commands
-in certain terminals, like opening a text editor in one of the windows.
+in certain terminals, like opening a text editor in one of the panes.
 
 I also had a simple system set up for managing aliases for different projects.
 Basically, I had a folder that contained projects' alias files. Those files
@@ -65,12 +65,6 @@ functions, and the WENV 'framework' is just a bunch of Zsh functions. This is
 convenient because many of the functions are just sequences of commands I'd like
 to run in the terminal anyway, and the rest are maintaining state in a way that
 shells are good at.
-
-**Note**: This framework was written on the fly to implement the features I
-(@dgrisham) wanted while working on projects. I didn't research many solutions to
-this (aside from trying `tmux-resurrect
-<https://github.com/tmux-plugins/tmux-resurrect>`_ for a short time), and as
-such I do not have the experience or knowledge to compare it to existing tools.
 
 Example
 ~~~~~~~
