@@ -116,7 +116,7 @@ The environment variable `WENVS` is used to specify the directory where all
 projects' WENV files are stored. This can be overriden by setting the `WENVS`
 value in your Zsh profile. `WENVS` will default to
 `"${XDG_CONFIG_HOME}/wenv/wenvs` if `XDG_CONFIG_HOME` is set; otherwise, it's
-set to`$HOME/.config/wenv/wenvs`.
+set to `$HOME/.config/wenv/wenvs`.
 
 dependencies (optional or not)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
