@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-wenv_setup() {
+wenv_def() {
     WENV_DIR=""
     WENV_DEPS=()
     WENV_PROJECT=''
@@ -9,7 +9,7 @@ wenv_setup() {
     WENV_GITDIR=""
 
     wenv_bootstrap() {}
-    wenv_init() {}
+    wenv_startup() {}
     wenv_shutdown() {}
 }
 
