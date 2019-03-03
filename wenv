@@ -8,11 +8,11 @@ wenv_setup() {
     WENV_BRANCH='master'
     WENV_GITDIR=''
 
-    wenv_init() { }
-    wenv_shutdown() { }
+    wenv_init() {}
+    wenv_shutdown() {}
 }
 
-export WENVS="${WENVS:-${XDG_CONFIG_HOME:-$HOME/.config}/wenv/wenvs}"
+export WENV_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
 
 wenv() {
     local wenv_command="$1"
@@ -86,7 +86,7 @@ wenv_start() {
     done
     shift $((OPTIND-1))
 
-    if [[ $# == 0 || ! -f "$WENVS/$1" ]]; then
+    if [[ $# == 0 || ! -f "$WENV_CFG/wenvs/$1" ]]; then
         return 1
     fi
     local wenv="$1"
@@ -243,18 +243,18 @@ wenv_load() {
 run_wenv_setup() {
     [[ -z "$1" ]] && return 1
     local wenv="$1"
-    eval "$(source $WENVS/$wenv && declare -f wenv_setup)"
+    eval "$(source $WENV_CFG/wenvs/$wenv && declare -f wenv_setup)"
     function_exists wenv_setup || return 1
     wenv_setup
 }
 
 wenv_new() {
-    local template="${XDG_CONFIG_HOME:-$HOME/.config}/wenv/template"
+    local template="$WENV_CFG/template"
     local flag_d=0
     while getopts ":di:" opt; do
         case $opt in
             d) flag_d=1 ;;
-            i) [[ ! -z "$OPTARG" ]] && template="$WENVS/${OPTARG}" ;;
+            i) [[ ! -z "$OPTARG" ]] && template="$WENV_CFG/wenvs/${OPTARG}" ;;
             --) break ;;
             *) echo "invalid flag: $1" ; exit 1 ;;
         esac
@@ -266,10 +266,10 @@ wenv_new() {
 
     # generalize/clean this up
     if [[ $flag_d -eq 1 ]]; then
-        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$template") > "$WENVS/${wenv}"
+        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$template") > "$WENV_CFG/wenvs/${wenv}"
     else
         # this case shouldn't be exclusive from previous
-        cp "$template" "$WENVS/${wenv}"
+        cp "$template" "$WENV_CFG/wenvs/${wenv}"
     fi
     wenv_edit "$wenv"
 }
@@ -277,7 +277,7 @@ wenv_new() {
 wenv_edit() {
     # nice bash syntax for setting var to first non-empty variable
     local wenv="${1:-${WENV}}"
-    [[ -f "$WENVS/$wenv" ]] && "$EDITOR" "$WENVS/$wenv"
+    [[ -f "$WENV_CFG/wenvs/$wenv" ]] && "$EDITOR" "$WENV_CFG/wenvs/$wenv"
 }
 
 wenv_remove() {
@@ -289,7 +289,7 @@ wenv_remove() {
         return 1
     fi
     local wenv="$1"
-    local wenv_file="$WENVS/${wenv}"
+    local wenv_file="$WENV_CFG/wenvs/${wenv}"
     read "choice?Delete WENV $wenv? "
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         rm -f "$wenv_file"
@@ -359,11 +359,11 @@ wenv_tasks_add() {
 wenv_source() {
     if [[ "$#" -eq 0 && -n "$WENV" ]]; then
         (( ${#WENV_DEPS[@]} != 0 )) && wenv_source "${WENV_DEPS[@]}"
-        source "$WENVS/$WENV" >/dev/null
+        source "$WENV_CFG/wenvs/$WENV" >/dev/null
     fi
     local wenv
     for wenv in $@; do
-        source "$WENVS/$wenv" >/dev/null
+        source "$WENV_CFG/wenvs/$wenv" >/dev/null
     done
 }
 
@@ -372,7 +372,7 @@ wenv_rename() {
     local old="$1"
     local new="$2"
 
-    mv "$WENVS/$old" "$WENVS/$new"
+    mv "$WENV_CFG/wenvs/$old" "$WENV_CFG/wenvs/$new"
 }
 
 wenv_tmux_layout() {
@@ -455,7 +455,7 @@ is_wenv() {
     if [[ -z "$1" ]]; then
         return 1
     fi
-    local wenv_file="$WENVS/$1"
+    local wenv_file="$WENV_CFG/wenvs/$1"
     if [[ ! -f "$wenv_file" ]]; then
         return 1
     fi
