@@ -36,11 +36,11 @@ layout -- I also wanted to automatically run project-specific commands in certai
 terminals in a given layout. This would require a bit more work than the shell
 function the SO post.
 
-At the same time, I had a simple system set up for managing aliases with
-different domains. For example, I had a Python aliases file that defined useful
-functions for Python development (mainly creating and starting virtual
-environemnts). I also wrote alias files specific to certain projects, e.g. the
-`IPTB <https://github.com/ipfs/iptb>` development aliases defined the required
+At the same time, I had a simple system for managing aliases with different
+domains. For example, I had a Python aliases file that defined useful functions
+for Python development (mainly creating and starting virtual environemnts). I
+also wrote alias files specific to certain projects, e.g. the `IPTB
+<https://github.com/ipfs/iptb>`_ development aliases defined the required
 `IPTB_ROOT` environment variable and additional functions to simplify IPTB and
 Docker startup, shutdown, and cleanup. Then I just had a few Zsh commands that
 would let me easily create, edit, and source these alias files. Organizing
