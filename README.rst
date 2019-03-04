@@ -166,5 +166,5 @@ Usage
       task <cmd>            Access the project task list.
       bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
-    Run `wenv <cmd> --help` for more information on a given subcommand <cmd>.
+    Run `wenv <cmd> -h` for more information on a given subcommand <cmd>.
 
