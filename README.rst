@@ -1,7 +1,7 @@
 .. default-role:: literal
 
-WENV -- A Simple Working Environment Framework
-==============================================
+WENV: A Simple Working Environment Framework
+============================================
 
 Perpetual WIP, likely to have bugs.
 
