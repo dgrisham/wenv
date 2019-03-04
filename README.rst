@@ -57,7 +57,7 @@ tmux pane/window in a given session, which would
 1.  be much nicer than having to manually source the aliases in every pane that
     I needed them, while
 2.  maintaining a clean Zsh namespace by restricting the project's aliases to a
-    given tmux session.
+    single tmux session.
 
 Unfortunately, this turned out to be more involved than I'd expected. Sourcing a
 given aliases file in every pane of a tmux session required work on both the Zsh
