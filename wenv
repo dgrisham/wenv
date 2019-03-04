@@ -37,6 +37,7 @@ SUBCOMMANDS
 Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
+    [ $# -eq 0 ] && echo "$usage" && return 1
     while getopts ":h" opt; do
         case "$opt" in
             h)
