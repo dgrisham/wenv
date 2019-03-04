@@ -11,21 +11,24 @@ Introduction
 ------------
 
 Working environments (WENVs) are a tool for streamlining workflow in the
-terminal. A WENV for a given project defines 1. what commands should be run to
-start (and end) the project, and 2. the project-specific environment that should
-be loaded. The WENV framework is a set of functions that help manage projects'
-WENVs and use their environment information to provide other useful
-functionality, like showing a todo list for a project.
+terminal. A given project's WENV defines 1. useful functionality specific to the
+project, and 2. its WENV definition, which is information that the WENV framework
+uses to make working on the project easier.
 
-Much of the reason I started working on WENVs was the result of taking the advice
-in `this answer on Stack Overflow
+The motivation for WENVs will take a bit of explaining. I'll start from the
+beginning.
+
+Much of the reason I started working on WENVs came from wanting to have
+predefined tmux layouts. I saw advice like `this answer on Stack Overflow
 <https://stackoverflow.com/a/5752901/4516052>`_, which recommends running a
 sequence of tmux commands as a function that starts your desired development
 environment. However, as I worked on projects, I found that I'd want different
 tmux layouts depending on the project. Further, I wanted more than just a tmux
 layout -- I also wanted to automatically run project-specific commands in certain
 terminals in a given layout. This would require a bit more work than the shell
-function the SO post.
+function the SO post. (There is `tmux-resurrect
+<https://github.com/tmux-plugins/tmux-resurrect>`, but from what I remember it
+wasn't quite what I was looking for.)
 
 At the same time, I had a simple system set up for managing aliases for different
 projects. Basically, I had a folder that contained projects' individual alias
@@ -53,7 +56,7 @@ about to work. So, I thought it'd be nice to include something in the project
 file that automatically runs commands like `sudo systemctl start docker` when I
 start working on the project and `sudo systemctl stop docker` when I'm done.
 
-Another feature I realized would be useful was the ability to wrap `Taskwarrior
+Another potential feature that came to mind was the ability to wrap `Taskwarrior
 <https://taskwarrior.org/>`_ commands to show only the tasks associated with the
 active project. Taskwarrior is a great tool, but I don't want to have to type out
 and think about a project's name every time I want to add or show its tasks. I'd
@@ -67,14 +70,6 @@ functions. This is convenient because many of the functions are just sequences o
 commands I'd like to run in the terminal anyway, and the rest are maintaining
 state in a way that shells are good at.
 
-Example
-~~~~~~~
-
-A given project's WENV is defined by `zsh` functions and environment variables.
-As an example,
-
-TODO: gif webm movie thing
-
 Installation
 ------------
 
@@ -83,10 +78,19 @@ painless. The following steps (or variations on them) should get the job done:
 
 1.  Clone this repository.
 2.  Put the `wenv` file in a directory that's in your `PATH` (e.g.
-    `$HOME/.local/bin`). `wenv` is a Zsh script that defines all of the relevant
-    functionality.
-3.  Make sure the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`)
-    exists, and put the `template` file there.
+    `$HOME/.local/bin`). `wenv` is a Zsh script that defines all of the
+    relevant functionality.
+3.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
+    put the `template` file there. Also, create a directory inside of that
+    `wenv` directory called `wenvs`, which will store the WENV files for all of
+    your projects. If you're in the directory with this repository, you can run
+    the following lines to complete this step:
+
+    ::
+
+        mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/wenv/wenvs"
+        cp template "${XDG_CONFIG_HOME:-$HOME/.config}/wenv
+
 4.  In order for WENVs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
@@ -94,24 +98,18 @@ painless. The following steps (or variations on them) should get the job done:
 
         eval "$WENV_EXEC"
 
-
     This makes it so that the WENV associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
-5.  Put the `completion.bash` file wherever you like, and source it in one of
-    your Zsh startup files. For example, you can add the following lines to your
-    Zsh profile:
+5.  Put the `completion.bash` file wherever you like, and add the following
+    lines to source it in your Zsh profile (or another Zsh startup file):
 
     ::
 
+        # enable bash completion functions
         autoload bashcompinit
         bashcompinit
+        # source wenv completion file
         source <path-to-completion.bash>
-
-The environment variable `WENVS` is used to specify the directory where all
-projects' WENV files are stored. This can be overriden by setting the `WENVS`
-value in your Zsh profile. `WENVS` will default to
-`${XDG_CONFIG_HOME}/wenv/wenvs` if `XDG_CONFIG_HOME` is set; otherwise, it's
-set to `$HOME/.config/wenv/wenvs`.
 
 dependencies
 ~~~~~~~~~~~~
@@ -120,8 +118,36 @@ dependencies
 -   tmux
 -   taskwarrior
 
+Example
+~~~~~~~
+
+A given project's WENV is defined by `zsh` functions and environment variables.
+As an example,
+
+TODO: gif webm movie thing
+
 Usage
 ~~~~~
 
-**TODO: output usage from wenv functions themselves**
+::
+
+    USAGE
+      $(basename $0) [-h] <cmd> ...
+
+    OPTIONS
+      -h                    Display this help message.
+
+    SUBCOMMANDS
+      start <wenv>          Start the working environment <wenv>.
+      stop                  Stop the current working environment.
+      new                   Create a new working environment.
+      edit <wenv>           Edit the WENV file for <wenv>.
+      rename <old> <new>    Rename WENV <old> to <new>.
+      remove <wenv>         Delete the WENV file for <wenv>.
+      source <wenv>         Source <wenv>'s 
+      cd <wenv>             Change to <wenv>'s base directory.
+      task <cmd>            Access the project task list.
+      bootstrap <wenv>      Run <wenv>'s bootstrap function.
+
+    Run `wenv <cmd> --help` for more information on a given subcommand <cmd>.
 
