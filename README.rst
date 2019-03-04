@@ -11,15 +11,23 @@ Introduction
 ------------
 
 The working environment (wenv) framework is a tool for streamlining workflow in
-the terminal. A wenv is associated with a project and defines 1. useful
-functionality specific to the project, and 2. its wenv definition, which is
-information that the wenv framework uses to make working on the project easier.
+the terminal. A wenv is associated with a single project and defines 1. its wenv
+definition, which the wenv framework uses to make working on the project easier,
+and 2. useful shell functionality specific to the project.
 
-The motivation for wenvs will take a bit of explaining. I'll start from the
-beginning.
+My (@dgrisham's) motivation for this project came from a desire to make working
+in the terminal clean, easy, and fun. Zsh and tmux were ubiquitous in my
+workflow, and over time I started to see potential in those tools that I wanted
+to take advantage of. The wenv framework emerged from this potential. The actual
+conception of this project formed as I tried to solve relatively disparate
+problems. I'll start by describing some of those problems, and how they came
+together to shape a single solution.
 
-Much of the reason I started working on wenvs came from wanting to have
-predefined tmux layouts. I saw advice like `this answer on Stack Overflow
+One of the issues I faced had to do with starting tmux with a given layout. Every
+time I started to work, I'd have to go through the steps of setting up the
+appropriate layout of panes and opening the relevant programs in those panes.
+This seemed silly, given that I was working in the terminal and should be able to
+automate such things. I saw advice like `this answer on Stack Overflow
 <https://stackoverflow.com/a/5752901/4516052>`_, which recommends running a
 sequence of tmux commands as a function that starts your desired development
 environment. However, as I worked on projects, I found that I'd want different
@@ -28,32 +36,42 @@ layout -- I also wanted to automatically run project-specific commands in certai
 terminals in a given layout. This would require a bit more work than the shell
 function the SO post.
 
-At the same time, I had a simple system set up for managing aliases for different
-projects. Basically, I had a folder that contained projects' individual alias
-files. Those files contained whatever Zsh environment variables/functions I
-wanted to have defined for that project. This avoids putting a bunch of temporary
-or highly-specific aliases in my general Zsh aliases file, which I'd rather be
-accessible and general enough for people who might want to look at it. Then I
-just wrote a few Zsh commands that would let me easily create, edit, and source
-alias files.
+At the same time, I had a simple system set up for managing aliases with
+different domains. For example, I had a Python aliases file that defined useful
+functions for Python development (mainly creating and starting virtual
+environemnts). I also wrote alias files specific to certain projects, e.g. the
+`IPTB <https://github.com/ipfs/iptb>` development aliases defined the required
+`IPTB_ROOT` environment variable and additional functions to simplify IPTB and
+Docker startup, shutdown, and cleanup. Then I just had a few Zsh commands that
+would let me easily create, edit, and source these alias files. Organizing
+aliases in this way avoids putting a bunch of temporary or overly-specific
+aliases in my general Zsh aliases file, which I'd rather be accessible and
+general enough for people who might want to draw from it.
 
 Eventually, I decided to integrate a solution to my varied-tmux-startup conundrum
-with the project alias files. That way, the entire definition for a project (both
-its layout and its Zsh variables/functions) could be defined in one place. It
-turned out to be much more involved than I expected, though. One of the big
-reasons for this had to do with sourcing the project's alias in every pane/window
-of the tmux session. This requires maintaining enough state in tmux to know which
-aliases file to source, then running the proper commands to do so when a new pane
-or window opens.
+with the alias files. That way, the entire definition for a project (both its
+layout and its Zsh variables/functions) could exist in one place. This approach
+also presented the possibility of having a project's aliases defined in every
+tmux pane/window in a given session, which would
 
-Other useful features also quickly became apparent to me as I started working on
-this. For example, I had a project that required a running Docker daemon. I
-didn't want Docker to run unless I was working on the project, but I didn't want
-to have to think about starting processes like that when I was about to work. So,
-I thought it'd be nice if I could include something in the project file that
-would let me automatically run commands like `sudo systemctl start docker` when
-I started working on the project and `sudo systemctl stop docker` when I was
-finished.
+1.  be much nicer than having to manually source the aliases in every pane that
+    I needed them, while
+2.  maintaining a clean Zsh namespace by restricting the project's aliases to a
+    given tmux session.
+
+Unfortunately, this turned out to be more involved than I'd expected. Sourcing a
+given aliases file in every pane of a tmux session required work on both the Zsh
+end (to tell tmux which aliases file to source) and the tmux end (to actually
+source the aliases in each pane).
+
+Other useful features also quickly became apparent as I started working on this
+approach. For example, the IPTB project I mentioned required a running Docker
+daemon. I didn't want Docker to run unless I was working on the project, but I
+didn't want to have to think about starting processes like that when I was about
+to work. So, I thought it'd be nice if I could include something in the IPTB
+project file that would let me automatically run commands like `sudo systemctl
+start docker` when I started working on the project and `sudo systemctl stop
+docker` when I was finished.
 
 Another potential feature that came to mind was the ability to wrap `Taskwarrior
 <https://taskwarrior.org/>`_ commands to show only the tasks associated with the
@@ -65,9 +83,9 @@ working on" and "add a task for the active project with this description".
 The wenv framework arose from this increasing complexity. However, it never left
 the realm of Zsh scripting. A project's wenv is defined by Zsh environment
 variables and functions, and the wenv 'framework' is just a bunch of Zsh
-functions. This is convenient because many of the functions are just sequences of
-commands I'd like to run in the terminal anyway, and the rest are maintaining
-state in a way that shells are good at.
+functions. This is convenient because much of the code is just sequences of
+commands I'd run in the terminal anyway, and the rest maintain state in the Zsh
+and tmux environments.
 
 Installation
 ------------
