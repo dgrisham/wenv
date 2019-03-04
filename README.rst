@@ -26,9 +26,7 @@ environment. However, as I worked on projects, I found that I'd want different
 tmux layouts depending on the project. Further, I wanted more than just a tmux
 layout -- I also wanted to automatically run project-specific commands in certain
 terminals in a given layout. This would require a bit more work than the shell
-function the SO post. (There is `tmux-resurrect
-<https://github.com/tmux-plugins/tmux-resurrect>`, but from what I remember it
-wasn't quite what I was looking for.)
+function the SO post.
 
 At the same time, I had a simple system set up for managing aliases for different
 projects. Basically, I had a folder that contained projects' individual alias
