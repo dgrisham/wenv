@@ -10,10 +10,10 @@ Perpetual WIP, likely to have bugs.
 Introduction
 ------------
 
-Working environments (WENVs) are a tool for streamlining workflow in the
-terminal. A given project's WENV defines 1. useful functionality specific to the
-project, and 2. its WENV definition, which is information that the WENV framework
-uses to make working on the project easier.
+The working environment (WENV) framework is a tool for streamlining workflow in
+the terminal. A WENV is associated with a project and defines 1. useful
+functionality specific to the project, and 2. its WENV definition, which is
+information that the WENV framework uses to make working on the project easier.
 
 The motivation for WENVs will take a bit of explaining. I'll start from the
 beginning.
@@ -47,12 +47,13 @@ aliases file to source, then running the proper commands to do so when a new pan
 or window opens.
 
 Other useful features also quickly became apparent to me as I started working on
-this. For example, let's say I have a project that requires a running Docker
-daemon. I'd prefer for Docker to only run while I'm working on the project, but I
-don't really want to have to think about starting processes like that when I'm
-about to work. So, I thought it'd be nice to include something in the project
-file that automatically runs commands like `sudo systemctl start docker` when I
-start working on the project and `sudo systemctl stop docker` when I'm done.
+this. For example, I had a project that required a running Docker daemon. I
+didn't want Docker to run unless I was working on the project, but I didn't want
+to have to think about starting processes like that when I was about to work. So,
+I thought it'd be nice if I could include something in the project file that
+would let me automatically run commands like `sudo systemctl start docker` when
+I started working on the project and `sudo systemctl stop docker` when I was
+finished.
 
 Another potential feature that came to mind was the ability to wrap `Taskwarrior
 <https://taskwarrior.org/>`_ commands to show only the tasks associated with the
