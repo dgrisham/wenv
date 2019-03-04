@@ -59,7 +59,7 @@ tmux pane/window in a given session, which would
 2.  maintaining a clean Zsh namespace by restricting the project's aliases to a
     single tmux session.
 
-Unfortunately, this turned out to be more involved than I'd expected. Sourcing a
+This emerging idea turned out to be more involved than I'd expected. Sourcing a
 given aliases file in every pane of a tmux session required work on both the Zsh
 end (to tell tmux which aliases file to source) and the tmux end (to actually
 source the aliases in each pane).
