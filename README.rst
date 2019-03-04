@@ -65,13 +65,13 @@ end (to tell tmux which aliases file to source) and the tmux end (to actually
 source the aliases in each pane).
 
 Other useful features also quickly became apparent as I started working on this
-approach. For example, the IPTB project I mentioned required a running Docker
-daemon. I didn't want Docker to run unless I was working on the project, but I
-didn't want to have to think about starting processes like that when I was about
-to work. So, I thought it'd be nice if I could include something in the IPTB
-project file that would let me automatically run commands like `sudo systemctl
-start docker` when I started working on the project and `sudo systemctl stop
-docker` when I was finished.
+approach. For example, developing the aforementioned IPTB project required a
+running Docker daemon. I didn't want Docker to run unless I was working on the
+project, but I didn't want to have to think about starting processes like that
+when I was about to work. So, I thought it'd be nice if I could include something
+in the IPTB project file that would let me automatically run commands like `sudo
+systemctl start docker` when I started working on the project and `sudo
+systemctl stop docker` when I was finished.
 
 Another potential feature that came to mind was the ability to wrap `Taskwarrior
 <https://taskwarrior.org/>`_ commands to show only the tasks associated with the
