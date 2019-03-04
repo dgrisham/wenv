@@ -1,11 +1,11 @@
 .. default-role:: literal
 
-wenv: A Shell Streamlining Framework
-====================================
+wenv: A Shell Workflow Simplifier
+=================================
 
 Perpetual WIP, likely to have bugs.
 
-**Note**: This README is unfinished.
+**Note**: This README is currently in development.
 
 Introduction
 ------------
