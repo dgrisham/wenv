@@ -81,8 +81,8 @@ painless. The following steps (or variations on them) should get the job done:
 3.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
     put the `template` file there. Also, create a directory inside of that
     `wenv` directory called `wenvs`, which will store the WENV files for all of
-    your projects. If you're in the directory with this repository, you can run
-    the following lines to complete this step:
+    your projects. If you're in this repository, you can run the following lines
+    to complete this step:
 
     ::
 
