@@ -1,7 +1,7 @@
 .. default-role:: literal
 
-wenv: A Shell Workflow Simplifier
-=================================
+wenv: A Shell Workflow Tool
+===========================
 
 Perpetual WIP, likely to have bugs.
 
