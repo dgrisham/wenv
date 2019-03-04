@@ -7,9 +7,9 @@ wenv_def() {
     WENV_TASK=''
     WENV_BRANCH='master'
 
-    wenv_bootstrap() {}
-    wenv_startup() {}
-    wenv_shutdown() {}
+    bootstrap_wenv() {}
+    startup_wenv() {}
+    shutdown_wenv() {}
 }
 
 export WENV_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
@@ -17,7 +17,7 @@ export WENV_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
 wenv() {
     local usage="\
 USAGE
-  $(basename $0) [-h] <cmd> ...
+  wenv [-h] <cmd>
 
 OPTIONS
   -h                    Display this help message.
@@ -34,10 +34,9 @@ SUBCOMMANDS
   task <cmd>            Access the project task list.
   bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
-Run \`wenv <cmd> --help\` for more information on a given subcommand <cmd>.
+Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
-    OPTIND=1
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -70,7 +69,7 @@ Run \`wenv <cmd> --help\` for more information on a given subcommand <cmd>.
             wenv_new $@
             ;;
         bootstrap)
-            _wenv_bootstrap $@
+            wenv_bootstrap $@
             ;;
         edit)
             wenv_edit $@
@@ -90,15 +89,29 @@ Run \`wenv <cmd> --help\` for more information on a given subcommand <cmd>.
 wenv_start() {
     local usage="\
 USAGE
-    wenv start [-h] <
+  wenv start [-t] [-i] [-q] [-h] <wenv> - Start working environemnt <wenv>.
 
 OPTIONS
-  -h                    Display this help message.
+  -t    Open the wenv in tmux. Default: true.
+  -i    Run <wenv>'s startup function. Default: true.
+  -q    Don't show <wenv>'s task list on startup. Default: false.
+  -h    Display this help message.
 "
 
-    OPTIND=1
-    while getopts ":h" opt; do
-        case "$opt" in
+    local flag_t=1
+    local flag_q=0
+    local flag_i=1
+    while getopts ":tqih" opt; do
+        case $opt in
+            t)
+                flag_t=0
+                ;;
+            q)
+                flag_q=1
+                ;;
+            i)
+                flag_i=0
+                ;;
             h)
                 echo "$usage"
                 return 0
@@ -109,17 +122,6 @@ OPTIONS
                 ;;
         esac
     done
-
-    local flag_n=0
-    local flag_q=0
-    local flag_i=1
-    while getopts ":nqi" opt; do
-        case $opt in
-            n) flag_n=1 ;;
-            q) flag_q=1 ;;
-            i) flag_i=0 ;;
-        esac
-    done
     shift $((OPTIND-1))
 
     if [[ $# == 0 || ! -f "$WENV_CFG/wenvs/$1" ]]; then
@@ -127,11 +129,11 @@ OPTIONS
     fi
     local wenv="$1"
 
-    if [[ $flag_n -eq 1 ]]; then
+    if ((flag_t == 0)); then
         wenv_stop
         wenv_exec $@ || return 1
-        ((flag_i == 1)) && wenv_startup
-        unset_quiet -f wenv_startup
+        ((flag_i == 1)) && startup_wenv
+        unset_quiet -f startup_wenv
         ((flag_q == 1)) || wenv task show
         return 0
     fi
@@ -143,8 +145,8 @@ OPTIONS
         tmux bind-key - split-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
         tmux bind-key \\ split-window -h -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
         tmux bind-key c new-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
-        (('"$flag_i"' == 1)) && wenv_startup
-        unset_quiet -f wenv_startup
+        (('"$flag_i"' == 1)) && startup_wenv
+        unset_quiet -f startup_wenv
         clear
         (('"$flag_q"' == 1)) || wenv task show
     }' ENTER
@@ -179,15 +181,26 @@ wenv_exec() {
 wenv_stop() {
     local usage="\
 USAGE
-    wenv stop [-h]
+  wenv stop [-h] - Shutdown the active working environment.
 
 OPTIONS
-  -h                    Display this help message.
+  -s    Run the active wenv's shutdown function. Default: true.
+  -h    Display this help message.
 "
 
-    OPTIND=1
-    while getopts ":h" opt; do
-        case "$opt" in
+    [[ -z "$WENV" ]] && return 1
+
+    # local flag_f=0
+    local flag_s=1
+    while getopts ":sh" opt; do
+        case $opt in
+            # force stop, regardless of git working tree state
+            # f)
+            #     flag_f=0
+            #     ;;
+            s)
+                flag_s=0
+                ;;
             h)
                 echo "$usage"
                 return 0
@@ -198,31 +211,19 @@ OPTIONS
                 ;;
         esac
     done
-
-    [[ -z "$WENV" ]] && return 1
-
-    local flag_f=0
-    local flag_s=1
-    while getopts ":fe" opt; do
-        case $opt in
-            # force stop, regardless of git working tree state
-            f) flag_f=0 ;;
-            e) flag_s=0 ;;
-        esac
-    done
     shift $((OPTIND-1))
 
     # make sure we're in a git repo and the force flag isn't set
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [[ $flag_f -ne 1 ]]; then
-        git diff-index --quiet HEAD -- 2>/dev/null
-        [[ $? -ne 0 ]] && [[ $? -ne 128 ]] && { echo "Error: Dirty working tree. Please clean up and try again." ; return 1 }
-    fi
+    # if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ((flag_f != 1)); then
+    #     git diff-index --quiet HEAD -- 2>/dev/null
+    #     [[ $? -ne 0 ]] && [[ $? -ne 128 ]] && { echo "Error: Dirty working tree. Please clean up and try again." ; return 1 }
+    # fi
 
     wenv_cd
 
     [[ -n "$WENV_TASK" ]] && task "$WENV_TASK" stop
 
-    ((flag_s == 1)) && wenv_shutdown &> /dev/null # TODO: decide when is best to run this
+    ((flag_s == 1)) && shutdown_wenv &> /dev/null
     wenv_clean_up
 }
 
@@ -253,7 +254,7 @@ wenv_load() {
     else
         return 1
     fi
-    unset_quiet -f wenv_bootstrap
+    unset_quiet -f bootstrap_wenv
     return 0
 }
 
@@ -268,15 +269,24 @@ run_wenv_def() {
 wenv_new() {
     local usage="\
 USAGE
-    wenv new [-h]
+  wenv new [-d] [-i <wenv>] [-h] <name> - Create a new wenv called <name>.
 
 OPTIONS
-  -h                    Display this help message.
+  -d        Set the cwd as the new wenv's base directory (i.e. WENV_DIR).
+  -i <wenv> Use <wenv>'s wenv file as the initial definition for the new wenv.
+  -h        Display this help message.
 "
 
-    OPTIND=1
-    while getopts ":h" opt; do
-        case "$opt" in
+    local template="$WENV_CFG/template"
+    local flag_d=0
+    while getopts ":di:h" opt; do
+        case $opt in
+            d)
+                flag_d=1
+                ;;
+            i)
+                [[ ! -z "$OPTARG" ]] && template="$WENV_CFG/wenvs/${OPTARG}"
+                ;;
             h)
                 echo "$usage"
                 return 0
@@ -285,17 +295,6 @@ OPTIONS
                 echo "unknown option: -$OPTARG" >&2
                 return 1
                 ;;
-        esac
-    done
-
-    local template="$WENV_CFG/template"
-    local flag_d=0
-    while getopts ":di:" opt; do
-        case $opt in
-            d) flag_d=1 ;;
-            i) [[ ! -z "$OPTARG" ]] && template="$WENV_CFG/wenvs/${OPTARG}" ;;
-            --) break ;;
-            *) echo "invalid flag: $1" ; exit 1 ;;
         esac
     done
     shift $((OPTIND-1))
@@ -316,13 +315,12 @@ OPTIONS
 wenv_edit() {
     local usage="\
 USAGE
-    wenv edit [-h]
+  wenv edit [-h] <wenv> - Open <wenv>'s wenv file in \$EDITOR.
 
 OPTIONS
-  -h                    Display this help message.
+  -h    Display this help message.
 "
 
-    OPTIND=1
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -344,13 +342,12 @@ OPTIONS
 wenv_remove() {
     local usage="\
 USAGE
-    wenv remove [-h]
+  wenv remove [-h] <wenv> - Delete <wenv>'s wenv file.
 
 OPTIONS
-  -h                    Display this help message.
+  -h    Display this help message.
 "
 
-    OPTIND=1
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -382,13 +379,19 @@ OPTIONS
 wenv_source() {
     local usage="\
 USAGE
-    wenv source [<wenv>, ...] [-h]
+  wenv source [<wenv>, ...] [-h] - Source one or more wenvs.
 
 OPTIONS
-  -h                    Display this help message.
+  -h    Display this help message.
+
+DESCRIPTION
+  Calling \`wenv source\` with no arguments will source the active wenv's
+  aliases, as well as the aliases of all of its dependencies.
+
+  Calling as \`wenv source [<wenv>, ...]\` will source the aliases of every
+  wenv in the argument list.
 "
 
-    OPTIND=1
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -416,15 +419,26 @@ OPTIONS
 wenv_cd() {
     local usage="\
 USAGE
-    wenv cd [-h]
+  wenv cd [-r] [-h] <wenv> - cd into <wenv>'s base directory.
 
 OPTIONS
-  -h                    Display this help message.
+  -h    Display this help message.
+
+DESCRIPTION
+  Calling \`wenv cd\` with no arguments will \`cd\` into the active wenv's base
+  directory.
+
+  Calling as \`wenv cd <wenv>\` will \`cd\` into <wenv>'s base directory.
+
+  The base directory of a wenv is defined by its WENV_DIR value.
 "
 
-    OPTIND=1
-    while getopts ":h" opt; do
-        case "$opt" in
+    local flag_r=0
+    while getopts ":rh" opt; do
+        case $opt in
+            r)
+               flag_r=1
+               ;;
             h)
                 echo "$usage"
                 return 0
@@ -433,15 +447,6 @@ OPTIONS
                 echo "unknown option: -$OPTARG" >&2
                 return 1
                 ;;
-        esac
-    done
-
-    local flag_r=0
-    while getopts ":r" opt; do
-        case $opt in
-            r) flag_r=1 ;;
-            --) break ;;
-            *) echo "invalid flag: $1" ; exit 1 ;;
         esac
     done
     shift $((OPTIND-1))
@@ -464,7 +469,7 @@ OPTIONS
 
     # reload the wenv that was previously running
     wenv_load "$WENV"
-    unset_quiet -f wenv_startup
+    unset_quiet -f startup_wenv
 
     return 0
 }
@@ -472,13 +477,22 @@ OPTIONS
 wenv_task() {
     local usage="\
 USAGE
-    wenv task [-h]
+  wenv task [-h] [<cmd>] - Access the active wenv's tasks.
 
 OPTIONS
-  -h                    Display this help message.
+  -h    Display this help message.
+
+SUBCOMMANDS
+  show    Show the task list for the active wenv.
+  add     Add a task to the active wenv's task list.
+
+DESCRIPTION
+  As a convenient shorthand, running \`wenv task\` defaults to running
+  \`wenv task show\`.
+
+  Use  \`wenv task <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
-    OPTIND=1
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -508,18 +522,39 @@ OPTIONS
 }
 
 wenv_task_show() {
+    local usage="\
+USAGE
+  wenv task show [-h] - Show the tasks for the active wenv.
+
+OPTIONS
+  -w <wenv>    Show <wenv>'s task list, instead of the active wenv's.
+  -h           Display this help message.
+"
+
     local wenv="${WENV_PROJECT:-${WENV}}"
     [[ -z "$wenv" ]] && return 1
     local flag_w=0
-    while getopts ":w:" opt; do
+    while getopts ":w:h" opt; do
         case $opt in
-            w)  [[ ! -z "$OPTARG" ]] && wenv="$OPTARG" ;;
-            --) break ;;
-            *)  echo "invalid flag: $1" ; return 1 ;;
+            w)
+                [[ ! -z "$OPTARG" ]] && wenv="$OPTARG"
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            --)
+                break
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
         esac
     done
     shift $((OPTIND-1))
 
+    # TODO: document or delete this
     local report="$1"
     [[ -z "$report" ]] && report="project"
 
@@ -528,14 +563,41 @@ wenv_task_show() {
 }
 
 wenv_task_add() {
+    local usage="\
+USAGE
+  wenv task add [-h] [-w <wenv>] [<attrs>] <desc> - Add a task to the active
+                                                    wenv's task list.
+
+OPTIONS
+  -w <wenv>    Add a task to <wenv>'s task list, instead of the active wenv's.
+  -h           Display this help message.
+
+DESCRIPTION
+  This command accepts an optional series of Taskwarrior attributes <attrs>,
+  followed by a description for the task <desc>. The task's 'project' field is
+  automatically set to \$WENV_PROJECT if this value is set by the wenv's
+  definition, otherwise it's set to the wenv name.
+"
+
     [[ -z "$@" ]] && return 1
     local wenv="${WENV_PROJECT:-${WENV}}"
     local flag_w=0
-    while getopts ":w:" opt; do
+    while getopts ":w:h" opt; do
         case $opt in
-            w)  [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG" ;;
-            --) break ;;
-            *)  echo "invalid flag: $1" ; return 1 ;;
+            w)
+                [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG"
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            --)
+                break
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
         esac
     done
     shift $((OPTIND-1))
@@ -544,19 +606,18 @@ wenv_task_add() {
     local desc="${@[$#]}"
     # all other args are passed to task warrior (yeah, this is ugly)
     local task_args=${@:1:$(($# - 1))}
-    task add project:"$wenv" tags:"$WENV" "$task_args" -- "$desc"
+    task add project:"$wenv" "$task_args" -- "$desc"
 }
 
 wenv_rename() {
     local usage="\
 USAGE
-    wenv rename [-h]
+  wenv rename [-h] <old> <new> - Rename wenv <old> to <new>.
 
 OPTIONS
   -h                    Display this help message.
 "
 
-    OPTIND=1
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -577,18 +638,20 @@ OPTIONS
     mv "$WENV_CFG/wenvs/$old" "$WENV_CFG/wenvs/$new"
 }
 
-# TODO: figure out naming convention (preceding _ is so wenvs can define their
-# own wenv_bootstrap function without conflict)
-_wenv_bootstrap() {
+wenv_bootstrap() {
     local usage="\
 USAGE
-    wenv bootstrap [-h] <wenv>
+  wenv bootstrap [-h] <wenv> - Run the bootstrap function for a wenv.
 
 OPTIONS
-  -h                    Display this help message.
+  -h    Display this help message.
+
+DESCRIPTION
+  A wenv's bootstrap function is used to set up the wenv's environment before
+  the first time it's used. A wenv bootstrap function might pull down relevant
+  git repos, install relevant packages, create config files, etc.
 "
 
-    OPTIND=1
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -607,9 +670,9 @@ OPTIONS
     fi
     local wenv="$1"
     run_wenv_def "$wenv"
-    ! function_exists wenv_bootstrap && return 0
-    wenv_bootstrap
-    unset_quiet -f wenv_bootstrap
+    ! function_exists bootstrap_wenv && return 0
+    bootstrap_wenv
+    unset_quiet -f bootstrap_wenv
 }
 
 wenv_tmux_layout() {
