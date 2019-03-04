@@ -22,10 +22,10 @@ in `this answer on Stack Overflow
 <https://stackoverflow.com/a/5752901/4516052>`_, which recommends running a
 sequence of tmux commands as a function that starts your desired development
 environment. However, as I worked on projects, I found that I'd want different
-tmux layouts depending on the project. But I wanted more than just a tmux layout
--- I also wanted to automatically run project-specific commands in certain
-terminals when opening a layout. This would require a bit more work than the
-shell function the SO post.
+tmux layouts depending on the project. Further, I wanted more than just a tmux
+layout -- I also wanted to automatically run project-specific commands in certain
+terminals in a given layout. This would require a bit more work than the shell
+function the SO post.
 
 At the same time, I had a simple system set up for managing aliases for different
 projects. Basically, I had a folder that contained projects' individual alias
@@ -53,13 +53,12 @@ about to work. So, I thought it'd be nice to include something in the project
 file that automatically runs commands like `sudo systemctl start docker` when I
 start working on the project and `sudo systemctl stop docker` when I'm done.
 
-Another feature I quickly realized would be useful was the ability to wrap
-`Taskwarrior <https://taskwarrior.org/>`_ commands to show only the tasks
-associated with the active project. Taskwarrior is a great tool, but I don't want
-to have to type out and think about a project's name every time I want to add or
-show its tasks. I'd rather have commands that mean "show me the tasks associated
-with the project I'm working on" and "add a task for the active project with this
-description".
+Another feature I realized would be useful was the ability to wrap `Taskwarrior
+<https://taskwarrior.org/>`_ commands to show only the tasks associated with the
+active project. Taskwarrior is a great tool, but I don't want to have to type out
+and think about a project's name every time I want to add or show its tasks. I'd
+rather have commands that mean "show me the tasks associated with the project I'm
+working on" and "add a task for the active project with this description".
 
 The WENV framework arose from this increasing complexity. However, it never left
 the realm of Zsh scripting. A project's WENV is defined by Zsh environment
@@ -111,7 +110,7 @@ painless. The following steps (or variations on them) should get the job done:
 The environment variable `WENVS` is used to specify the directory where all
 projects' WENV files are stored. This can be overriden by setting the `WENVS`
 value in your Zsh profile. `WENVS` will default to
-`"${XDG_CONFIG_HOME}/wenv/wenvs` if `XDG_CONFIG_HOME` is set; otherwise, it's
+`${XDG_CONFIG_HOME}/wenv/wenvs` if `XDG_CONFIG_HOME` is set; otherwise, it's
 set to `$HOME/.config/wenv/wenvs`.
 
 dependencies
