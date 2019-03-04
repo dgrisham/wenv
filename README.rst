@@ -36,7 +36,7 @@ layout -- I also wanted to automatically run project-specific commands in certai
 terminals in a given layout. This would require a bit more work than the shell
 function the SO post.
 
-At the same time, I had a simple system for managing aliases with different
+At the same time, I'd set up a simple system for managing aliases with different
 domains. For example, I had a Python aliases file that defined useful functions
 for Python development (mainly creating and starting virtual environemnts). I
 also wrote alias files specific to certain projects, e.g. the `IPTB
