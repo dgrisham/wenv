@@ -15,6 +15,42 @@ wenv_def() {
 export WENV_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
 
 wenv() {
+    local usage="\
+USAGE
+  $(basename $0) [-h] <cmd> ...
+
+OPTIONS
+  -h                    Display this help message.
+
+SUBCOMMANDS
+  start <wenv>          Start the working environment <wenv>.
+  stop                  Stop the current working environment.
+  new                   Create a new working environment.
+  edit <wenv>           Edit the WENV file for <wenv>.
+  rename <old> <new>    Rename WENV <old> to <new>.
+  remove <wenv>         Delete the WENV file for <wenv>.
+  source <wenv>         Source <wenv>'s 
+  cd <wenv>             Change to <wenv>'s base directory.
+  task <cmd>            Access the project task list.
+  bootstrap <wenv>      Run <wenv>'s bootstrap function.
+
+Run `wenv <cmd> --help` for more information on a given subcommand <cmd>.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
     local wenv_command="$1"
     shift
     case "$wenv_command" in
@@ -24,11 +60,8 @@ wenv() {
         stop)
             wenv_stop $@
             ;;
-        reset)
-            wenv_reset $@
-            ;;
         task)
-            wenv_tasks $@
+            wenv_task $@
             ;;
         'cd')
             wenv_cd $@
@@ -48,32 +81,35 @@ wenv() {
         'source')
             wenv_source $@
             ;;
-        exec)
-            wenv_exec $@
-            ;;
         mv|rename)
             wenv_rename $@
-            ;;
-        *)
-            echo "Unrecognized command: '$wenv_command'"
             ;;
     esac
 }
 
-# TODO: figure out naming convention (preceding _ is so wenvs can define their
-# own wenv_bootstrap function without conflict)
-_wenv_bootstrap() {
-    if ! is_wenv "$1"; then
-        return 1
-    fi
-    local wenv="$1"
-    run_wenv_def "$wenv"
-    ! function_exists wenv_bootstrap && return 0
-    wenv_bootstrap
-    unset_quiet -f wenv_bootstrap
-}
-
 wenv_start() {
+    local usage="\
+USAGE
+    wenv start [-h] <
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
     local flag_n=0
     local flag_q=0
     local flag_i=1
@@ -104,9 +140,9 @@ wenv_start() {
     tmux send -t "$wenv" '{
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
-        tmux bind-key - split-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
-        tmux bind-key \\ split-window -h -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
-        tmux bind-key c new-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key - split-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key \\ split-window -h -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
+        tmux bind-key c new-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
         (('"$flag_i"' == 1)) && wenv_startup
         unset_quiet -f wenv_startup
         clear
@@ -141,6 +177,28 @@ wenv_exec() {
 }
 
 wenv_stop() {
+    local usage="\
+USAGE
+    wenv stop [-h]
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
     [[ -z "$WENV" ]] && return 1
 
     local flag_f=0
@@ -182,7 +240,202 @@ wenv_clean_up() {
     export PS1="$ORIGINAL_PS1"
 }
 
+# load either the input wenv, or the active WENV + its dependencies
+wenv_load() {
+    if [[ -n "$1" ]]; then
+        local wenv="$1"
+        run_wenv_def "$wenv"
+        wenv_source "$wenv"
+    elif [[ -n "$WENV" ]]; then
+        run_wenv_def "$WENV"
+        wenv_def
+        wenv_source
+    else
+        return 1
+    fi
+    unset -f wenv_def
+    unset_quiet -f wenv_bootstrap
+    return 0
+}
+
+run_wenv_def() {
+    [[ -z "$1" ]] && return 1
+    local wenv="$1"
+    eval "$(source $WENV_CFG/wenvs/$wenv && declare -f wenv_def)"
+    function_exists wenv_def || return 1
+    wenv_def
+}
+
+wenv_new() {
+    local usage="\
+USAGE
+    wenv new [-h]
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    local template="$WENV_CFG/template"
+    local flag_d=0
+    while getopts ":di:" opt; do
+        case $opt in
+            d) flag_d=1 ;;
+            i) [[ ! -z "$OPTARG" ]] && template="$WENV_CFG/wenvs/${OPTARG}" ;;
+            --) break ;;
+            *) echo "invalid flag: $1" ; exit 1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    [[ -z "$1" ]] && return 1
+    local wenv="$1"
+
+    # generalize/clean this up
+    if [[ $flag_d -eq 1 ]]; then
+        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$template") > "$WENV_CFG/wenvs/$wenv"
+    else
+        # this case shouldn't be exclusive from previous
+        cp "$template" "$WENV_CFG/wenvs/$wenv"
+    fi
+    wenv_edit "$wenv"
+}
+
+wenv_edit() {
+    local usage="\
+USAGE
+    wenv edit [-h]
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    # nice bash syntax for setting var to first non-empty variable
+    local wenv="${1:-${WENV}}"
+    [[ -f "$WENV_CFG/wenvs/$wenv" ]] && "$EDITOR" "$WENV_CFG/wenvs/$wenv"
+}
+
+wenv_remove() {
+    local usage="\
+USAGE
+    wenv remove [-h]
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    if [[ -z "$1" ]]; then
+        return 1
+    fi
+    if ! is_wenv "$1"; then
+        echo "WENV $1 does not exist."
+        return 1
+    fi
+    local wenv="$1"
+    local wenv_file="$WENV_CFG/wenvs/$wenv"
+    read "choice?Delete WENV $wenv? "
+    if [[ "$choice" =~ ^[Yy]$ ]]; then
+        rm -f "$wenv_file"
+    fi
+}
+
+wenv_source() {
+    local usage="\
+USAGE
+    wenv source [<wenv>, ...] [-h]
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    if [[ "$#" -eq 0 && -n "$WENV" ]]; then
+        (( ${#WENV_DEPS[@]} != 0 )) && wenv_source "${WENV_DEPS[@]}"
+        source "$WENV_CFG/wenvs/$WENV" >/dev/null
+    fi
+    local wenv
+    for wenv in $@; do
+        source "$WENV_CFG/wenvs/$wenv" >/dev/null
+    done
+}
+
 wenv_cd() {
+    local usage="\
+USAGE
+    wenv cd [-h]
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
     local flag_r=0
     while getopts ":r" opt; do
         case $opt in
@@ -216,101 +469,45 @@ wenv_cd() {
     return 0
 }
 
-# load either the input wenv, or the active WENV + its dependencies
-wenv_load() {
-    if [[ -n "$1" ]]; then
-        local wenv="$1"
-        run_wenv_def "$wenv"
-        wenv_source "$wenv"
-    elif [[ -n "$WENV" ]]; then
-        run_wenv_def "$WENV"
-        wenv_def
-        wenv_source
-    else
-        return 1
-    fi
-    unset -f wenv_def
-    unset_quiet -f wenv_bootstrap
-    return 0
-}
+wenv_task() {
+    local usage="\
+USAGE
+    wenv task [-h]
 
-run_wenv_def() {
-    [[ -z "$1" ]] && return 1
-    local wenv="$1"
-    eval "$(source $WENV_CFG/wenvs/$wenv && declare -f wenv_def)"
-    function_exists wenv_def || return 1
-    wenv_def
-}
+OPTIONS
+  -h                    Display this help message.
+"
 
-wenv_new() {
-    local template="$WENV_CFG/template"
-    local flag_d=0
-    while getopts ":di:" opt; do
-        case $opt in
-            d) flag_d=1 ;;
-            i) [[ ! -z "$OPTARG" ]] && template="$WENV_CFG/wenvs/${OPTARG}" ;;
-            --) break ;;
-            *) echo "invalid flag: $1" ; exit 1 ;;
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
         esac
     done
-    shift $((OPTIND-1))
 
-    [[ -z "$1" ]] && return 1
-    local wenv="$1"
-
-    # generalize/clean this up
-    if [[ $flag_d -eq 1 ]]; then
-        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$template") > "$WENV_CFG/wenvs/$wenv"
-    else
-        # this case shouldn't be exclusive from previous
-        cp "$template" "$WENV_CFG/wenvs/$wenv"
-    fi
-    wenv_edit "$wenv"
-}
-
-wenv_edit() {
-    # nice bash syntax for setting var to first non-empty variable
-    local wenv="${1:-${WENV}}"
-    [[ -f "$WENV_CFG/wenvs/$wenv" ]] && "$EDITOR" "$WENV_CFG/wenvs/$wenv"
-}
-
-wenv_remove() {
-    if [[ -z "$1" ]]; then
-        return 1
-    fi
-    if ! is_wenv "$1"; then
-        echo "WENV $1 does not exist."
-        return 1
-    fi
-    local wenv="$1"
-    local wenv_file="$WENV_CFG/wenvs/$wenv"
-    read "choice?Delete WENV $wenv? "
-    if [[ "$choice" =~ ^[Yy]$ ]]; then
-        rm -f "$wenv_file"
-    fi
-}
-
-wenv_reset() {
-    [[ -n "TMUX" ]] && tmux set-environment WENV "$WENV"
-}
-
-wenv_tasks() {
     local arg="$1"
     shift 2> /dev/null
     case "$arg" in
         s|show)
-            wenv_tasks_show $@
+            wenv_task_show $@
             ;;
         a|add)
-            wenv_tasks_add $@
+            wenv_task_add $@
             ;;
         *)
-            wenv_tasks_show "$arg" $@
+            wenv_task_show "$arg" $@
             ;;
     esac
 }
 
-wenv_tasks_show() {
+wenv_task_show() {
     local wenv="${WENV_PROJECT:-${WENV}}"
     [[ -z "$wenv" ]] && return 1
     local flag_w=0
@@ -330,7 +527,7 @@ wenv_tasks_show() {
     task "$report" project:"$wenv"
 }
 
-wenv_tasks_add() {
+wenv_task_add() {
     [[ -z "$@" ]] && return 1
     local wenv="${WENV_PROJECT:-${WENV}}"
     local flag_w=0
@@ -350,23 +547,69 @@ wenv_tasks_add() {
     task add project:"$wenv" tags:"$WENV" "$task_args" -- "$desc"
 }
 
-wenv_source() {
-    if [[ "$#" -eq 0 && -n "$WENV" ]]; then
-        (( ${#WENV_DEPS[@]} != 0 )) && wenv_source "${WENV_DEPS[@]}"
-        source "$WENV_CFG/wenvs/$WENV" >/dev/null
-    fi
-    local wenv
-    for wenv in $@; do
-        source "$WENV_CFG/wenvs/$wenv" >/dev/null
-    done
-}
-
 wenv_rename() {
+    local usage="\
+USAGE
+    wenv rename [-h]
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
     [[ $# != 2 ]] && return 1
     local old="$1"
     local new="$2"
 
     mv "$WENV_CFG/wenvs/$old" "$WENV_CFG/wenvs/$new"
+}
+
+# TODO: figure out naming convention (preceding _ is so wenvs can define their
+# own wenv_bootstrap function without conflict)
+_wenv_bootstrap() {
+    local usage="\
+USAGE
+    wenv bootstrap [-h] <wenv>
+
+OPTIONS
+  -h                    Display this help message.
+"
+
+    OPTIND=1
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    if ! is_wenv "$1"; then
+        return 1
+    fi
+    local wenv="$1"
+    run_wenv_def "$wenv"
+    ! function_exists wenv_bootstrap && return 0
+    wenv_bootstrap
+    unset_quiet -f wenv_bootstrap
 }
 
 wenv_tmux_layout() {
@@ -422,7 +665,7 @@ wenv_tmux_split() {
     done
     shift $((OPTIND-1))
 
-    local wenv_init_cmd='WENV_EXEC="unset WENV; wenv exec -c \"$WENV\"" zsh -i'
+    local wenv_init_cmd='WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'
     local direction="$1"
     shift
     local user_cmd=$@
