@@ -26,9 +26,9 @@ SUBCOMMANDS
   start <wenv>          Start the working environment <wenv>.
   stop                  Stop the current working environment.
   new                   Create a new working environment.
-  edit <wenv>           Edit the Wenv file for <wenv>.
-  rename <old> <new>    Rename Wenv <old> to <new>.
-  remove <wenv>         Delete the Wenv file for <wenv>.
+  edit <wenv>           Edit the wenv file for <wenv>.
+  rename <old> <new>    Rename wenv <old> to <new>.
+  remove <wenv>         Delete the wenv file for <wenv>.
   source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
   cd <wenv>             Change to <wenv>'s base directory.
   task <cmd>            Access the project task list.

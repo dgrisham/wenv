@@ -1,6 +1,6 @@
 .. default-role:: literal
 
-Wenv: A Shell Streamlining Framework
+wenv: A Shell Streamlining Framework
 ====================================
 
 Perpetual WIP, likely to have bugs.
@@ -10,15 +10,15 @@ Perpetual WIP, likely to have bugs.
 Introduction
 ------------
 
-The working environment (Wenv) framework is a tool for streamlining workflow in
-the terminal. A Wenv is associated with a project and defines 1. useful
-functionality specific to the project, and 2. its Wenv definition, which is
-information that the Wenv framework uses to make working on the project easier.
+The working environment (wenv) framework is a tool for streamlining workflow in
+the terminal. A wenv is associated with a project and defines 1. useful
+functionality specific to the project, and 2. its wenv definition, which is
+information that the wenv framework uses to make working on the project easier.
 
-The motivation for Wenvs will take a bit of explaining. I'll start from the
+The motivation for wenvs will take a bit of explaining. I'll start from the
 beginning.
 
-Much of the reason I started working on Wenvs came from wanting to have
+Much of the reason I started working on wenvs came from wanting to have
 predefined tmux layouts. I saw advice like `this answer on Stack Overflow
 <https://stackoverflow.com/a/5752901/4516052>`_, which recommends running a
 sequence of tmux commands as a function that starts your desired development
@@ -62,9 +62,9 @@ and think about a project's name every time I want to add or show its tasks. I'd
 rather have commands that mean "show me the tasks associated with the project I'm
 working on" and "add a task for the active project with this description".
 
-The Wenv framework arose from this increasing complexity. However, it never left
-the realm of Zsh scripting. A project's Wenv is defined by Zsh environment
-variables and functions, and the Wenv 'framework' is just a bunch of Zsh
+The wenv framework arose from this increasing complexity. However, it never left
+the realm of Zsh scripting. A project's wenv is defined by Zsh environment
+variables and functions, and the wenv 'framework' is just a bunch of Zsh
 functions. This is convenient because many of the functions are just sequences of
 commands I'd like to run in the terminal anyway, and the rest are maintaining
 state in a way that shells are good at.
@@ -81,7 +81,7 @@ painless. The following steps (or variations on them) should get the job done:
     relevant functionality.
 3.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
     put the `template` file there. Also, create a directory inside of that
-    `wenv` directory called `wenvs`, which will store the Wenv files for all of
+    `wenv` directory called `wenvs`, which will store the wenv files for all of
     your projects. If you're in this repository, you can run the following lines
     to complete this step:
 
@@ -90,14 +90,14 @@ painless. The following steps (or variations on them) should get the job done:
         mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/wenv/wenvs"
         cp template "${XDG_CONFIG_HOME:-$HOME/.config}/wenv
 
-4.  In order for Wenvs to work with `tmux`, the following line should be added
+4.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
     ::
 
         eval "$WENV_EXEC"
 
-    This makes it so that the Wenv associated with a given tmux session can be
+    This makes it so that the wenv associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
 5.  Put the `completion.bash` file wherever you like, and add the following
     lines to source it in your Zsh profile (or another Zsh startup file):
@@ -120,7 +120,7 @@ dependencies
 Example
 ~~~~~~~
 
-A given project's Wenv is defined by `zsh` functions and environment variables.
+A given project's wenv is defined by `zsh` functions and environment variables.
 As an example,
 
 TODO: gif webm movie thing
@@ -140,9 +140,9 @@ Usage
       start <wenv>          Start the working environment <wenv>.
       stop                  Stop the current working environment.
       new                   Create a new working environment.
-      edit <wenv>           Edit the Wenv file for <wenv>.
-      rename <old> <new>    Rename Wenv <old> to <new>.
-      remove <wenv>         Delete the Wenv file for <wenv>.
+      edit <wenv>           Edit the wenv file for <wenv>.
+      rename <old> <new>    Rename wenv <old> to <new>.
+      remove <wenv>         Delete the wenv file for <wenv>.
       source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
       cd <wenv>             Change to <wenv>'s base directory.
       task <cmd>            Access the project task list.
