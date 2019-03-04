@@ -20,7 +20,7 @@ in the terminal clean, easy, and fun. Zsh and tmux were ubiquitous in my
 workflow, and over time I started to see potential in those tools that I wanted
 to take advantage of. The wenv framework emerged from this potential. The actual
 conception of this project formed as I tried to solve relatively disparate
-problems. I'll start by describing some of those problems, and how they came
+problems. I'll start by describing some of those problems, then how they came
 together to shape a single solution.
 
 One of the issues I faced had to do with starting tmux with a given layout. Every
