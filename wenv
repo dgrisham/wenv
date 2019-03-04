@@ -29,12 +29,12 @@ SUBCOMMANDS
   edit <wenv>           Edit the WENV file for <wenv>.
   rename <old> <new>    Rename WENV <old> to <new>.
   remove <wenv>         Delete the WENV file for <wenv>.
-  source <wenv>         Source <wenv>'s 
+  source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
   cd <wenv>             Change to <wenv>'s base directory.
   task <cmd>            Access the project task list.
   bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
-Run `wenv <cmd> --help` for more information on a given subcommand <cmd>.
+Run \`wenv <cmd> --help\` for more information on a given subcommand <cmd>.
 "
 
     OPTIND=1
@@ -253,7 +253,6 @@ wenv_load() {
     else
         return 1
     fi
-    unset -f wenv_def
     unset_quiet -f wenv_bootstrap
     return 0
 }
@@ -411,6 +410,7 @@ OPTIONS
     for wenv in $@; do
         source "$WENV_CFG/wenvs/$wenv" >/dev/null
     done
+    unset_quiet -f wenv_def
 }
 
 wenv_cd() {

@@ -130,7 +130,7 @@ Usage
 ::
 
     USAGE
-      $(basename $0) [-h] <cmd> ...
+      wenv [-h] <cmd> ...
 
     OPTIONS
       -h                    Display this help message.
@@ -142,7 +142,7 @@ Usage
       edit <wenv>           Edit the WENV file for <wenv>.
       rename <old> <new>    Rename WENV <old> to <new>.
       remove <wenv>         Delete the WENV file for <wenv>.
-      source <wenv>         Source <wenv>'s 
+      source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
       cd <wenv>             Change to <wenv>'s base directory.
       task <cmd>            Access the project task list.
       bootstrap <wenv>      Run <wenv>'s bootstrap function.
