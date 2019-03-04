@@ -12,18 +12,22 @@ _show_wenvs() {
 
 _wenv_start() {
     if [[ $word == -* ]] ; then
-        _wenv_comp "-n -q -i"
+        _wenv_comp "-t -i -q -h"
     else
         _show_wenvs
     fi
 }
 
 _wenv_stop() {
-    _wenv_comp "-s"
+    _wenv_comp "-s -h"
 }
 
 _wenv_cd() {
-    _show_wenvs
+    if [[ $word == -* ]] ; then
+        _wenv_comp "-r -h"
+    else
+        _show_wenvs
+    fi
 }
 
 _wenv_rm() {
@@ -31,11 +35,19 @@ _wenv_rm() {
 }
 
 _wenv_remove() {
-    _show_wenvs
+    if [[ $word == -* ]] ; then
+        _wenv_comp "-h"
+    else
+        _show_wenvs
+    fi
 }
 
 _wenv_source() {
-    _show_wenvs
+    if [[ $word == -* ]] ; then
+        _wenv_comp "-h"
+    else
+        _show_wenvs
+    fi
 }
 
 _wenv_edit() {
@@ -43,7 +55,11 @@ _wenv_edit() {
 }
 
 _wenv_rename() {
-    _show_wenvs
+    if [[ $word == -* ]] ; then
+        _wenv_comp "-h"
+    else
+        _show_wenvs
+    fi
 }
 
 _wenv_mv() {
@@ -52,21 +68,25 @@ _wenv_mv() {
 
 _wenv_exec() {
     if [[ $word == -* ]] ; then
-        _wenv_comp "-c -n"
+        _wenv_comp "-c -n -h"
     else
         _show_wenvs
     fi
 }
 
 _wenv_task() {
-    _wenv_comp "show add"
+    if [[ $word == -* ]] ; then
+        _wenv_comp "-h"
+    else
+        _wenv_comp "show add"
+    fi
 }
 
 _wenv_task_add() {
     if [[ ${prev} == "-w" ]] ; then
         _show_wenvs
     elif [[ ${word} == -* ]] ; then
-        _wenv_comp "-w"
+        _wenv_comp "-w -h"
     fi
 }
 
@@ -74,7 +94,7 @@ _wenv_task_show() {
     if [[ ${prev} == "-w" ]] ; then
         _show_wenvs
     elif [[ ${word} == -* ]] ; then
-        _wenv_comp "-w"
+        _wenv_comp "-w -h"
     fi
 }
 
@@ -82,7 +102,15 @@ _wenv_new() {
     if [[ ${prev} == "-i" ]] ; then
         _show_wenvs
     elif [[ ${word} == -* ]] ; then
-        _wenv_comp "-i -d"
+        _wenv_comp "-i -d -h"
+    fi
+}
+
+_wenv_bootstrap() {
+    if [[ $word == -* ]] ; then
+        _wenv_comp "-h"
+    else
+        _show_wenvs
     fi
 }
 
