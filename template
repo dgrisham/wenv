@@ -4,7 +4,6 @@ wenv_def() {
     WENV_DIR=""
     WENV_DEPS=()
     WENV_PROJECT=''
-    WENV_BRANCH='master'
     WENV_TASK=''
     WENV_GITDIR=""
 
