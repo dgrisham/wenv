@@ -139,10 +139,51 @@ Example
 ~~~~~~~
 
 A given project's wenv has two primary parts: a wenv definition, and any shell
-aliases/functions that are specific to the project.
+aliases/functions that are specific to the project. Let's start by creating a
+new directory for our wenv, then initializing the wenv in that directory.
 
-A given project's wenv is defined by `zsh` functions and environment variables.
-As an example,
+TODO: better to start wenv here then continue example from there?
+
+::
+
+    $ cd ~
+    $ mkdir hello-world
+    $ cd hello-world
+    $ wenv new -d hello-world
+
+Running this command will copy the wenv `template` file into a new wenv file
+called `hello-world`. The template file provides a base structure for a new
+wenv.
+
+Let's look at the new wenv file that was just created. Notice the first
+function, `wenv_def`:
+
+::
+
+    wenv_def() {
+        WENV_DIR="/home/grish/hello-world"
+        WENV_DEPS=()
+        WENV_PROJECT=''
+        WENV_TASK=''
+
+        bootstrap_wenv() {}
+        startup_wenv() {}
+        shutdown_wenv() {}
+    }
+
+This function defines all of the parameters that the wenv framework can use to
+help us work on a project. Here's a rundown of these parameters:
+
+-   `WENV_DIR`: A string containing the path to the base directory of this
+    project.
+-   `WENV_DEPS`: An array of strings specifying the wenvs that this wenv is
+    dependent on.
+-   `WENV_PROJECT`: TODO
+-   `WENV_TASK`: TODO
+
+Let's focus on `WENV_DIR` for now. Note that `WENV_DIR`'s value was
+automatically populated with our current working directory. That's because we
+passed the `-d` flag to `wenv new`.
 
 TODO: gif webm movie thing
 
