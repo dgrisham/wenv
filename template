@@ -8,9 +8,9 @@ wenv_def() {
     WENV_TASK=''
     WENV_GITDIR=""
 
-    wenv_bootstrap() {}
-    wenv_startup() {}
-    wenv_shutdown() {}
+    bootstrap_wenv() {}
+    startup_wenv() {}
+    shutdown_wenv() {}
 }
 
 c() {
