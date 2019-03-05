@@ -138,6 +138,9 @@ dependencies
 Example
 ~~~~~~~
 
+A given project's wenv has two primary parts: a wenv definition, and any shell
+aliases/functions that are specific to the project.
+
 A given project's wenv is defined by `zsh` functions and environment variables.
 As an example,
 
