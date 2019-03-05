@@ -5,7 +5,6 @@ wenv_def() {
     WENV_DEPS=()
     WENV_PROJECT=''
     WENV_TASK=''
-    WENV_GITDIR=""
 
     bootstrap_wenv() {}
     startup_wenv() {}
