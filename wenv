@@ -5,7 +5,6 @@ wenv_def() {
     WENV_DEPS=()
     WENV_PROJECT='wenv'
     WENV_TASK=''
-    WENV_BRANCH='master'
 
     bootstrap_wenv() {}
     startup_wenv() {}
@@ -233,7 +232,7 @@ wenv_clean_up() {
     unset_quiet -f wenv_{init,shutdown}
 
     unset_quiet WENV
-    unset_quiet WENV_{DIR,DEPS,PROJECT,BRANCH}
+    unset_quiet WENV_{DIR,DEPS,PROJECT}
 
     if [[ -n "$TMUX" ]]; then
         tmux set-environment WENV ''
