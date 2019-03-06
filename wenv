@@ -454,14 +454,13 @@ DESCRIPTION
 
     if [[ -z "$1" ]]; then
         [[ ! -z "$WENV_DIR" ]] && cd "$WENV_DIR" &> /dev/null
+        ((flag_r == 1)) && tmux rename-window "$WENV"
         return 0
     fi
     if ! is_wenv "$1"; then
         return 1
     fi
     local wenv="$1"
-
-    ((flag_r == 1)) && tmux rename-window "$wenv"
 
     # TODO: need a better way to do this
     # load and cd to input wenv
@@ -471,6 +470,8 @@ DESCRIPTION
     # reload the wenv that was previously running
     wenv_load "$WENV"
     unset_quiet -f startup_wenv
+
+    ((flag_r == 1)) && tmux rename-window "$wenv"
 
     return 0
 }
