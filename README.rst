@@ -248,7 +248,6 @@ TODO: preface the lists below
 -  `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
     daemons started by `startup_wenv()`, and do any other cleanup.
 
-
 Usage
 ~~~~~
 
