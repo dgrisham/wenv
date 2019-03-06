@@ -422,6 +422,7 @@ USAGE
   wenv cd [-r] [-h] <wenv> - cd into <wenv>'s base directory.
 
 OPTIONS
+  -r    Rename the current tmux window to the designated wenv's name.
   -h    Display this help message.
 
 DESCRIPTION
