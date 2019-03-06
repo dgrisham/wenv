@@ -138,6 +138,8 @@ dependencies
 Example
 ~~~~~~~
 
+TODO: **need to explain tmux keybindings**
+
 A given project's wenv has two primary parts: a wenv definition, and any shell
 aliases/functions that are specific to the project. Let's start by creating a
 new directory for our wenv, then initializing the wenv in that directory.
@@ -155,8 +157,8 @@ Running this command will copy the wenv `template` file into a new wenv file
 called `hello-world`. The template file provides a base structure for a new
 wenv.
 
-Let's look at the new wenv file that was just created. Notice the first
-function, `wenv_def`:
+Let's look at the new wenv file that was just created. Notice the first function,
+`wenv_def()`:
 
 ::
 
@@ -166,26 +168,117 @@ function, `wenv_def`:
         WENV_PROJECT=''
         WENV_TASK=''
 
-        bootstrap_wenv() {}
         startup_wenv() {}
+        bootstrap_wenv() {}
         shutdown_wenv() {}
     }
 
 This function defines all of the parameters that the wenv framework can use to
-help us work on a project. Here's a rundown of these parameters:
+help us work on a project. Let's focus on `WENV_DIR` for now.
 
--   `WENV_DIR`: A string containing the path to the base directory of this
-    project.
--   `WENV_DEPS`: An array of strings specifying the wenvs that this wenv is
-    dependent on.
--   `WENV_PROJECT`: TODO
--   `WENV_TASK`: TODO
+`WENV_DIR`
+++++++++++
 
-Let's focus on `WENV_DIR` for now. Note that `WENV_DIR`'s value was
-automatically populated with our current working directory. That's because we
-passed the `-d` flag to `wenv new`.
+Note that `WENV_DIR`'s value was automatically populated with our current
+working directory. That's because we passed the `-d` flag to `wenv new` -- if
+we hadn't, the value would just be an empty string.
 
-TODO: gif webm movie thing
+The `WENV_DIR` variable has a few purposes. One is via the `wenv cd` command,
+which is used to change into a given wenv's directory. When run without an
+argument, this command will `cd` into the base directory of the active wenv.
+So, in our case, running `wenv cd` would `cd` into `"~/hello-world". This
+allows us to navigate to anywhere in the filesystem and always have a way to get
+back to the base directory of our project. Further, if we wanted to browse to the
+base directory of the `hello-world` wenv when it wasn't active, we could do so
+by running `wenv cd hello-world`.
+
+Another use of the `$WENV_DIR` value is within your wenv-specific functions.
+For example, take the `c()` function in the generated `hello-world` wenv.
+This is meant to provide a shortcut for `cd`'ing into directories related to the
+project other than `$WENV_DIR`. This can be useful for subdirectories of our
+wenv, e.g. if we wanted to run `c src` to `cd` into a directory called `src` in
+our wenv:
+
+::
+
+    case "$input"
+        'src')
+            dir="$WENV_DIR/src"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+We can also, of course, specify directories that aren't in our project
+
+For example, let's say `/srv/http` was an
+important directory for our project, and we wanted to be able to navigate to that
+directory by calling `c` with `http` as an argument. We could update the
+`case` statement in `c()` to:
+
+::
+
+    case "$input"
+        'http')
+            dir="/srv/http"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+We can also use `WENV_DIR`'s value to specify sub-directories of the wenv:
+
+::
+
+    case "$input"
+        'http')
+            dir="/srv/http"
+            ;;
+        'src')
+            dir="$WENV_DIR/src"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+Let's look a bit further down now, at the `_c()` function. This is an outline
+for a completion function for `c()`. If we fill in the `local opts` value like
+so:
+
+.. code-block:: bash
+
+    local opts="http src"
+
+Then, when this wenv is active, the `c()` function will tab-complete your
+directory options.
+
+TODO: preface the lists below
+
+**Variables**
+
+-  `WENV_DIR`: The path to the base directory of this project.
+-  `WENV_DEPS`: An array whose elements are the names of the wenvs that this
+   wenv is dependent on.
+-  `WENV_PROJECT`: The value to use for the task's `project` attribute in
+   Taskwarrior.
+-  `WENV_TASK`: The wenv's current primary task number.
+
+**Functions**
+
+-   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
+    For example, this function might pull down a git repository for development
+    or check to ensure that all packages required by this wenv are installed.
+    You can run this function on a wenv `<wenv>` by running
+    `wenv bootstrap <wenv>`.
+-  `startup_wenv()` is run whenever you start the wenv. This function is good
+    for starting up any necessary daemons, setting up a tmux layout, opening
+    programs (e.g. a text editor), etc.
+-  `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
+    daemons started by `startup_wenv()`, and do any other cleanup.
+
 
 Usage
 ~~~~~

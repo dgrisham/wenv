@@ -9,9 +9,9 @@ wenv_def() {
     declare -Ag wenv_dirs=()
     declare -Ag wenv_files=()
 
-    bootstrap_wenv() {}
     startup_wenv() {}
     shutdown_wenv() {}
+    bootstrap_wenv() {}
 }
 
 c() {
