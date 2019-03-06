@@ -192,7 +192,10 @@ back to the base directory of our project. Further, if we wanted to browse to th
 base directory of the `hello-world` wenv when it wasn't active, we could do so
 by running `wenv cd hello-world`.
 
-Another use of the `$WENV_DIR` value is within your wenv-specific functions.
+Another use of the `$WENV_DIR` value is within your wenv-specific functions. For
+example, take a look at the line that declares an associative array called
+`wenv_dirs`. TODO: finish explaining this and change below to reflect this
+
 For example, take the `c()` function in the generated `hello-world` wenv.
 This is meant to provide a shortcut for `cd`'ing into directories related to the
 project other than `$WENV_DIR`. This can be useful for subdirectories of our
@@ -201,52 +204,18 @@ our wenv:
 
 ::
 
-    case "$input"
-        'src')
-            dir="$WENV_DIR/src"
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+    declare -Ag wenv_dirs=(
+        ['src']="$WENV_DIR/src"
+    )
 
-We can also, of course, specify directories that aren't in our project
-
-For example, let's say `/srv/http` was an
-important directory for our project, and we wanted to be able to navigate to that
-directory by calling `c` with `http` as an argument. We could update the
-`case` statement in `c()` to:
+We can also, of course, specify directories that aren't in our project:
 
 ::
 
-    case "$input"
-        'http')
-            dir="/srv/http"
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-
-We can also use `WENV_DIR`'s value to specify sub-directories of the wenv:
-
-::
-
-    case "$input"
-        'http')
-            dir="/srv/http"
-            ;;
-        'src')
-            dir="$WENV_DIR/src"
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-
-Let's look a bit further down now, at the `_c()` function. This is an outline
-for a completion function for `c()`. If we fill in the `local opts` value like
-so:
+    declare -Ag wenv_dirs=(
+        ['src']="$WENV_DIR/src"
+        ['http']="/srv/http"
+    )
 
 .. code-block:: bash
 
