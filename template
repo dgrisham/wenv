@@ -6,13 +6,13 @@ wenv_def() {
     WENV_PROJECT=''
     WENV_TASK=''
 
-    declare -Ag wenv_dirs=()
-    declare -Ag wenv_files=()
-
-    bootstrap_wenv() {}
     startup_wenv() {}
     shutdown_wenv() {}
+    bootstrap_wenv() {}
 }
+
+declare -Ag wenv_dirs=()
+declare -Ag wenv_files=()
 
 c() {
     local flag_r=0
