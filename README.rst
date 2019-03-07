@@ -196,7 +196,7 @@ Another use of the `$WENV_DIR` value is within your wenv-specific variables and
 functions. For example, take a look at the line that declares an associative
 array called `wenv_dirs`, and also notice the provided `c()` function a few
 lines below that. The `c()` function accepts any argument that is a key in
-wenv_dirs and `cd`'s into the corresponding value. So, if `wenv_dirs` is
+`wenv_dirs` and `cd`'s into the corresponding value. So, if `wenv_dirs` is
 defined like so:
 
 .. code-block:: bash
