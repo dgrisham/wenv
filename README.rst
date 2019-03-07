@@ -250,6 +250,9 @@ Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
                                                       # sorted in reverse order
     )
 
+Note that `edit()` expects your editor to be specified in the `EDITOR`
+environment variable.
+
 `startup_wenv()`
 ++++++++++++++++
 
