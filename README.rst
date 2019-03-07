@@ -259,9 +259,9 @@ environment variable.
 `startup_wenv()`
 ++++++++++++++++
 
-Now let's talk about starting a wenv. The `startup_wenv()` function is run
-whenever you activate a wenv with `wenv start <wenv>`. This can be useful for
-running startup commands, e.g.
+Now let's talk about what you can do when starting a wenv. The `startup_wenv()`
+function is run whenever you activate a wenv with `wenv start <wenv>`. This can
+be useful for running startup commands, e.g.
 
 .. code-block:: bash
 
