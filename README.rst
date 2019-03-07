@@ -249,7 +249,7 @@ Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
         ['main']='main.cpp'
         ['class']='class.{cpp,h}' # open the header and impl files for `class`
         ['cpp']='*.cpp' # open all cpp files
-        ['cpp']='$(echo src/* | xargs -n1 | sort -r)' # open all files in `src`,
+        ['src']='$(echo src/* | xargs -n1 | sort -r)' # open all files in `src`,
                                                       # sorted in reverse order
     )
 
