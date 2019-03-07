@@ -300,8 +300,8 @@ We can also open a file in our text editor in the new pane:
     }
 
 Other tmux commands can be useful in specifying a layout as well. For example, if
-we wanted to create a small vertical pane under the initial pane, show the
-current active Taskwarrior task, then refocus on the larger pane:
+we wanted to create a small vertical pane under the initial pane, show the active
+Taskwarrior task, then refocus on the larger pane:
 
 .. code-block:: bash
 
