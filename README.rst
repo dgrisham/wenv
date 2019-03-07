@@ -250,14 +250,74 @@ Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
                                                       # sorted in reverse order
     )
 
-`wenv_startup()`
+`startup_wenv()`
 ++++++++++++++++
 
-Now that we know how to move around a bit, let's talk about specifying a tmux
-layout for a wenv. This, among other things, can be done in the
-`wenv_startup()` function.
+Now let's talk about starting a wenv. The `startup_wenv()` function is run
+whenever you activate a wenv with `wenv start <wenv>`. This can be useful for
+running startup commands, e.g.
 
-TODO: preface the lists below
+.. code-block:: bash
+
+    startup_wenv() {
+        sudo systemctl start docker
+    }
+
+Or opening programs like text editors:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        $EDITOR main.cpp
+    }
+
+Additionally, the utility function `wenv_tmux_split` can be used to define an
+initial tmux layout for the project. `wenv_tmux_split` will create a new tmux
+pane or window and load the active wenv's environment in the new pane/window. It
+accepts two arguments:
+
+1.  `h`, `v`, or `c` to specify whether to open a horizontal pane, vertical
+    pane, or new window, resp.
+2.  (Optional) The command to run in the newly opened pane/window.
+
+So, we can start our wenv with a horizontal split with the startup function:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        wenv_tmux_split h
+    }
+
+We can also open a file in our text editor in the new pane:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        wenv_tmux_split h "$EDITOR main.cpp"
+    }
+
+Other tmux commands can be useful in specifying a layout as well. For example, if
+we wanted to create a small vertical pane under the initial pane, show the
+current active Taskwarrior task, then refocus on the larger pane:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        wenv_tmux_split v
+        tmux resize-pane -y 7
+        task active
+        tmux select-pane -U
+    }
+
+Speaking of Taskwarrior...
+
+`WENV_PROJECT` and `WENV_TASK`
+++++++++++++++++++++++++++++++
+
+# TODO
+
+Summary
++++++++
 
 **Variables**
 
@@ -270,16 +330,16 @@ TODO: preface the lists below
 
 **Functions**
 
--   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
-    For example, this function might pull down a git repository for development
-    or check to ensure that all packages required by this wenv are installed.
-    You can run this function on a wenv `<wenv>` by running
-    `wenv bootstrap <wenv>`.
 -  `startup_wenv()` is run whenever you start the wenv. This function is good
     for starting up any necessary daemons, setting up a tmux layout, opening
     programs (e.g. a text editor), etc.
 -  `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
     daemons started by `startup_wenv()`, and do any other cleanup.
+-   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
+    For example, this function might pull down a git repository for development
+    or check to ensure that all packages required by this wenv are installed.
+    You can run this function on a wenv `<wenv>` by running
+    `wenv bootstrap <wenv>`.
 
 Usage
 ~~~~~

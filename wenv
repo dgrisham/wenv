@@ -722,10 +722,33 @@ wenv_tmux_layout() {
 }
 
 wenv_tmux_split() {
-    while getopts ":n:" opt; do
+usage="\
+USAGE
+  wenv_tmux_split [-h] [-n <name>] h|v|c [<cmd>] - Open a new tmux pane/window.
+
+OPTIONS
+  -v <name> Set the name of the tmux window to \`<name>\`.
+  -h        Display this help message.
+
+ARGUMENTS
+  h|v|c    \`h\`, \`v\`, or \`c\` to open a horizontal pane, vertical pane, or new
+           window, resp.
+  <cmd>    The command to run in the newly-opened terminal, if any.
+"
+
+    while getopts ":n:h" opt; do
         case $opt in
-            n) [[ ! -z "$OPTARG" ]] && local name="$OPTARG" ;;
-            *) echo "invalid flag: $opt" ; exit 1 ;;
+            n)
+                [[ ! -z "$OPTARG" ]] && local name="$OPTARG"
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
         esac
     done
     shift $((OPTIND-1))
@@ -745,7 +768,12 @@ wenv_tmux_split() {
             split_args=('new-window')
             [[ -n "$name" ]] && split_args+=('-n' "$name")
             ;;
-        *)
+        h)
+            echo "$usage"
+            return 0
+            ;;
+        \?)
+            echo "unknown option: -$OPTARG" >&2
             return 1
             ;;
     esac
