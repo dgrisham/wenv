@@ -336,10 +336,10 @@ Summary
 
 **Functions**
 
--  `startup_wenv()` is run whenever you start the wenv. This function is good
+-   `startup_wenv()` is run whenever you start the wenv. This function is good
     for starting up any necessary daemons, setting up a tmux layout, opening
     programs (e.g. a text editor), etc.
--  `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
+-   `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
     daemons started by `startup_wenv()`, and do any other cleanup.
 -   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
     For example, this function might pull down a git repository for development
