@@ -103,7 +103,7 @@ painless. The following steps (or variations on them) should get the job done:
     your projects. If you're in this repository, you can run the following lines
     to complete this step:
 
-    ::
+    .. code-block:: bash
 
         mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/wenv/wenvs"
         cp template "${XDG_CONFIG_HOME:-$HOME/.config}/wenv
@@ -111,7 +111,7 @@ painless. The following steps (or variations on them) should get the job done:
 4.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
-    ::
+    .. code-block:: bash
 
         eval "$WENV_EXEC"
 
@@ -120,7 +120,7 @@ painless. The following steps (or variations on them) should get the job done:
 5.  Put the `completion.bash` file wherever you like, and add the following
     lines to source it in your Zsh profile (or another Zsh startup file):
 
-    ::
+    .. code-block:: bash
 
         # enable bash completion functions
         autoload bashcompinit
@@ -146,7 +146,7 @@ new directory for our wenv, then initializing the wenv in that directory.
 
 TODO: better to start wenv here then continue example from there?
 
-::
+.. code-block:: bash
 
     $ cd ~
     $ mkdir hello-world
@@ -160,7 +160,7 @@ wenv.
 Let's look at the new wenv file that was just created. Notice the first function,
 `wenv_def()`:
 
-::
+.. code-block:: bash
 
     wenv_def() {
         WENV_DIR="/home/grish/hello-world"
@@ -176,8 +176,8 @@ Let's look at the new wenv file that was just created. Notice the first function
 This function defines all of the parameters that the wenv framework can use to
 help us work on a project. Let's focus on `WENV_DIR` for now.
 
-`WENV_DIR`
-++++++++++
+`WENV_DIR` (and `c()`/`wenv_dirs`)
+++++++++++++++++++++++++++++++++++
 
 Note that `WENV_DIR`'s value was automatically populated with our current
 working directory. That's because we passed the `-d` flag to `wenv new` -- if
@@ -192,37 +192,70 @@ back to the base directory of our project. Further, if we wanted to browse to th
 base directory of the `hello-world` wenv when it wasn't active, we could do so
 by running `wenv cd hello-world`.
 
-Another use of the `$WENV_DIR` value is within your wenv-specific functions. For
-example, take a look at the line that declares an associative array called
-`wenv_dirs`. TODO: finish explaining this and change below to reflect this
+Another use of the `$WENV_DIR` value is within your wenv-specific variables and
+functions. For example, take a look at the line that declares an associative
+array called `wenv_dirs`, and also notice the provided `c()` function a few
+lines below that. The `c()` function accepts any argument that is a key in
+wenv_dirs and `cd`'s into the corresponding value. So, if `wenv_dirs` is
+defined like so:
 
-For example, take the `c()` function in the generated `hello-world` wenv.
-This is meant to provide a shortcut for `cd`'ing into directories related to the
-project other than `$WENV_DIR`. This can be useful for subdirectories of our
-wenv, e.g. if we wanted to run `c src` to `cd` into a directory called `src` in
-our wenv:
-
-::
+.. code-block:: bash
 
     declare -Ag wenv_dirs=(
         ['src']="$WENV_DIR/src"
     )
 
-We can also, of course, specify directories that aren't in our project:
+Then running `c src` will change to the `"$WENV_DIR/src"` directory. This is
+meant to provide a shortcut for `cd`'ing into directories related to the project
+other than `$WENV_DIR`. We can also, of course, add entries for directories
+outside of the wenv:
 
-::
+.. code-block:: bash
 
     declare -Ag wenv_dirs=(
         ['src']="$WENV_DIR/src"
         ['http']="/srv/http"
     )
 
+`c()` also comes with a predefined completion function for the keys of
+`wenv_dirs`, so you can tab-complete all possible inputs (in this case, `src`
+and `http`).
+
+`edit()` and `wenv_files`
++++++++++++++++++++++++++
+
+`c()` and `wenv_dirs` are meant to provide a convenient interface for nimbly
+navigating frequently visited directories. `edit()` and `wenv_files` accomplish
+a similar goal, but with opening sets of files in your text editor. For example,
+if we had a `main.cpp` file that we wanted to open by running `edit main`, we'd
+add the following entry to `wenv_files`:
+
 .. code-block:: bash
 
-    local opts="http src"
+    declare -Ag wenv_files=(
+        ['main']='main.cpp'
+    )
 
-Then, when this wenv is active, the `c()` function will tab-complete your
-directory options.
+By default, the `edit()` function opens files from the project directory, so we
+specify `main.cpp` instead of `"$WENV_DIR/main.cpp"`. We can also use
+Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
+
+.. code-block:: bash
+
+    declare -Ag wenv_files=(
+        ['main']='main.cpp'
+        ['class']='class.{cpp,h}' # open the header and impl files for `class`
+        ['cpp']='*.cpp' # open all cpp files
+        ['cpp']='$(echo src/* | xargs -n1 | sort -r)' # open all files in `src`,
+                                                      # sorted in reverse order
+    )
+
+`wenv_startup()`
+++++++++++++++++
+
+Now that we know how to move around a bit, let's talk about specifying a tmux
+layout for a wenv. This, among other things, can be done in the
+`wenv_startup()` function.
 
 TODO: preface the lists below
 
