@@ -186,7 +186,7 @@ we hadn't, the value would just be an empty string.
 The `WENV_DIR` variable has a few purposes. One is via the `wenv cd` command,
 which is used to change into a given wenv's directory. When run without an
 argument, this command will `cd` into the base directory of the active wenv.
-So, in our case, running `wenv cd` would `cd` into `"~/hello-world". This
+So, in our case, running `wenv cd` would `cd` into `"~/hello-world"`. This
 allows us to navigate to anywhere in the filesystem and always have a way to get
 back to the base directory of our project. Further, if we wanted to browse to the
 base directory of the `hello-world` wenv when it wasn't active, we could do so
