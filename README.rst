@@ -176,8 +176,8 @@ Let's look at the new wenv file that was just created. Notice the first function
 This function defines all of the parameters that the wenv framework can use to
 help us work on a project. Let's focus on `WENV_DIR` for now.
 
-`WENV_DIR` (and `c()`/`wenv_dirs`)
-++++++++++++++++++++++++++++++++++
+`WENV_DIR`
+++++++++++
 
 Note that `WENV_DIR`'s value was automatically populated with our current
 working directory. That's because we passed the `-d` flag to `wenv new` -- if
@@ -191,6 +191,9 @@ allows us to navigate to anywhere in the filesystem and always have a way to get
 back to the base directory of our project. Further, if we wanted to browse to the
 base directory of the `hello-world` wenv when it wasn't active, we could do so
 by running `wenv cd hello-world`.
+
+`c() and `wenv_dirs`
+++++++++++++++++++++
 
 Another use of the `$WENV_DIR` value is within your wenv-specific variables and
 functions. For example, take a look at the line that declares an associative
