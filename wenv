@@ -181,23 +181,23 @@ wenv_exec() {
 wenv_stop() {
     local usage="\
 USAGE
-  wenv stop [-h] - Shutdown the active working environment.
+  wenv stop [-h] [-f] [-s] - Shutdown the active working environment.
 
 OPTIONS
+  -f    Force shutdown even if \`shutdown_wenv()\` fails. Default: false.
   -s    Run the active wenv's shutdown function. Default: true.
   -h    Display this help message.
 "
 
     [[ -z "$WENV" ]] && return 1
 
-    # local flag_f=0
+    local flag_f=0
     local flag_s=1
-    while getopts ":sh" opt; do
+    while getopts ":fsh" opt; do
         case $opt in
-            # force stop, regardless of git working tree state
-            # f)
-            #     flag_f=0
-            #     ;;
+            f)
+                flag_f=1
+                ;;
             s)
                 flag_s=0
                 ;;
@@ -223,7 +223,8 @@ OPTIONS
 
     [[ -n "$WENV_TASK" ]] && task "$WENV_TASK" stop
 
-    ((flag_s == 1)) && shutdown_wenv &> /dev/null
+    ((flag_s == 1)) && shutdown_wenv
+    [[ $? -ne 0 ]] && ((flag_f != 1)) && { echo "error: shutdown_wenv failed" ; return 1 }
     wenv_clean_up
 }
 

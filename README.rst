@@ -315,7 +315,31 @@ Taskwarrior task, then refocus on the larger pane:
         tmux select-pane -U
     }
 
-Speaking of Taskwarrior...
+Note that `wenv start` will `cd` into `"$WENV_DIR"` before `startup_wenv()` is
+run, you can assume you'll be in the wenv's base directory when writing your
+`startup_wenv()` functions.
+
+# TODO: mention layouts (+ clean up examples)
+
+`shutdown_wenv()`
+++++++++++++++++
+
+This is essentially the opposite of `startup_wenv()` -- it runs whenver you
+deactivate the current wenv with `wenv stop`. So, if we have a wenv whose
+`startup_wenv()` function runs `sudo systemctl start docker`, our
+`shutdown_wenv()` might be:
+
+.. code-block::bash
+
+    shutdown_wenv() {
+        sudo systemctl stop docker
+    }
+
+Note that if `shutdown_wenv()` returns a non-zero exit code, the wenv will not
+be deactivated.
+
+If the project is a Git repo, you might want to check if there are uncommitted
+changes before stopping the wenv. Note, howe
 
 `WENV_PROJECT` and `WENV_TASK`
 ++++++++++++++++++++++++++++++
@@ -338,7 +362,7 @@ Summary
 
 -   `startup_wenv()` is run whenever you start the wenv. This function is good
     for starting up any necessary daemons, setting up a tmux layout, opening
-    programs (e.g. a text editor), etc.
+    programs (e.g. a text editor), etc. It will run inside `"$WENV_DIR"`.
 -   `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
     daemons started by `startup_wenv()`, and do any other cleanup.
 -   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
