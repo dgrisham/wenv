@@ -8,6 +8,8 @@ Perpetual WIP, likely to have bugs.
 
 **Note**: This README is currently in development.
 
+**TODO: mention layouts**
+
 Introduction
 ------------
 
@@ -164,8 +166,6 @@ Usage
 Example
 -------
 
-TODO: **need to explain tmux keybindings**
-
 A given project's wenv has two primary parts: a wenv definition, and any shell
 aliases/functions that are specific to the project. Let's start by creating a
 new directory for our wenv, then initializing the wenv in that directory.
@@ -278,8 +278,6 @@ Taskwarrior task, then refocus on the larger pane:
 Note that `wenv start` will `cd` into `"$WENV_DIR"` before `startup_wenv()` is
 run, you can assume you'll be in the wenv's base directory when writing your
 `startup_wenv()` functions.
-
-# TODO: mention layouts (+ clean up examples)
 
 `shutdown_wenv()`
 ~~~~~~~~~~~~~~~~
@@ -447,6 +445,20 @@ Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
 
 Note that `edit()` expects your editor to be specified in the `EDITOR`
 environment variable.
+
+tmux
+~~~~
+
+A wenv that opens in tmux sets a few tmux keybindings for opening new
+panes/windows and activating the current wenv in them. By default, these are
+bound to:
+
+-   `-`: Split window vertically
+-   `\`: Split window horizontally
+-   `c`: New window
+
+These are currently hardcoded in the `wenv_start()` function, so if you want to
+change the bindings you'll have to edit that function.
 
 Summary
 -------

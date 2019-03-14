@@ -1,0 +1,88 @@
+#!/bin/zsh
+
+wenv_def() {
+    WENV_DIR="$HOME/scratch/webdev-practice"
+    WENV_DEPS=()
+    WENV_PROJECT=''
+    WENV_TASK=''
+
+    startup_wenv() {
+        wenv_tmux_split -n http window 'python -m http.server'
+        tmux select-window -t 1
+        edit -r js
+    }
+    shutdown_wenv() {}
+    bootstrap_wenv() {}
+}
+
+declare -Ag wenv_dirs=(
+    ['js']="$WENV_DIR/js"
+)
+declare -Ag wenv_files=(
+    ['js']='js/main.js'
+)
+
+c() {
+    local flag_r=0
+    while getopts ":r" opt; do
+        case $opt in
+            r) flag_r=1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local input="$1"
+    shift
+    [ "${wenv_dirs[$input]+0}" ] || return 1
+    cd "${wenv_dirs[$input]}"
+    if (( flag_r == 1 )); then
+        [[ ! -v wname ]] && local wname="$input"
+        tmux rename-window "$wname"
+    fi
+}
+_c() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="${(k)wenv_dirs[@]}"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _c c
+
+edit() {
+    local flag_r=0
+    while getopts ":r" opt; do
+        case $opt in
+            r) flag_r=1 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    input="$1"
+    shift
+    [ "${wenv_files[$input]+0}" ] || return 1
+    (( flag_r == 1 )) && tmux rename-window "$input"
+    eval $EDITOR $@ "$WENV_DIR/${wenv_files[$input]}"
+}
+_edit() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="${(k)wenv_files[@]}"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _edit edit
