@@ -384,8 +384,8 @@ start hello-world`. When you run `wenv stop`, `task stop 82` will run. This
 further reduces interaction with Taskwarrior by automatically managing active
 tasks based on the current project.
 
-`c() and `wenv_dirs`
-~~~~~~~~~~~~~~~~~~~~
+`c()` and `wenv_dirs`
+~~~~~~~~~~~~~~~~~~~~~
 
 Take a look at the line that declares an associative array called `wenv_dirs`,
 and also notice the provided `c()` function a few lines below that. The `c()`
