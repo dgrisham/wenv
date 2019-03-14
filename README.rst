@@ -277,7 +277,9 @@ Taskwarrior task, then refocus on the larger pane:
 
 Note that `wenv start` will `cd` into `"$WENV_DIR"` before `startup_wenv()` is
 run, you can assume you'll be in the wenv's base directory when writing your
-`startup_wenv()` functions.
+`startup_wenv()` functions. Additionally, your wenv aliases will be sourced once
+`startup_wenv()` is called. So, `startup_wenv()` can take advantage of any
+environment variables/functions defined outside of `wenv_def()`.
 
 `shutdown_wenv()`
 ~~~~~~~~~~~~~~~~
@@ -387,10 +389,11 @@ tasks based on the current project.
 `c()` and `wenv_dirs`
 ~~~~~~~~~~~~~~~~~~~~~
 
-Take a look at the line that declares an associative array called `wenv_dirs`,
-and also notice the provided `c()` function a few lines below that. The `c()`
-function accepts any argument that is a key in `wenv_dirs` and `cd`'s into the
-corresponding value. So, if `wenv_dirs` is defined like so:
+If you create a new wenv with the default template, you'll see a line that
+declares an associative array called `wenv_dirs`, and also a provided `c()`
+function a few lines below that. The `c()` function accepts any argument that
+is a key in `wenv_dirs` and `cd`'s into the corresponding value. So, if
+`wenv_dirs` is defined like so:
 
 .. code-block:: bash
 
