@@ -181,23 +181,23 @@ wenv_exec() {
 wenv_stop() {
     local usage="\
 USAGE
-  wenv stop [-h] - Shutdown the active working environment.
+  wenv stop [-h] [-f] [-s] - Shutdown the active working environment.
 
 OPTIONS
+  -f    Force shutdown even if \`shutdown_wenv()\` fails. Default: false.
   -s    Run the active wenv's shutdown function. Default: true.
   -h    Display this help message.
 "
 
     [[ -z "$WENV" ]] && return 1
 
-    # local flag_f=0
+    local flag_f=0
     local flag_s=1
-    while getopts ":sh" opt; do
+    while getopts ":fsh" opt; do
         case $opt in
-            # force stop, regardless of git working tree state
-            # f)
-            #     flag_f=0
-            #     ;;
+            f)
+                flag_f=1
+                ;;
             s)
                 flag_s=0
                 ;;
@@ -223,7 +223,8 @@ OPTIONS
 
     [[ -n "$WENV_TASK" ]] && task "$WENV_TASK" stop
 
-    ((flag_s == 1)) && shutdown_wenv &> /dev/null
+    ((flag_s == 1)) && shutdown_wenv
+    [[ $? -ne 0 ]] && ((flag_f != 1)) && { echo "error: shutdown_wenv failed" ; return 1 }
     wenv_clean_up
 }
 
@@ -422,6 +423,7 @@ USAGE
   wenv cd [-r] [-h] <wenv> - cd into <wenv>'s base directory.
 
 OPTIONS
+  -r    Rename the current tmux window to the designated wenv's name.
   -h    Display this help message.
 
 DESCRIPTION
@@ -453,14 +455,13 @@ DESCRIPTION
 
     if [[ -z "$1" ]]; then
         [[ ! -z "$WENV_DIR" ]] && cd "$WENV_DIR" &> /dev/null
+        ((flag_r == 1)) && tmux rename-window "$WENV"
         return 0
     fi
     if ! is_wenv "$1"; then
         return 1
     fi
     local wenv="$1"
-
-    ((flag_r == 1)) && tmux rename-window "$wenv"
 
     # TODO: need a better way to do this
     # load and cd to input wenv
@@ -470,6 +471,8 @@ DESCRIPTION
     # reload the wenv that was previously running
     wenv_load "$WENV"
     unset_quiet -f startup_wenv
+
+    ((flag_r == 1)) && tmux rename-window "$wenv"
 
     return 0
 }
@@ -565,11 +568,12 @@ OPTIONS
 wenv_task_add() {
     local usage="\
 USAGE
-  wenv task add [-h] [-w <wenv>] [<attrs>] <desc> - Add a task to the active
+  wenv task add [-h] [-w <wenv>] [<mods>] <desc> - Add a task to the active
                                                     wenv's task list.
 
 OPTIONS
   -w <wenv>    Add a task to <wenv>'s task list, instead of the active wenv's.
+  <mods>       List of Taskwarrior modifiers. See `man task` for more details.
   -h           Display this help message.
 
 DESCRIPTION
@@ -676,10 +680,33 @@ DESCRIPTION
 }
 
 wenv_tmux_split() {
-    while getopts ":n:" opt; do
+usage="\
+USAGE
+  wenv_tmux_split [-h] [-n <name>] h|v|c [<cmd>] - Open a new tmux pane/window.
+
+OPTIONS
+  -v <name> Set the name of the tmux window to \`<name>\`.
+  -h        Display this help message.
+
+ARGUMENTS
+  h|v|c    \`h\`, \`v\`, or \`c\` to open a horizontal pane, vertical pane, or new
+           window, resp.
+  <cmd>    The command to run in the newly-opened terminal, if any.
+"
+
+    while getopts ":n:h" opt; do
         case $opt in
-            n) [[ ! -z "$OPTARG" ]] && local name="$OPTARG" ;;
-            *) echo "invalid flag: $opt" ; exit 1 ;;
+            n)
+                [[ ! -z "$OPTARG" ]] && local name="$OPTARG"
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
         esac
     done
     shift $((OPTIND-1))
@@ -699,7 +726,12 @@ wenv_tmux_split() {
             split_args=('new-window')
             [[ -n "$name" ]] && split_args+=('-n' "$name")
             ;;
-        *)
+        h)
+            echo "$usage"
+            return 0
+            ;;
+        \?)
+            echo "unknown option: -$OPTARG" >&2
             return 1
             ;;
     esac

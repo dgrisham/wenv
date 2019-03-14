@@ -1,4 +1,5 @@
 .. default-role:: literal
+.. sectnum::
 
 wenv: A Shell Workflow Tool
 ===========================
@@ -6,6 +7,8 @@ wenv: A Shell Workflow Tool
 Perpetual WIP, likely to have bugs.
 
 **Note**: This README is currently in development.
+
+**TODO: mention layouts**
 
 Introduction
 ------------
@@ -103,7 +106,7 @@ painless. The following steps (or variations on them) should get the job done:
     your projects. If you're in this repository, you can run the following lines
     to complete this step:
 
-    ::
+    .. code-block:: bash
 
         mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/wenv/wenvs"
         cp template "${XDG_CONFIG_HOME:-$HOME/.config}/wenv
@@ -111,7 +114,7 @@ painless. The following steps (or variations on them) should get the job done:
 4.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
-    ::
+    .. code-block:: bash
 
         eval "$WENV_EXEC"
 
@@ -120,7 +123,7 @@ painless. The following steps (or variations on them) should get the job done:
 5.  Put the `completion.bash` file wherever you like, and add the following
     lines to source it in your Zsh profile (or another Zsh startup file):
 
-    ::
+    .. code-block:: bash
 
         # enable bash completion functions
         autoload bashcompinit
@@ -128,26 +131,15 @@ painless. The following steps (or variations on them) should get the job done:
         # source wenv completion file
         source <path-to-completion.bash>
 
-dependencies
+Dependencies
 ~~~~~~~~~~~~
 
 -   Zsh
 -   tmux
--   taskwarrior
-
-Example
-~~~~~~~
-
-A given project's wenv has two primary parts: a wenv definition, and any shell
-aliases/functions that are specific to the project.
-
-A given project's wenv is defined by `zsh` functions and environment variables.
-As an example,
-
-TODO: gif webm movie thing
+-   Taskwarrior
 
 Usage
-~~~~~
+-----
 
 ::
 
@@ -171,3 +163,324 @@ Usage
 
     Run `wenv <cmd> -h` for more information on a given subcommand <cmd>.
 
+Example
+-------
+
+A given project's wenv has two primary parts: a wenv definition, and any shell
+aliases/functions that are specific to the project. Let's start by creating a
+new directory for our wenv, then initializing the wenv in that directory.
+
+.. code-block:: bash
+
+    $ cd ~
+    $ mkdir hello-world
+    $ cd hello-world
+    $ wenv new -d hello-world
+
+Running this command will copy the wenv `template` file into a new wenv file
+called `hello-world`. The template file provides a base structure for a new
+wenv.
+
+Let's look at the new wenv file that was just created. Notice the first function,
+`wenv_def()`:
+
+.. code-block:: bash
+
+    wenv_def() {
+        WENV_DIR="/home/grish/hello-world"
+        WENV_DEPS=()
+        WENV_PROJECT=''
+        WENV_TASK=''
+
+        startup_wenv() {}
+        bootstrap_wenv() {}
+        shutdown_wenv() {}
+    }
+
+This function defines all of the parameters that the wenv framework can use to
+help us work on a project. Let's focus on `WENV_DIR` for now.
+
+`WENV_DIR`
+~~~~~~~~~~
+
+Note that `WENV_DIR`'s value was automatically populated with our current
+working directory. That's because we passed the `-d` flag to `wenv new` -- if
+we hadn't, the value would just be an empty string.
+
+The `WENV_DIR` variable has a few purposes. One is via the `wenv cd` command,
+which is used to change into a given wenv's directory. When run without an
+argument, this command will `cd` into the base directory of the active wenv.
+So, in our case, running `wenv cd` would `cd` into `"~/hello-world"`. This
+allows us to navigate to anywhere in the filesystem and always have a way to get
+back to the base directory of our project. Further, if we wanted to browse to the
+base directory of the `hello-world` wenv when it wasn't active, we could do so
+by running `wenv cd hello-world`.
+
+`startup_wenv()`
+~~~~~~~~~~~~~~~~
+
+Now let's talk about what you can do when starting a wenv. The `startup_wenv()`
+function is run whenever you activate a wenv with `wenv start <wenv>`. This can
+be useful for running startup commands, e.g.
+
+.. code-block:: bash
+
+    startup_wenv() {
+        sudo systemctl start docker
+    }
+
+Or opening programs like text editors:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        $EDITOR main.cpp
+    }
+
+Additionally, the utility function `wenv_tmux_split` can be used to define an
+initial tmux layout for the project. `wenv_tmux_split` will create a new tmux
+pane or window and load the active wenv's environment in the new pane/window. It
+accepts two arguments:
+
+1.  `h`, `v`, or `c` to specify whether to open a horizontal pane, vertical
+    pane, or new window, resp.
+2.  (Optional) The command to run in the newly opened pane/window.
+
+So, we can start our wenv with a horizontal split with the startup function:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        wenv_tmux_split h
+    }
+
+We can also open a file in our text editor in the new pane:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        wenv_tmux_split h "$EDITOR main.cpp"
+    }
+
+Other tmux commands can be useful in specifying a layout as well. For example, if
+we wanted to create a small vertical pane under the initial pane, show the active
+Taskwarrior task, then refocus on the larger pane:
+
+.. code-block:: bash
+
+    startup_wenv() {
+        wenv_tmux_split v
+        tmux resize-pane -y 7
+        task active
+        tmux select-pane -U
+    }
+
+Note that `wenv start` will `cd` into `"$WENV_DIR"` before `startup_wenv()` is
+run, you can assume you'll be in the wenv's base directory when writing your
+`startup_wenv()` functions.
+
+`shutdown_wenv()`
+~~~~~~~~~~~~~~~~
+
+This is essentially the opposite of `startup_wenv()` -- it runs whenver you
+deactivate the current wenv with `wenv stop`. So, if we have a wenv whose
+`startup_wenv()` function runs `sudo systemctl start docker`, our
+`shutdown_wenv()` might be:
+
+.. code-block::bash
+
+    shutdown_wenv() {
+        sudo systemctl stop docker
+    }
+
+Note, however, that the `wenv stop` command doesn't deactivate the wenv if
+`shutdown_wenv()` returns a non-zero exit code. You can always pass the `-f`
+flag to `wenv stop` to close the wenv even if `shutdown_wenv()` fails.
+
+`WENV_DEPS`
+~~~~~~~~~~~
+
+`WENV_DEPS` is an array of wenvs that this wenv is dependent on. Essentially,
+every wenv in `WENV_DEPS` is sourced when starting the wenv. Let's take the
+example of a wenv for IPTB (which we'll call `iptb`):
+
+.. code-block::bash
+
+    wenv_def() {
+        # ...
+    }
+
+    export IPTB_ROOT="$HOME/.iptb"
+
+Let's say we wanted to create another wenv that also used IPTB, and therefore
+also needs to set the `IPTB_ROOT` variable. We *could* initialize the new wenv
+with the `iptb` wenv as a base using `wenv new -i iptb`, so our new wenv would
+have the same `export` command. However, this approach isn't particularly
+maintainable -- e.g. if the IPTB developers decide to rename the `IPTB_ROOT`
+variable, all wenv's that use IPTB would have to update. Alternatively, we could
+just source the `iptb` wenv and get all of its environment variables every time
+we start any wenv that uses IPTB. To do this, we'd add `iptb` to our
+`WENV_DEPS`:
+
+.. code-block::bash
+
+    wenv_def() {
+        WENV_DIR="..."
+        WENV_DEPS=('iptb')
+    }
+
+Taskwarrior Functionality
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As mentioned in the introduction, I thought it would be useful to wrap
+Taskwarrior commands within wenv commands. This would allow me to reduce mental
+overhead of using Taskwarrior. Taskwarrior essentially maintains a global task
+list and allows you to interact with subsets based on filters you provide. Since
+the wenv environment contains information about the current project, wenv
+commands can automatically pass the project name to Taskwarrior. This makes
+adding and showing tasks related to the project easier, because you don't have
+to type in the project name every time, and less error-prone, since the shell is
+filling that field in for you.
+
+As an example, let's say the `hello-world` wenv is active and we want to add a
+task for this project with the description 'add new feature'. We'd use the wenv
+command:
+
+.. code-block::bash
+
+    wenv task add 'add new feature'
+
+This would consequently run the following Taskwarrior command:
+
+.. code-block::bash
+
+    task add project:'hello-world' -- 'add new feature'
+
+Then, if we want to show the tasks associated with the current wenv, we'd run
+`wenv task show`. In this case, the output would look something like:
+
+.. code-block::bash
+
+    $ wenv task show
+    hello-world
+
+    ID Description
+    82 add new feature
+
+    1 task
+
+Note that simply running `wenv task` defaults to `wenv task show`.
+
+By default, the Taskwarrior `project` attribute is set to the name of the wenv.
+To override this with a different value, set `WENV_PROJECT` to a different
+string in `wenv_def()`.
+
+Additionally, the wenv framework can also automatically start and stop a
+project's active tasks. This is done by filling in the `WENV_TASK` value in
+`wenv_def()`. So, if we wanted to set the active task for our `hello-world`
+project to our previously created task with `ID` value `82`, we'd set
+`WENV_TASK=82`. Then `task start 82` will run the next time you run `wenv
+start hello-world`. When you run `wenv stop`, `task stop 82` will run. This
+further reduces interaction with Taskwarrior by automatically managing active
+tasks based on the current project.
+
+`c() and `wenv_dirs`
+~~~~~~~~~~~~~~~~~~~~
+
+Take a look at the line that declares an associative array called `wenv_dirs`,
+and also notice the provided `c()` function a few lines below that. The `c()`
+function accepts any argument that is a key in `wenv_dirs` and `cd`'s into the
+corresponding value. So, if `wenv_dirs` is defined like so:
+
+.. code-block:: bash
+
+    declare -Ag wenv_dirs=(
+        ['src']="$WENV_DIR/src"
+    )
+
+Then running `c src` will change to the `"$WENV_DIR/src"` directory. This is
+meant to provide a shortcut for `cd`'ing into directories related to the project
+other than `$WENV_DIR`. We can also, of course, add entries for directories
+outside of the wenv:
+
+.. code-block:: bash
+
+    declare -Ag wenv_dirs=(
+        ['src']="$WENV_DIR/src"
+        ['http']="/srv/http"
+    )
+
+`c()` also comes with a predefined completion function for the keys of
+`wenv_dirs`, so you can tab-complete all possible inputs (in this case, `src`
+and `http`).
+
+`edit()` and `wenv_files`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`c()` and `wenv_dirs` are meant to provide a convenient interface for nimbly
+navigating frequently visited directories. `edit()` and `wenv_files` accomplish
+a similar goal, but with opening sets of files in your text editor. For example,
+if we had a `main.cpp` file that we wanted to open by running `edit main`, we'd
+add the following entry to `wenv_files`:
+
+.. code-block:: bash
+
+    declare -Ag wenv_files=(
+        ['main']='main.cpp'
+    )
+
+By default, the `edit()` function opens files from the project directory, so we
+specify `main.cpp` instead of `"$WENV_DIR/main.cpp"`. We can also use
+Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
+
+.. code-block:: bash
+
+    declare -Ag wenv_files=(
+        ['main']='main.cpp'
+        ['class']='class.{cpp,h}' # open the header and impl files for `class`
+        ['cpp']='*.cpp' # open all cpp files
+        ['src']='$(echo src/* | xargs -n1 | sort -r)' # open all files in `src`,
+                                                      # sorted in reverse order
+    )
+
+Note that `edit()` expects your editor to be specified in the `EDITOR`
+environment variable.
+
+tmux
+~~~~
+
+A wenv that opens in tmux sets a few tmux keybindings for opening new
+panes/windows and activating the current wenv in them. By default, these are
+bound to:
+
+-   `-`: Split window vertically
+-   `\`: Split window horizontally
+-   `c`: New window
+
+These are currently hardcoded in the `wenv_start()` function, so if you want to
+change the bindings you'll have to edit that function.
+
+Summary
+-------
+
+**Variables**
+
+-  `WENV_DIR`: The path to the base directory of this project.
+-  `WENV_DEPS`: An array whose elements are the names of the wenvs that this
+   wenv is dependent on.
+-  `WENV_PROJECT`: The value to use for the task's `project` attribute in
+   Taskwarrior.
+-  `WENV_TASK`: The wenv's current active task number.
+
+**Functions**
+
+-   `startup_wenv()` is run whenever you start the wenv. This function is good
+    for starting up any necessary daemons, setting up a tmux layout, opening
+    programs (e.g. a text editor), etc. It will run inside `"$WENV_DIR"`.
+-   `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
+    daemons started by `startup_wenv()`, and do any other cleanup.
+-   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
+    For example, this function might pull down a git repository for development
+    or check to ensure that all packages required by this wenv are installed.
+    You can run this function on a wenv `<wenv>` by running
+    `wenv bootstrap <wenv>`.
