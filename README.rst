@@ -454,7 +454,7 @@ panes/windows and activating the current wenv in them. By default, these are
 bound to:
 
 -   `-`: Split window vertically
--   `\`: Split window horizontally
+-   `\\`: Split window horizontally
 -   `c`: New window
 
 These are currently hardcoded in the `wenv_start()` function, so if you want to
