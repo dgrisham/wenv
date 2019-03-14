@@ -377,8 +377,62 @@ Taskwarrior Functionality (`WENV_PROJECT` and `WENV_TASK`)
 `WENV_PROJECT` and `WENV_TASK` are used to manage interactions with
 Taskwarrior. `WENV_PROJECT` is used to specify the string that should be used
 for the task's `project` `attribute
-<https://taskwarrior.org/docs/terminology.html#attribute>`_. For example, the
-`wenv task add <desc>` command # TODO
+<https://taskwarrior.org/docs/terminology.html#attribute>`_.
+
+Taskwarrior Functionality
++++++++++++++++++++++++++
+
+As mentioned in the introduction, I thought it would be useful to wrap
+Taskwarrior commands within wenv commands. This would allow me to reduce mental
+overhead of using Taskwarrior. Taskwarrior essentially maintains a global task
+list and allows you to interact with subsets based on filters you provide. Since
+the wenv environment contains information about the current project, wenv
+commands can automatically pass the project name to Taskwarrior. This makes
+adding and showing tasks related to the project easier, because you don't have
+to type in the project name every time, and less error-prone, since the shell is
+filling that field in for you.
+
+As an example, let's say the `hello-world` wenv is active and we want to add a
+task for this project with the description 'add new feature'. We'd use the wenv
+command:
+
+.. code-block::bash
+
+    wenv task add 'add new feature'
+
+This would consequently run the following Taskwarrior command:
+
+.. code-block::bash
+
+    task add project:'hello-world' -- 'add new feature'
+
+Then, if we want to show the tasks associated with the current wenv, we'd run
+`wenv task show`. In this case, the output would look something like:
+
+.. code-block::bash
+
+    $ wenv task show
+    hello-world
+
+    ID Description
+    82 add new feature
+
+    1 task
+
+Note that simply running `wenv task` defaults to `wenv task show`.
+
+By default, the Taskwarrior `project` attribute is set to the name of the wenv.
+To override this with a different value, set `WENV_PROJECT` to a different
+string in `wenv_def()`.
+
+Additionally, the wenv framework can also automatically start and stop a
+project's active tasks. This is done by filling in the `WENV_TASK` value in
+`wenv_def()`. So, if we wanted to set the active task for our `hello-world`
+project to our previously created task with `ID` value `82`, we'd set
+`WENV_TASK=82`. Then `task start 82` will run the next time you run `wenv
+start hello-world`. When you run `wenv stop`, `task stop 82` will run. This
+further reduces interaction with Taskwarrior by automatically managing active
+tasks based on the current project.
 
 Summary
 +++++++
@@ -390,7 +444,7 @@ Summary
    wenv is dependent on.
 -  `WENV_PROJECT`: The value to use for the task's `project` attribute in
    Taskwarrior.
--  `WENV_TASK`: The wenv's current primary task number.
+-  `WENV_TASK`: The wenv's current active task number.
 
 **Functions**
 
