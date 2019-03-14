@@ -335,16 +335,50 @@ deactivate the current wenv with `wenv stop`. So, if we have a wenv whose
         sudo systemctl stop docker
     }
 
-Note that if `shutdown_wenv()` returns a non-zero exit code, the wenv will not
-be deactivated.
+Note, however, that the `wenv stop` command doesn't deactivate the wenv if
+`shutdown_wenv()` returns a non-zero exit code. You can always pass the `-f`
+flag to `wenv stop` to close the wenv even if `shutdown_wenv()` fails.
 
-If the project is a Git repo, you might want to check if there are uncommitted
-changes before stopping the wenv. Note, howe
+`WENV_DEPS`
++++++++++++
 
-`WENV_PROJECT` and `WENV_TASK`
-++++++++++++++++++++++++++++++
+`WENV_DEPS` is an array of wenvs that this wenv is dependent on. Essentially,
+every wenv in `WENV_DEPS` is sourced when starting the wenv. Let's take the
+example of a wenv for IPTB (which we'll call `iptb`):
 
-# TODO
+.. code-block::bash
+
+    wenv_def() {
+        # ...
+    }
+
+    export IPTB_ROOT="$HOME/.iptb"
+
+Let's say we wanted to create another wenv that also used IPTB, and therefore
+also needs to set the `IPTB_ROOT` variable. We *could* initialize the new wenv
+with the `iptb` wenv as a base using `wenv new -i iptb`, so our new wenv would
+have the same `export` command. However, this approach isn't particularly
+maintainable -- e.g. if the IPTB developers decide to rename the `IPTB_ROOT`
+variable, all wenv's that use IPTB would have to update. Alternatively, we could
+just source the `iptb` wenv and get all of its environment variables every time
+we start any wenv that uses IPTB. To do this, we'd add `iptb` to our
+`WENV_DEPS`:
+
+.. code-block::bash
+
+    wenv_def() {
+        WENV_DIR="..."
+        WENV_DEPS=('iptb')
+    }
+
+Taskwarrior Functionality (`WENV_PROJECT` and `WENV_TASK`)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+`WENV_PROJECT` and `WENV_TASK` are used to manage interactions with
+Taskwarrior. `WENV_PROJECT` is used to specify the string that should be used
+for the task's `project` `attribute
+<https://taskwarrior.org/docs/terminology.html#attribute>`_. For example, the
+`wenv task add <desc>` command # TODO
 
 Summary
 +++++++
