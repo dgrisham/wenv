@@ -163,8 +163,8 @@ Usage
 
     Run `wenv <cmd> -h` for more information on a given subcommand <cmd>.
 
-Example
--------
+Walkthrough
+-----------
 
 A given project's wenv has two primary parts: a wenv definition, and any shell
 aliases/functions that are specific to the project. Let's start by creating a
