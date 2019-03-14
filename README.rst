@@ -128,15 +128,40 @@ painless. The following steps (or variations on them) should get the job done:
         # source wenv completion file
         source <path-to-completion.bash>
 
-dependencies
+Dependencies
 ~~~~~~~~~~~~
 
 -   Zsh
 -   tmux
--   taskwarrior
+-   Taskwarrior
+
+Usage
+-----
+
+::
+
+    USAGE
+      wenv [-h] <cmd> ...
+
+    OPTIONS
+      -h                    Display this help message.
+
+    SUBCOMMANDS
+      start <wenv>          Start the working environment <wenv>.
+      stop                  Stop the current working environment.
+      new                   Create a new working environment.
+      edit <wenv>           Edit the wenv file for <wenv>.
+      rename <old> <new>    Rename wenv <old> to <new>.
+      remove <wenv>         Delete the wenv file for <wenv>.
+      source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
+      cd <wenv>             Change to <wenv>'s base directory.
+      task <cmd>            Access the project task list.
+      bootstrap <wenv>      Run <wenv>'s bootstrap function.
+
+    Run `wenv <cmd> -h` for more information on a given subcommand <cmd>.
 
 Example
-~~~~~~~
+-------
 
 TODO: **need to explain tmux keybindings**
 
@@ -177,7 +202,7 @@ This function defines all of the parameters that the wenv framework can use to
 help us work on a project. Let's focus on `WENV_DIR` for now.
 
 `WENV_DIR`
-++++++++++
+~~~~~~~~~~
 
 Note that `WENV_DIR`'s value was automatically populated with our current
 working directory. That's because we passed the `-d` flag to `wenv new` -- if
@@ -192,72 +217,8 @@ back to the base directory of our project. Further, if we wanted to browse to th
 base directory of the `hello-world` wenv when it wasn't active, we could do so
 by running `wenv cd hello-world`.
 
-`c() and `wenv_dirs`
-++++++++++++++++++++
-
-Another use of the `$WENV_DIR` value is within your wenv-specific variables and
-functions. For example, take a look at the line that declares an associative
-array called `wenv_dirs`, and also notice the provided `c()` function a few
-lines below that. The `c()` function accepts any argument that is a key in
-`wenv_dirs` and `cd`'s into the corresponding value. So, if `wenv_dirs` is
-defined like so:
-
-.. code-block:: bash
-
-    declare -Ag wenv_dirs=(
-        ['src']="$WENV_DIR/src"
-    )
-
-Then running `c src` will change to the `"$WENV_DIR/src"` directory. This is
-meant to provide a shortcut for `cd`'ing into directories related to the project
-other than `$WENV_DIR`. We can also, of course, add entries for directories
-outside of the wenv:
-
-.. code-block:: bash
-
-    declare -Ag wenv_dirs=(
-        ['src']="$WENV_DIR/src"
-        ['http']="/srv/http"
-    )
-
-`c()` also comes with a predefined completion function for the keys of
-`wenv_dirs`, so you can tab-complete all possible inputs (in this case, `src`
-and `http`).
-
-`edit()` and `wenv_files`
-+++++++++++++++++++++++++
-
-`c()` and `wenv_dirs` are meant to provide a convenient interface for nimbly
-navigating frequently visited directories. `edit()` and `wenv_files` accomplish
-a similar goal, but with opening sets of files in your text editor. For example,
-if we had a `main.cpp` file that we wanted to open by running `edit main`, we'd
-add the following entry to `wenv_files`:
-
-.. code-block:: bash
-
-    declare -Ag wenv_files=(
-        ['main']='main.cpp'
-    )
-
-By default, the `edit()` function opens files from the project directory, so we
-specify `main.cpp` instead of `"$WENV_DIR/main.cpp"`. We can also use
-Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
-
-.. code-block:: bash
-
-    declare -Ag wenv_files=(
-        ['main']='main.cpp'
-        ['class']='class.{cpp,h}' # open the header and impl files for `class`
-        ['cpp']='*.cpp' # open all cpp files
-        ['src']='$(echo src/* | xargs -n1 | sort -r)' # open all files in `src`,
-                                                      # sorted in reverse order
-    )
-
-Note that `edit()` expects your editor to be specified in the `EDITOR`
-environment variable.
-
 `startup_wenv()`
-++++++++++++++++
+~~~~~~~~~~~~~~~~
 
 Now let's talk about what you can do when starting a wenv. The `startup_wenv()`
 function is run whenever you activate a wenv with `wenv start <wenv>`. This can
@@ -322,7 +283,7 @@ run, you can assume you'll be in the wenv's base directory when writing your
 # TODO: mention layouts (+ clean up examples)
 
 `shutdown_wenv()`
-++++++++++++++++
+~~~~~~~~~~~~~~~~
 
 This is essentially the opposite of `startup_wenv()` -- it runs whenver you
 deactivate the current wenv with `wenv stop`. So, if we have a wenv whose
@@ -340,7 +301,7 @@ Note, however, that the `wenv stop` command doesn't deactivate the wenv if
 flag to `wenv stop` to close the wenv even if `shutdown_wenv()` fails.
 
 `WENV_DEPS`
-+++++++++++
+~~~~~~~~~~~
 
 `WENV_DEPS` is an array of wenvs that this wenv is dependent on. Essentially,
 every wenv in `WENV_DEPS` is sourced when starting the wenv. Let's take the
@@ -371,16 +332,8 @@ we start any wenv that uses IPTB. To do this, we'd add `iptb` to our
         WENV_DEPS=('iptb')
     }
 
-Taskwarrior Functionality (`WENV_PROJECT` and `WENV_TASK`)
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-`WENV_PROJECT` and `WENV_TASK` are used to manage interactions with
-Taskwarrior. `WENV_PROJECT` is used to specify the string that should be used
-for the task's `project` `attribute
-<https://taskwarrior.org/docs/terminology.html#attribute>`_.
-
 Taskwarrior Functionality
-+++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As mentioned in the introduction, I thought it would be useful to wrap
 Taskwarrior commands within wenv commands. This would allow me to reduce mental
@@ -434,8 +387,70 @@ start hello-world`. When you run `wenv stop`, `task stop 82` will run. This
 further reduces interaction with Taskwarrior by automatically managing active
 tasks based on the current project.
 
+`c() and `wenv_dirs`
+~~~~~~~~~~~~~~~~~~~~
+
+Take a look at the line that declares an associative array called `wenv_dirs`,
+and also notice the provided `c()` function a few lines below that. The `c()`
+function accepts any argument that is a key in `wenv_dirs` and `cd`'s into the
+corresponding value. So, if `wenv_dirs` is defined like so:
+
+.. code-block:: bash
+
+    declare -Ag wenv_dirs=(
+        ['src']="$WENV_DIR/src"
+    )
+
+Then running `c src` will change to the `"$WENV_DIR/src"` directory. This is
+meant to provide a shortcut for `cd`'ing into directories related to the project
+other than `$WENV_DIR`. We can also, of course, add entries for directories
+outside of the wenv:
+
+.. code-block:: bash
+
+    declare -Ag wenv_dirs=(
+        ['src']="$WENV_DIR/src"
+        ['http']="/srv/http"
+    )
+
+`c()` also comes with a predefined completion function for the keys of
+`wenv_dirs`, so you can tab-complete all possible inputs (in this case, `src`
+and `http`).
+
+`edit()` and `wenv_files`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`c()` and `wenv_dirs` are meant to provide a convenient interface for nimbly
+navigating frequently visited directories. `edit()` and `wenv_files` accomplish
+a similar goal, but with opening sets of files in your text editor. For example,
+if we had a `main.cpp` file that we wanted to open by running `edit main`, we'd
+add the following entry to `wenv_files`:
+
+.. code-block:: bash
+
+    declare -Ag wenv_files=(
+        ['main']='main.cpp'
+    )
+
+By default, the `edit()` function opens files from the project directory, so we
+specify `main.cpp` instead of `"$WENV_DIR/main.cpp"`. We can also use
+Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
+
+.. code-block:: bash
+
+    declare -Ag wenv_files=(
+        ['main']='main.cpp'
+        ['class']='class.{cpp,h}' # open the header and impl files for `class`
+        ['cpp']='*.cpp' # open all cpp files
+        ['src']='$(echo src/* | xargs -n1 | sort -r)' # open all files in `src`,
+                                                      # sorted in reverse order
+    )
+
+Note that `edit()` expects your editor to be specified in the `EDITOR`
+environment variable.
+
 Summary
-+++++++
+-------
 
 **Variables**
 
@@ -458,29 +473,3 @@ Summary
     or check to ensure that all packages required by this wenv are installed.
     You can run this function on a wenv `<wenv>` by running
     `wenv bootstrap <wenv>`.
-
-Usage
-~~~~~
-
-::
-
-    USAGE
-      wenv [-h] <cmd> ...
-
-    OPTIONS
-      -h                    Display this help message.
-
-    SUBCOMMANDS
-      start <wenv>          Start the working environment <wenv>.
-      stop                  Stop the current working environment.
-      new                   Create a new working environment.
-      edit <wenv>           Edit the wenv file for <wenv>.
-      rename <old> <new>    Rename wenv <old> to <new>.
-      remove <wenv>         Delete the wenv file for <wenv>.
-      source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
-      cd <wenv>             Change to <wenv>'s base directory.
-      task <cmd>            Access the project task list.
-      bootstrap <wenv>      Run <wenv>'s bootstrap function.
-
-    Run `wenv <cmd> -h` for more information on a given subcommand <cmd>.
-
