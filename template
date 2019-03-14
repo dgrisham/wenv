@@ -28,8 +28,7 @@ c() {
     [ "${wenv_dirs[$input]+0}" ] || return 1
     cd "${wenv_dirs[$input]}"
     if (( flag_r == 1 )); then
-        [[ ! -v wname ]] && local wname="$input"
-        tmux rename-window "$wname"
+        tmux rename-window "$input"
     fi
 }
 _c() {
@@ -60,7 +59,7 @@ edit() {
     input="$1"
     shift
     [ "${wenv_files[$input]+0}" ] || return 1
-    (( flag_r == 1 )) && tmux rename-window "$wname"
+    (( flag_r == 1 )) && tmux rename-window "$input"
     eval $EDITOR $@ "$WENV_DIR/${wenv_files[$input]}"
 }
 _edit() {
