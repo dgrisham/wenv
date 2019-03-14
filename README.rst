@@ -463,8 +463,8 @@ bound to:
 These are currently hardcoded in the `wenv_start()` function, so if you want to
 change the bindings you'll have to edit that function.
 
-Summary
--------
+Wenv Environment Summary
+------------------------
 
 **Variables**
 
@@ -487,3 +487,10 @@ Summary
     or check to ensure that all packages required by this wenv are installed.
     You can run this function on a wenv `<wenv>` by running
     `wenv bootstrap <wenv>`.
+
+Examples
+--------
+
+Check out the `examples`__ directory for example wenvs with descriptions.
+
+__ examples/

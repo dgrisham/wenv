@@ -1,5 +1,28 @@
 #!/bin/zsh
 
+# This is a simple example of a wenv that starts an environment for a toy web
+# development environment. The WENV_DIR is just set to the base directory of my
+# toy website. The diretory tree for this project looks like:
+#
+# $ tree
+# .
+# ├── css
+# │   └── styles.css
+# ├── index.html
+# └── js
+#     └── main.js
+#
+# Now look at the startup_wenv(). This starts by using wenv_tmux_split() to
+# open a new window, named 'http', and run the command 'python -m http.server'
+# (to run a simple http server in the base directory of the wenv). After the
+# first command runs, we'll be in the second tmux window. To get back to the
+# first, we use the `tmux select-window` command. Then we use edit() to open
+# the Javascript file main.js, wich works because 'js' maps to 'main.js' in
+# wenv_files. We pass the -r flag to edit() to rename the current tmux window
+# to 'js'. The result of all of this is: two tmux windows, the first named 'js'
+# with main.js opened in your editor, and the second named 'http' that contains
+# a running python HTTP server.
+
 wenv_def() {
     WENV_DIR="$HOME/scratch/webdev-practice"
     WENV_DEPS=()
@@ -17,9 +40,12 @@ wenv_def() {
 
 declare -Ag wenv_dirs=(
     ['js']="$WENV_DIR/js"
+    ['css']="$WENV_DIR/css"
 )
 declare -Ag wenv_files=(
+    ['html']='index.html'
     ['js']='js/main.js'
+    ['css']='css/styles.css'
 )
 
 c() {
