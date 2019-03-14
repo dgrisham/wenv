@@ -379,7 +379,7 @@ OPTIONS
 wenv_source() {
     local usage="\
 USAGE
-  wenv source [<wenv>, ...] [-h] - Source one or more wenvs.
+  wenv source [-h] [<wenv>, ...] - Source one or more wenvs.
 
 OPTIONS
   -h    Display this help message.
