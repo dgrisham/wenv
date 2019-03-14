@@ -1,4 +1,5 @@
 .. default-role:: literal
+.. sectnum::
 
 wenv: A Shell Workflow Tool
 ===========================
@@ -168,8 +169,6 @@ TODO: **need to explain tmux keybindings**
 A given project's wenv has two primary parts: a wenv definition, and any shell
 aliases/functions that are specific to the project. Let's start by creating a
 new directory for our wenv, then initializing the wenv in that directory.
-
-TODO: better to start wenv here then continue example from there?
 
 .. code-block:: bash
 
