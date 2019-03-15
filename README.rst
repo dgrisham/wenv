@@ -339,6 +339,34 @@ adding and showing tasks related to the project easier, because you don't have
 to type in the project name every time, and less error-prone, since the shell is
 filling that field in for you.
 
+Taskwarrior Config
+++++++++++++++++++
+
+If you're new to Taskwarrior, the following `taskrc` example should get you
+started (there are many Taskwarrior features beyond what's used here):
+
+.. code-block:: bash
+
+    data.location=~/.task
+
+    include /usr/share/doc/task/rc/dark-gray-256.theme
+
+    color.active=black on white
+    report.active.columns=id,project,description
+    report.active.labels=ID,Project,Description
+
+    report.project.columns=id,description
+    report.project.labels=ID,Description
+    report.project.filter=(status:pending or status:waiting)
+
+This sets the two task reports used by wenvs: `active` and `project`. The
+`active` report is used for showing all active tasks (which you can see by
+running `task active`), while the `project` report shows all tasks related to
+a given project.
+
+Taskwarrior Wenv Commands
++++++++++++++++++++++++++
+
 As an example, let's say the `hello-world` wenv is active and we want to add a
 task for this project with the description 'add new feature'. We'd use the wenv
 command:
