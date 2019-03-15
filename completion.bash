@@ -1,6 +1,6 @@
 _wenv_comp() {
     COMPREPLY=( $(compgen -W "$1" -- ${word}) )
-    if [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} == "--"*"=" ]] ; then
+    if [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} == "--"*"=" ]]; then
         # If there's only one option, with =, then discard space
         complete -o nospace
     fi
@@ -11,7 +11,7 @@ _show_wenvs() {
 }
 
 _wenv_start() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-t -i -q -h"
     else
         _show_wenvs
@@ -23,7 +23,7 @@ _wenv_stop() {
 }
 
 _wenv_cd() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-r -h"
     else
         _show_wenvs
@@ -35,7 +35,7 @@ _wenv_rm() {
 }
 
 _wenv_remove() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
         _show_wenvs
@@ -43,7 +43,7 @@ _wenv_remove() {
 }
 
 _wenv_source() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
         _show_wenvs
@@ -55,7 +55,7 @@ _wenv_edit() {
 }
 
 _wenv_rename() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
         _show_wenvs
@@ -67,7 +67,7 @@ _wenv_mv() {
 }
 
 _wenv_exec() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-c -n -h"
     else
         _show_wenvs
@@ -75,7 +75,7 @@ _wenv_exec() {
 }
 
 _wenv_task() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
         _wenv_comp "show add"
@@ -83,31 +83,31 @@ _wenv_task() {
 }
 
 _wenv_task_add() {
-    if [[ ${prev} == "-w" ]] ; then
+    if [[ ${prev} == "-w" ]]; then
         _show_wenvs
-    elif [[ ${word} == -* ]] ; then
+    elif [[ ${word} == -* ]]; then
         _wenv_comp "-w -h"
     fi
 }
 
 _wenv_task_show() {
-    if [[ ${prev} == "-w" ]] ; then
+    if [[ ${prev} == "-w" ]]; then
         _show_wenvs
-    elif [[ ${word} == -* ]] ; then
+    elif [[ ${word} == -* ]]; then
         _wenv_comp "-w -h"
     fi
 }
 
 _wenv_new() {
-    if [[ ${prev} == "-i" ]] ; then
+    if [[ ${prev} == "-i" ]]; then
         _show_wenvs
-    elif [[ ${word} == -* ]] ; then
+    elif [[ ${word} == -* ]]; then
         _wenv_comp "-i -d -h"
     fi
 }
 
 _wenv_bootstrap() {
-    if [[ $word == -* ]] ; then
+    if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
         _show_wenvs
@@ -123,17 +123,24 @@ _wenv() {
 
     case "${COMP_CWORD}" in
         1)
-            local opts="start stop reset task cd new bootstrap edit rm remove \
-                        source exec mv"
-            COMPREPLY=( $(compgen -W "${opts}" -- ${word}) );;
+            if [[ $word == -* ]]; then
+                _wenv_comp '-h'
+            else
+                local opts="start stop reset task cd new bootstrap edit rm \
+                            remove source exec mv"
+                COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+            fi
+            ;;
         2)
             local command="${COMP_WORDS[1]}"
-            eval "_wenv_$command" 2> /dev/null ;;
+            eval "_wenv_$command" 2> /dev/null
+            ;;
         *)
             local command="${COMP_WORDS[1]}"
             local subcommand="${COMP_WORDS[2]}"
             eval "_wenv_${command}_${subcommand}" 2> /dev/null && return
-            eval "_wenv_$command" 2> /dev/null ;;
+            eval "_wenv_$command" 2> /dev/null
+            ;;
     esac
 }
 complete -F _wenv wenv
