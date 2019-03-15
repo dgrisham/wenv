@@ -427,8 +427,8 @@ By default, the Taskwarrior `project` attribute is set to the name of the wenv.
 To override this with a different value, set `WENV_PROJECT` to a different
 string in `wenv_def()`.
 
-Additionally, the wenv framework can also automatically start and stop a
-project's active tasks. This is done by filling in the `WENV_TASK` value in
+Additionally, the wenv framework can automatically start and stop a project's
+active tasks. This is done by filling in the `WENV_TASK` value in
 `wenv_def()`. So, if we wanted to set the active task for our `hello-world`
 project to our previously created task with `ID` value `82`, we'd set
 `WENV_TASK=82`. Then `task start 82` will run the next time you run `wenv
