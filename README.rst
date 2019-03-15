@@ -157,6 +157,33 @@ Usage
 
     Run `wenv <cmd> -h` for more information on a given subcommand <cmd>.
 
+Wenv Environment Summary
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+See Walkthrough_ for further elaboration and examples.
+
+**Variables**
+
+-  `WENV_DIR`: The path to the base directory of this project.
+-  `WENV_DEPS`: An array whose elements are the names of the wenvs that this
+   wenv is dependent on.
+-  `WENV_PROJECT`: The value to use for the task's `project` attribute in
+   Taskwarrior.
+-  `WENV_TASK`: The wenv's current active task number.
+
+**Functions**
+
+-   `startup_wenv()` is run whenever you start the wenv. This function is good
+    for starting up any necessary daemons, setting up a tmux layout, opening
+    programs (e.g. a text editor), etc. It will run inside `"$WENV_DIR"`.
+-   `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
+    daemons started by `startup_wenv()`, and do any other cleanup.
+-   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
+    For example, this function might pull down a git repository for development
+    or check to ensure that all packages required by this wenv are installed.
+    You can run this function on a wenv `<wenv>` by running
+    `wenv bootstrap <wenv>`.
+
 Walkthrough
 -----------
 
@@ -485,31 +512,6 @@ bound to:
 
 These are currently hardcoded in the `wenv_start()` function, so if you want to
 change the bindings you'll have to edit that function.
-
-Wenv Environment Summary
-------------------------
-
-**Variables**
-
--  `WENV_DIR`: The path to the base directory of this project.
--  `WENV_DEPS`: An array whose elements are the names of the wenvs that this
-   wenv is dependent on.
--  `WENV_PROJECT`: The value to use for the task's `project` attribute in
-   Taskwarrior.
--  `WENV_TASK`: The wenv's current active task number.
-
-**Functions**
-
--   `startup_wenv()` is run whenever you start the wenv. This function is good
-    for starting up any necessary daemons, setting up a tmux layout, opening
-    programs (e.g. a text editor), etc. It will run inside `"$WENV_DIR"`.
--   `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
-    daemons started by `startup_wenv()`, and do any other cleanup.
--   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
-    For example, this function might pull down a git repository for development
-    or check to ensure that all packages required by this wenv are installed.
-    You can run this function on a wenv `<wenv>` by running
-    `wenv bootstrap <wenv>`.
 
 Examples
 --------
