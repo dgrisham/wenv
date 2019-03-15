@@ -284,7 +284,7 @@ deactivate the current wenv with `wenv stop`. So, if we have a wenv whose
 `startup_wenv()` function runs `sudo systemctl start docker`, our
 `shutdown_wenv()` might be:
 
-.. code-block::bash
+.. code-block:: bash
 
     shutdown_wenv() {
         sudo systemctl stop docker
@@ -301,7 +301,7 @@ flag to `wenv stop` to close the wenv even if `shutdown_wenv()` fails.
 every wenv in `WENV_DEPS` is sourced when starting the wenv. Let's take the
 example of a wenv for IPTB (which we'll call `iptb`):
 
-.. code-block::bash
+.. code-block:: bash
 
     wenv_def() {
         # ...
@@ -319,7 +319,7 @@ just source the `iptb` wenv and get all of its environment variables every time
 we start any wenv that uses IPTB. To do this, we'd add `iptb` to our
 `WENV_DEPS`:
 
-.. code-block::bash
+.. code-block:: bash
 
     wenv_def() {
         WENV_DIR="..."
@@ -343,20 +343,20 @@ As an example, let's say the `hello-world` wenv is active and we want to add a
 task for this project with the description 'add new feature'. We'd use the wenv
 command:
 
-.. code-block::bash
+.. code-block:: bash
 
     wenv task add 'add new feature'
 
 This would consequently run the following Taskwarrior command:
 
-.. code-block::bash
+.. code-block:: bash
 
     task add project:'hello-world' -- 'add new feature'
 
 Then, if we want to show the tasks associated with the current wenv, we'd run
 `wenv task show`. In this case, the output would look something like:
 
-.. code-block::bash
+.. code-block:: bash
 
     $ wenv task show
     hello-world
