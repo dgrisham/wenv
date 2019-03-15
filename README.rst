@@ -160,7 +160,7 @@ Usage
 Wenv Environment Summary
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-See Walkthrough_ for further elaboration and examples.
+See the Walkthrough_ for further elaboration and examples.
 
 **Variables**
 
