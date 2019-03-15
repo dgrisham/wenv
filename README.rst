@@ -4,6 +4,8 @@
 wenv: A Shell Workflow Tool
 ===========================
 
+.. contents:: Table of Contents
+
 Introduction
 ------------
 
