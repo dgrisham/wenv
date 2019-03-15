@@ -178,7 +178,6 @@ Here's an example that creates a wenv for a project called 'hello-world':
 
 .. code-block:: bash
 
-    $ cd ~
     $ mkdir hello-world
     $ cd hello-world
     $ wenv new -d hello-world
