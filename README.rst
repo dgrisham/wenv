@@ -4,12 +4,6 @@
 wenv: A Shell Workflow Tool
 ===========================
 
-Perpetual WIP, likely to have bugs.
-
-**Note**: This README is currently in development.
-
-**TODO: mention layouts**
-
 Introduction
 ------------
 
