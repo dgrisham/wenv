@@ -167,8 +167,14 @@ Walkthrough
 -----------
 
 A given project's wenv has two primary parts: a wenv definition, and any shell
-aliases/functions that are specific to the project. Let's start by creating a
-new directory for our wenv, then initializing the wenv in that directory.
+aliases/functions that are specific to the project. A wenv's definition is
+represented by a `wenv_def()` function, and the wenv's aliases/functions are
+defined in the same file as its `wenv_def()`.
+
+Creating a wenv
+~~~~~~~~~~~~~~~
+
+Here's an example that creates a wenv for a project called 'hello-world':
 
 .. code-block:: bash
 
@@ -177,12 +183,10 @@ new directory for our wenv, then initializing the wenv in that directory.
     $ cd hello-world
     $ wenv new -d hello-world
 
-Running this command will copy the wenv `template` file into a new wenv file
-called `hello-world`. The template file provides a base structure for a new
-wenv.
-
-Let's look at the new wenv file that was just created. Notice the first function,
-`wenv_def()`:
+The `wenv new` command will copy the wenv `template` file into a new wenv
+file called `hello-world`. The template file provides a base structure for a new
+wenv. On my machine, the above wenv command creates a new wenv file that starts
+with the following `wenv_def()` function:
 
 .. code-block:: bash
 
@@ -203,18 +207,16 @@ help us work on a project. Let's focus on `WENV_DIR` for now.
 `WENV_DIR`
 ~~~~~~~~~~
 
-Note that `WENV_DIR`'s value was automatically populated with our current
-working directory. That's because we passed the `-d` flag to `wenv new` -- if
-we hadn't, the value would just be an empty string.
+The `WENV_DIR` value represents the base directory of the project. When we
+start a wenv with e.g. `wenv start hello-world`, we'll automatically `cd` into
+the project's `WENV_DIR`. Further, whenever a wenv is active, we can run `wenv
+cd` (without an argument) to `cd` into its base directory from anywhere. If we
+want to `cd` into an inactive wenv's `WENV_DIR`, we can do so by passing the
+wenv name as an argument -- e.g. `wenv cd hello-world`.
 
-The `WENV_DIR` variable has a few purposes. One is via the `wenv cd` command,
-which is used to change into a given wenv's directory. When run without an
-argument, this command will `cd` into the base directory of the active wenv.
-So, in our case, running `wenv cd` would `cd` into `"~/hello-world"`. This
-allows us to navigate to anywhere in the filesystem and always have a way to get
-back to the base directory of our project. Further, if we wanted to browse to the
-base directory of the `hello-world` wenv when it wasn't active, we could do so
-by running `wenv cd hello-world`.
+In the example in the previous section, `WENV_DIR`'s value was automatically
+populated with our current working directory. That's because we passed the `-d`
+flag to `wenv new` -- if we hadn't, the value would just be an empty string.
 
 `startup_wenv()`
 ~~~~~~~~~~~~~~~~
