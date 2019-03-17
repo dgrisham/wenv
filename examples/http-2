@@ -1,0 +1,114 @@
+#!/bin/zsh
+
+#TODO: explain
+
+wenv_def() {
+    # WENV_DIR="$HOME/scratch/webdev-practice"
+    WENV_DIR="$HOME/scratch/pokemon-Knowledgebase"
+    WENV_DEPS=()
+    WENV_PROJECT=''
+    WENV_TASK=''
+
+    startup_wenv() {
+        tmux rename-window js
+        wenv_tmux_split v
+        tmux resize-pane -y 7
+        tmux send-keys 'python -m http.server' 'Enter'
+        tmux select-pane -U
+
+        wenv_tmux_split -n html-css window 'edit html-css'
+        tmux select-window -t js
+        edit js
+    }
+    shutdown_wenv() {}
+    bootstrap_wenv() {}
+}
+
+declare -Ag wenv_dirs=(
+    ['js']="$WENV_DIR/js"
+    ['css']="$WENV_DIR/css"
+)
+declare -Ag wenv_files=(
+    ['html']='index.html'
+    ['js']='js/scripts.js'
+    ['css']='css/styles.css'
+    ['html-css']='$wenv_files[html] $wenv_files[css]'
+)
+
+c() {
+    local flag_r=0
+    while getopts ":r" opt; do
+        case $opt in
+            r)
+                flag_r=1
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local input="$1"
+    shift
+    [ "${wenv_dirs[$input]+0}" ] || return 1
+    cd "${wenv_dirs[$input]}"
+    if (( flag_r == 1 )); then
+        [[ ! -v wname ]] && local wname="$input"
+        tmux rename-window "$wname"
+    fi
+}
+_c() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="${(k)wenv_dirs[@]}"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _c c
+
+edit() {
+    local flag_r=0
+    while getopts ":ro:" opt; do
+        case $opt in
+            r)
+                flag_r=1
+                ;;
+            o)
+                opts="$OPTARG"
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    input="$1"
+    shift
+    [ "${wenv_files[$input]+0}" ] || return 1
+    (( flag_r == 1 )) && tmux rename-window "$input"
+    eval $EDITOR "$opts" "$WENV_DIR/${wenv_files[$input]}"
+}
+_edit() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="${(k)wenv_files[@]}"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _edit edit
