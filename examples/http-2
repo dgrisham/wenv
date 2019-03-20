@@ -1,6 +1,34 @@
 #!/bin/zsh
 
-#TODO: explain
+# This example builds off of http-1. Relative to that example, this wenv's
+# initial layout is more elaborate. Additionally, the values in some of the
+# entries of wenv_files are defined a more maintainable way.
+#
+# The directory tree for this project looks like:
+#
+# $ tree
+# .
+# ├── css
+# │   └── styles.css
+# ├── index.html
+# └── js
+#     └── main.js
+#
+# Take a look at startup_wenv(). Here are the steps it executes
+#
+# 1. Rename the current window to 'js', to signify that it will primarily be
+#    used for editing Javascript files.
+# 2. Create a new pane below the current one, set its height to 7, and start a
+#    Python HTTP server in this new pane.
+# 3. Select the original pane (which is above the current one).
+# 4. Create a new window called 'html-css', and use edit() to open the HTML and
+#    CSS files for the project.
+# 5. Select the first window by its name, 'js'.
+# 6. Use edit() to open the Javascript file.
+#
+# After startup_wenv() runs, we'll have two windows: the first named 'js' with
+# the Javascript file open in the larger top pane and HTTP server in the bottom
+# pane, and the second named 'html-css' with the HTML and CSS files open.
 
 wenv_def() {
     # WENV_DIR="$HOME/scratch/webdev-practice"
@@ -24,23 +52,36 @@ wenv_def() {
     bootstrap_wenv() {}
 }
 
+# declare -Ag wenv_dirs=(
+#     ['js']='src/js'
+#     ['css']='src/css'
+# )
+# declare -Ag wenv_files=(
+#     ['html']='index.html'
+#     ['js']="${wenv_dirs[js]}/scripts.js"
+#     ['css']="${wenv_dirs[css]}/styles.css"
+# )
+
 declare -Ag wenv_dirs=(
-    ['js']="$WENV_DIR/js"
-    ['css']="$WENV_DIR/css"
+    ['js']='src/js'
+    ['css']='src/css'
 )
 declare -Ag wenv_files=(
     ['html']='index.html'
-    ['js']='js/scripts.js'
-    ['css']='css/styles.css'
-    ['html-css']='$wenv_files[html] $wenv_files[css]'
+    ['js']="${wenv_dirs[js]}/scripts.js"
+    ['css']="${wenv_dirs[css]}/styles.css"
 )
 
 c() {
     local flag_r=0
-    while getopts ":r" opt; do
+    local wname=""
+    while getopts ":rn:" opt; do
         case $opt in
             r)
                 flag_r=1
+                ;;
+            n)
+                wname="$OPTARG"
                 ;;
             \?)
                 echo "unknown option: -$OPTARG" >&2
@@ -51,12 +92,20 @@ c() {
 
     local input="$1"
     shift
-    [ "${wenv_dirs[$input]+0}" ] || return 1
-    cd "${wenv_dirs[$input]}"
-    if (( flag_r == 1 )); then
-        [[ ! -v wname ]] && local wname="$input"
-        tmux rename-window "$wname"
+
+    [ "${wenv_dirs[$input]+0}" ] || { echo "no entry '$input'" >&2 ; return 1 }
+    dir="${wenv_dirs[$input]}"
+    (( flag_r == 1 )) && wname="$input"
+
+    local abs
+    if [[ $dir != /* ]]; then
+        abs=$(realpath --relative-to=. "$WENV_DIR/$dir")
+    else
+        abs=$dir
     fi
+    cd "$abs"
+
+    [[ ! -z "$wname" ]] && tmux rename-window "$wname"
 }
 _c() {
     COMPREPLY=()
@@ -76,10 +125,15 @@ complete -F _c c
 
 edit() {
     local flag_r=0
-    while getopts ":ro:" opt; do
+    local wname=""
+    local opts=""
+    while getopts ":rn:o:" opt; do
         case $opt in
             r)
                 flag_r=1
+                ;;
+            n)
+                wname="$OPTARG"
                 ;;
             o)
                 opts="$OPTARG"
@@ -91,11 +145,24 @@ edit() {
     done
     shift $((OPTIND-1))
 
-    input="$1"
-    shift
-    [ "${wenv_files[$input]+0}" ] || return 1
-    (( flag_r == 1 )) && tmux rename-window "$input"
-    eval $EDITOR "$opts" "$WENV_DIR/${wenv_files[$input]}"
+    local files=()
+    for arg in $@; do
+        [ "${wenv_files[$arg]+0}" ] || echo "no entry '$arg'" >&2 && return 1
+        files+="${wenv_files[$arg]}"
+    done
+    (( flag_r == 1 )) && wname="$1"
+
+    local abs=()
+    for file in $files; do
+        if [[ $file != /* ]]; then
+            abs+=($(realpath --relative-to=. "$WENV_DIR/$file"))
+        else
+            abs+=($file)
+        fi
+    done
+
+    [[ ! -z "$wname" ]] && tmux rename-window "$wname"
+    eval "$EDITOR $opts $abs"
 }
 _edit() {
     COMPREPLY=()
@@ -104,9 +171,9 @@ _edit() {
     local word="${COMP_WORDS[COMP_CWORD]}"
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
-        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
-    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+    if [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r -n -o" -- ${word}) )
+    else
         local opts="${(k)wenv_files[@]}"
         COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
     fi
