@@ -1,18 +1,65 @@
 #!/bin/zsh
 
+# This example builds off of http-1. Relative to that example, this wenv's
+# initial layout is more elaborate. Additionally, the values in some of the
+# entries of wenv_files are defined a more maintainable way.
+#
+# The directory tree for this project looks like:
+#
+# $ tree
+# .
+# ├── css
+# │   └── styles.css
+# ├── index.html
+# └── js
+#     └── main.js
+#
+# Take a look at startup_wenv(). Here are the steps it executes
+#
+# 1. Rename the current window to 'js', to signify that it will primarily be
+#    used for editing Javascript files.
+# 2. Create a new pane below the current one, set its height to 7, and start a
+#    Python HTTP server in this new pane.
+# 3. Select the original pane (which is above the current one).
+# 4. Create a new window called 'html-css', and use edit() to open the HTML and
+#    CSS files for the project.
+# 5. Select the first window by its name, 'js'.
+# 6. Use edit() to open the Javascript file.
+#
+# After startup_wenv() runs, we'll have two windows: the first named 'js' with
+# the Javascript file open in the larger top pane and HTTP server in the bottom
+# pane, and the second named 'html-css' with the HTML and CSS files open.
+
 wenv_def() {
-    WENV_DIR=""
+    WENV_DIR="$HOME/scratch/webdev-practice"
     WENV_DEPS=()
     WENV_PROJECT=''
     WENV_TASK=''
 
-    startup_wenv() {}
+    startup_wenv() {
+        tmux rename-window js
+        wenv_tmux_split v
+        tmux resize-pane -y 7
+        tmux send-keys 'python -m http.server' 'Enter'
+        tmux select-pane -U
+
+        wenv_tmux_split -n html-css window 'edit html css'
+        tmux select-window -t js
+        edit js
+    }
     shutdown_wenv() {}
     bootstrap_wenv() {}
 }
 
-declare -Ag wenv_dirs=()
-declare -Ag wenv_files=()
+declare -Ag wenv_dirs=(
+    ['js']='src/js'
+    ['css']='src/css'
+)
+declare -Ag wenv_files=(
+    ['html']='index.html'
+    ['js']="${wenv_dirs[js]}/scripts.js"
+    ['css']="${wenv_dirs[css]}/styles.css"
+)
 
 c() {
     local flag_r=0
@@ -114,10 +161,10 @@ _edit() {
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ ${word} == -* ]]; then
-        COMPREPLY=($(compgen -W "-r -n -o" -- ${word}))
+        COMPREPLY=( $(compgen -W "-r -n -o" -- ${word}) )
     else
         local opts="${(k)wenv_files[@]}"
-        COMPREPLY=($(compgen -W "${opts}" -- ${word}))
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
     fi
 }
 complete -F _edit edit
