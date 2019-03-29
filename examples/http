@@ -17,7 +17,7 @@
 # (to run a simple http server in the base directory of the wenv). After the
 # first command runs, we'll be in the second tmux window. To get back to the
 # first, we use the `tmux select-window` command. Then we use edit() to open
-# the Javascript file main.js, wich works because 'js' maps to 'main.js' in
+# the Javascript file main.js, which works because 'js' maps to 'main.js' in
 # wenv_files. We pass the -r flag to edit() to rename the current tmux window
 # to 'js'. The result of all of this is: two tmux windows, the first named 'js'
 # with main.js opened in your editor, and the second named 'http' that contains
