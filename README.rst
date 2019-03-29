@@ -299,11 +299,11 @@ Taskwarrior task, then refocus on the larger pane:
         tmux select-pane -U
     }
 
-Note that `wenv start` will `cd` into `"$WENV_DIR"` before `startup_wenv()` is
-run, you can assume you'll be in the wenv's base directory when writing your
-`startup_wenv()` functions. Additionally, your wenv aliases will be sourced once
-`startup_wenv()` is called. So, `startup_wenv()` can take advantage of any
-environment variables/functions defined outside of `wenv_def()`.
+Note that `wenv start` will `cd` into `"$WENV_DIR"` before
+`startup_wenv()` is run, so you can assume you'll be in the wenv's base
+directory when writing your `startup_wenv()` functions. Additionally, your wenv
+aliases will be sourced once `startup_wenv()` is called, so can take advantage
+of any environment variables/functions defined outside of `wenv_def()`.
 
 `shutdown_wenv()`
 ~~~~~~~~~~~~~~~~
@@ -340,13 +340,13 @@ example of a wenv for IPTB (which we'll call `iptb`):
 
 Let's say we wanted to create another wenv that also used IPTB, and therefore
 also needs to set the `IPTB_ROOT` variable. We *could* initialize the new wenv
-with the `iptb` wenv as a base using `wenv new -i iptb`, so our new wenv would
-have the same `export` command. However, this approach isn't particularly
-maintainable -- e.g. if the IPTB developers decide to rename the `IPTB_ROOT`
-variable, all wenv's that use IPTB would have to update. Alternatively, we could
-just source the `iptb` wenv and get all of its environment variables every time
-we start any wenv that uses IPTB. To do this, we'd add `iptb` to our
-`WENV_DEPS`:
+with the `iptb` wenv as a base using `wenv new -i iptb <new_wenv>`, so our new
+wenv would have the same `export` command. However, this approach isn't
+particularly maintainable -- e.g. if the IPTB developers decide to rename the
+`IPTB_ROOT` variable, all wenvs that use IPTB would have to update that
+variable's value. Alternatively, we could just source the `iptb` wenv and get
+all of its environment variables every time we start any wenv that uses IPTB. To
+do this, we'd add `iptb` to our `WENV_DEPS`:
 
 .. code-block:: bash
 
@@ -426,7 +426,7 @@ Then, if we want to show the tasks associated with the current wenv, we'd run
 Note that simply running `wenv task` defaults to `wenv task show`.
 
 By default, the Taskwarrior `project` attribute is set to the name of the wenv.
-To override this with a different value, set `WENV_PROJECT` to a different
+To override this with a different value, set `WENV_PROJECT` to the desired
 string in `wenv_def()`.
 
 Additionally, the wenv framework can automatically start and stop a project's
@@ -485,8 +485,8 @@ add the following entry to `wenv_files`:
     )
 
 By default, the `edit()` function opens files from the project directory, so we
-specify `main.cpp` instead of `"$WENV_DIR/main.cpp"`. We can also use
-Zsh globs/expansions/etc., provided we enclose such entries with single-quotes:
+specify `main.cpp` instead of `"$WENV_DIR/main.cpp"`. We can also use Zsh
+globs/expansions/etc., provided we enclose such entries in single-quotes:
 
 .. code-block:: bash
 
