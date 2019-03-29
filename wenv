@@ -152,6 +152,7 @@ OPTIONS
     }' ENTER
 
     tmux attach-session -t "$wenv"
+    return 0
 }
 
 wenv_exec() {
