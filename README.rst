@@ -240,7 +240,8 @@ aliases/functions that are specific to the project. A wenv's definition is
 represented by its `wenv_def()` function, and the wenv's Zsh aliases/functions
 are defined in the same file as its `wenv_def()`. When you initialize a new
 wenv, you'll notice that a few Zsh environment variables and functions are
-defined by default (more on those later).
+
+defined by default (more on those in `Predefined Functions`_).
 
 The `wenv_dir()` function defines all of the parameters that the wenv framework
 can use to help us work on a project. Let's focus on `WENV_DIR` for now.
@@ -457,8 +458,14 @@ start hello-world`. When you run `wenv stop`, `task stop 82` will run. This
 further reduces interaction with Taskwarrior by automatically managing active
 tasks based on the current project.
 
+Predefined Functions
+~~~~~~~~~~~~~~~~~~~~
+
+As mentioned at the beginning of this walkthrough, a new wenv comes with a few
+predefined variables/functions. The following subsections discuss these.
+
 `c()` and `wenv_dirs`
-~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++
 
 If you create a new wenv with the default template, you'll see a line that
 declares an associative array called `wenv_dirs`, and also a provided `c()`
@@ -512,8 +519,10 @@ tmux window to 'src'. If we wanted to rename the window to something other than
 `wenv_dirs`, so you can tab-complete all possible inputs (in this case, `src`
 and `http`).
 
+.. _edit:
+
 `edit()` and `wenv_files`
-~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++
 
 `c()` and `wenv_dirs` are meant to provide a convenient interface for nimbly
 navigating frequently visited directories. `edit()` and `wenv_files`
