@@ -9,10 +9,14 @@ wenv: A Shell Workflow Tool
 Introduction
 ------------
 
-The working environment (wenv) framework is a tool for streamlining workflow in
-the terminal. A wenv is associated with a single project and defines 1. its wenv
-definition, which the wenv framework uses to make working on the project easier,
-and 2. useful shell functionality specific to the project.
+Working in the terminal is fun, but it can also be tedious and messy. The working
+environment (wenv) project offloads the tedious work required to provide clean,
+project-specific environments that allow users to easily leverage the power of
+their shell. It acts as an extremely lightweight layer that connects tmux, Zsh,
+and your other favorite shell tools.
+
+The Story
+~~~~~~~~~
 
 My (@dgrisham's) motivation for this project came from a desire to make working
 in the terminal clean, easy, and fun. Zsh and tmux were ubiquitous in my
