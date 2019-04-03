@@ -192,10 +192,11 @@ Walkthrough
 The utility of wenvs takes a bit of time to explain. This walkthrough gives the
 basic configuration/commands for getting started while also explaining what I've
 found them to be useful for. If you're experienced with shell scripting, you'll
-see that much of the value of wenvs comes from leveraging the tools provided by
-shells. This project is less focused on forcing a specific workflow for users and
-more focused on giving users a convenient environment in which to define their
-own workflow unrestricted by the limitations of a single terminal.
+see that much of the value of wenvs comes from allowing the user to leverage the
+tools provided by shells. This project is less focused on forcing a specific
+workflow for users and more focused on giving users a convenient environment in
+which to define their own workflow unrestricted by the limitations of a single
+terminal.
 
 The example wenvs in the `examples`__ directory give concrete examples of wenv
 definitions for general projects. Each example includes a comprehensive
@@ -204,11 +205,6 @@ and useful environment. I recommend going through these examples, as they
 compliment this walkthrough.
 
 __ examples/
-
-A given project's wenv has two primary parts: a wenv definition, and any shell
-aliases/functions that are specific to the project. A wenv's definition is
-represented by a `wenv_def()` function, and the wenv's Zsh aliases/functions
-are defined in the same file as its `wenv_def()`.
 
 Creating a wenv
 ~~~~~~~~~~~~~~~
@@ -224,7 +220,7 @@ Here's an example that creates a wenv for a project called 'hello-world':
 The `wenv new` command will copy the wenv `template` file into a new wenv
 file called `hello-world`. The template file provides a base structure for a new
 wenv. On my machine, the above wenv command creates a new wenv file that starts
-with the following `wenv_def()` function:
+with the following function, called `wenv_def()`:
 
 .. code-block:: bash
 
@@ -239,8 +235,15 @@ with the following `wenv_def()` function:
         shutdown_wenv() {}
     }
 
-This function defines all of the parameters that the wenv framework can use to
-help us work on a project. Let's focus on `WENV_DIR` for now.
+A given project's wenv has two primary parts: its wenv definition, and any shell
+aliases/functions that are specific to the project. A wenv's definition is
+represented by its `wenv_def()` function, and the wenv's Zsh aliases/functions
+are defined in the same file as its `wenv_def()`. When you initialize a new
+wenv, you'll notice that a few Zsh environment variables and functions are
+defined by default (more on those later).
+
+The `wenv_dir()` function defines all of the parameters that the wenv framework
+can use to help us work on a project. Let's focus on `WENV_DIR` for now.
 
 `WENV_DIR`
 ~~~~~~~~~~
