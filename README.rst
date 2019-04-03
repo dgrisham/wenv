@@ -467,11 +467,10 @@ predefined variables/functions. The following subsections discuss these.
 `c()` and `wenv_dirs`
 +++++++++++++++++++++
 
-If you create a new wenv with the default template, you'll see a line that
-declares an associative array called `wenv_dirs`, and also a provided `c()`
-function a few lines below that. The `c()` function accepts any argument that
-is a key in `wenv_dirs` and `cd`'s into the corresponding value. So, if
-`wenv_dirs` is defined like so:
+The default wenv template includes a line that declares an associative array
+called `wenv_dirs`, and also a provided `c()` function a few lines below that.
+The `c()` function accepts any argument that is a key in `wenv_dirs` and
+`cd`'s into the corresponding value. So, if `wenv_dirs` is defined like so:
 
 .. code-block:: bash
 
