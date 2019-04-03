@@ -189,10 +189,26 @@ See the Walkthrough_ for further elaboration and examples.
 Walkthrough
 -----------
 
+The utility of wenvs takes a bit of time to explain. This walkthrough gives the
+basic configuration/commands for getting started while also explaining what I've
+found them to be useful for. If you're experienced with shell scripting, you'll
+see that much of the value of wenvs comes from leveraging the tools provided by
+shells. This project is less focused on forcing a specific workflow for users and
+more focused on giving users a convenient environment in which to define their
+own workflow unrestricted by the limitations of a single terminal.
+
+The example wenvs in the `examples`__ directory give concrete examples of wenv
+definitions for general projects. Each example includes a comprehensive
+description of the wenv's definition and features that are used to create a clean
+and useful environment. I recommend going through these examples, as they
+compliment this walkthrough.
+
+__ examples/
+
 A given project's wenv has two primary parts: a wenv definition, and any shell
 aliases/functions that are specific to the project. A wenv's definition is
-represented by a `wenv_def()` function, and the wenv's aliases/functions are
-defined in the same file as its `wenv_def()`.
+represented by a `wenv_def()` function, and the wenv's Zsh aliases/functions
+are defined in the same file as its `wenv_def()`.
 
 Creating a wenv
 ~~~~~~~~~~~~~~~
@@ -560,10 +576,3 @@ bound to:
 
 These are currently hardcoded in the `wenv_start()` function, so if you want to
 change the bindings you'll have to edit that function.
-
-Examples
---------
-
-Check out the `examples`__ directory for example wenvs with descriptions.
-
-__ examples/
