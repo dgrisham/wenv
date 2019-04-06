@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 
 # This example builds off of http-1. Relative to that example, this wenv's
 # initial layout is more elaborate. Additionally, the values in some of the
