@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 
 wenv_def() {
     WENV_DIR="$SRC/wenv"
