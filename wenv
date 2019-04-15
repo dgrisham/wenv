@@ -727,14 +727,6 @@ ARGUMENTS
             split_args=('new-window')
             [[ -n "$name" ]] && split_args+=('-n' "$name")
             ;;
-        h)
-            echo "$usage"
-            return 0
-            ;;
-        \?)
-            echo "unknown option: -$OPTARG" >&2
-            return 1
-            ;;
     esac
     tmux $split_args -c "#{pane_current_path}" "$wenv_init_cmd"
     [[ -n "$user_cmd" ]] && tmux send-keys "$user_cmd" 'Enter'
