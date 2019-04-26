@@ -579,8 +579,7 @@ OPTIONS
 wenv_task_add() {
     local usage="\
 USAGE
-  wenv task add [-h] [-w <wenv>] [<mods>] <desc> - Add a task to the active
-                                                   wenv's task list.
+  wenv task add [-h] [-w <wenv>] [<mods>] <desc> - Add a task to the active wenv's task list.
 
 OPTIONS
   -w <wenv>    Add a task to <wenv>'s task list, instead of the active wenv's.
@@ -729,6 +728,9 @@ DESCRIPTION
         open)
             wenv_extension_open $@
             ;;
+        remove)
+            wenv_extension_remove $@
+            ;;
         *)
             echo "$usage"
             return 1
@@ -792,8 +794,7 @@ ARGUMENTS
 
 DESCRIPTION
   Opens one or more extension files in \$EDITOR. When opening a extension file
-  that doesn't already exist, the file must be saved in the editor (it is not
-  created automatically).
+  that doesn't already exist, the file will be created with a default shebang.
 "
 
     while getopts ":h" opt; do
@@ -814,9 +815,60 @@ DESCRIPTION
 
     local abs=()
     for ext in $@; do
-        abs+=("$WENV_CFG/extensions/$ext")
+        file="$WENV_CFG/extensions/$ext"
+        [[ ! -f "$file" ]] && echo '#!/usr/bin/env zsh' > "$file"
+        abs+=($file)
     done
-    eval "$EDITOR $abs"
+    $EDITOR "$abs[@]"
+}
+
+wenv_extension_remove() {
+    local usage="\
+USAGE
+  wenv extension remove [-h] [-f] <extension> [<extension> ...] - Delete extension files.
+
+OPTIONS
+  -h    Display this help message.
+  -f    Force removal (passes \`-f\` flag to \`rm\`).
+
+DESCRIPTION
+  Removes extensions from \$WENV_CFG/extensions. If any of the passed extension
+  files don't exist, nothing will be removed.
+"
+
+    flag_f=0
+    while getopts ":fh" opt; do
+        case "$opt" in
+            f)
+                flag_f=1
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    declare -A abs
+    for ext in $@; do
+        local file="$WENV_CFG/extensions/$ext"
+        [[ ! -f "$file" ]] && { echo "Extension '$ext' does not exist" >&2 ; return 1 }
+        abs[$ext]="$file"
+    done
+
+    if ((flag_f == 1)); then
+        rm -f "${abs[@]}"
+    else
+        for ext in $@; do
+            rm "${abs[$ext]}"
+        done
+    fi
+    return 0
 }
 
 wenv_tmux_split() {
