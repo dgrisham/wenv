@@ -94,11 +94,27 @@ _wenv_source() {
     if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
-        _show_wenvs
+        _wenv_comp "load edit"
     fi
 }
 
-_wenv_extend() {
+_wenv_extension() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        _wenv_comp "load edit"
+    fi
+}
+
+_wenv_extension_load() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        ls "$WENV_CFG/extensions"
+    fi
+}
+
+_wenv_extension_edit() {
     if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
@@ -135,7 +151,7 @@ _wenv() {
                 _wenv_comp '-h'
             else
                 local opts="start stop cd new task edit rm mv source \
-                            extend bootstrap exec"
+                            extension bootstrap exec"
                 COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
             fi
             ;;

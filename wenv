@@ -80,8 +80,8 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
         'source')
             wenv_source $@
             ;;
-        extend)
-            wenv_extend $@
+        extension)
+            wenv_extension $@
             ;;
         bootstrap)
             wenv_bootstrap $@
@@ -184,7 +184,7 @@ wenv_exec() {
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
-    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extend "$WENV_EXTENSIONS[@]"
+    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "$WENV_EXTENSIONS[@]"
 
     return 0
 }
@@ -348,7 +348,7 @@ OPTIONS
 
     # nice bash syntax for setting var to first non-empty variable
     local wenv="${1:-${WENV}}"
-    [[ -f "$WENV_CFG/wenvs/$wenv" ]] && "$EDITOR" "$WENV_CFG/wenvs/$wenv"
+    [[ -f "$WENV_CFG/wenvs/$wenv" ]] && $EDITOR "$WENV_CFG/wenvs/$wenv"
 }
 
 wenv_remove() {
@@ -497,8 +497,8 @@ OPTIONS
   -h    Display this help message.
 
 SUBCOMMANDS
-  show    Show the task list for the active wenv.
-  add     Add a task to the active wenv's task list.
+  show  Show the task list for the active wenv.
+  add   Add a task to the active wenv's task list.
 
 DESCRIPTION
   As a convenient shorthand, running \`wenv task\` defaults to running
@@ -580,7 +580,7 @@ wenv_task_add() {
     local usage="\
 USAGE
   wenv task add [-h] [-w <wenv>] [<mods>] <desc> - Add a task to the active
-                                                    wenv's task list.
+                                                   wenv's task list.
 
 OPTIONS
   -w <wenv>    Add a task to <wenv>'s task list, instead of the active wenv's.
@@ -690,22 +690,67 @@ DESCRIPTION
     unset_quiet -f bootstrap_wenv
 }
 
-wenv_extend() {
-usage="\
+wenv_extension() {
+    local usage="\
 USAGE
-  wenv extend [-h] <extension> [<extension> ...] - Source wenv extensions.
+  wenv extension [-h] [<cmd>] - Interact with wenv extensions.
 
 OPTIONS
-  -h        Display this help message.
+  -h    Display this help message.
+
+SUBCOMMANDS
+  load  Load an extension.
+  edit  Create or open extensions.
+
+DESCRIPTION
+  Use  \`wenv task <cmd> -h\` for more information on a given subcommand <cmd>.
+"
+
+    while getopts ":h" opt; do
+        case $opt in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local arg="$1"
+    shift 2> /dev/null
+    case "$arg" in
+        load)
+            wenv_extension_load $@
+            ;;
+        edit)
+            wenv_extension_edit $@
+            ;;
+        *)
+            echo "$usage"
+            return 1
+            ;;
+    esac
+}
+
+wenv_extension_load() {
+    local usage="\
+USAGE
+  wenv extension load [-h] <extension> [<extension> ...] - Source wenv extensions.
+
+OPTIONS
+  -h                               Display this help message.
 
 ARGUMENTS
   <extension> [<extension> ...]    The names of the extension files to load.
 
 DESCRIPTION
-  Calling \`wenv extend <extension>\` sources the corresponding extension file
-  at \"\$WENV_CFG/<extension>\". This function is meant to be used as a utility
-  function -- it will only source the extension file in the current shell. See
-  the documentation on the WENV_EXTENSIONS environment variable for loading an
+  This function sources the corresponding extension file at \$WENV_CFG/<extension>.
+  This will only source the extension file in the current shell. See the
+  documentation on the WENV_EXTENSIONS environment variable for loading an
   extension in every shell of a wenv.
 "
 
@@ -728,9 +773,50 @@ DESCRIPTION
     for extension in "$@"; do
         if [[ ! -f "$extensions/$extension" ]]; then
             echo "'$extension' not found in $extensions" >&2
+            return 1
         fi
         source "$extensions/$extension"
     done
+}
+
+wenv_extension_edit() {
+    local usage="\
+USAGE
+  wenv extension new [-h] <extension> [<extension> ...] - Create or open extension files.
+
+OPTIONS
+  -h                               Display this help message.
+
+ARGUMENTS
+  <extension> [<extension> ...]    The names of the extension file to open.
+
+DESCRIPTION
+  Opens one or more extension files in \$EDITOR. If opening a extension file
+  that doesn't already exist, the file must be saved in the editor (it is not
+  created automatically).
+"
+
+    while getopts ":h" opt; do
+        case $opt in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
+
+    local abs=()
+    for ext in $@; do
+        abs+=("$WENV_CFG/extensions/$ext")
+    done
+    eval "$EDITOR $abs"
 }
 
 wenv_tmux_split() {

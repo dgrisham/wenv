@@ -3,17 +3,13 @@
 edit() {
     local flag_r=0
     local wname=""
-    local opts=""
-    while getopts ":rn:o:" opt; do
+    while getopts ":rn:" opt; do
         case $opt in
             r)
                 flag_r=1
                 ;;
             n)
                 wname="$OPTARG"
-                ;;
-            o)
-                opts="$OPTARG"
                 ;;
             \?)
                 echo "unknown option: -$OPTARG" >&2
@@ -39,7 +35,7 @@ edit() {
     done
 
     [[ ! -z "$wname" ]] && tmux rename-window "$wname"
-    eval "$EDITOR $opts $abs"
+    eval "$EDITOR $abs"
 }
 _edit() {
     COMPREPLY=()
