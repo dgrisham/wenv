@@ -33,7 +33,7 @@ SUBCOMMANDS
   task <cmd>            Access the project task list.
   bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
-Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
+Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
     [[ $# == 0 ]] && { echo "$usage" >&2 ; return 1 }
@@ -693,13 +693,20 @@ DESCRIPTION
 wenv_extend() {
 usage="\
 USAGE
-  wenv extend [-h] <extension> [<extension> ...] - Load wenv extensions.
+  wenv extend [-h] <extension> [<extension> ...] - Source wenv extensions.
 
 OPTIONS
   -h        Display this help message.
 
 ARGUMENTS
   <extension> [<extension> ...]    The names of the extension files to load.
+
+DESCRIPTION
+  Calling \`wenv extend <extension>\` sources the corresponding extension file
+  at \"\$WENV_CFG/<extension>\". This function is meant to be used as a utility
+  function -- it will only source the extension file in the current shell. See
+  the documentation on the WENV_EXTENSIONS environment variable for loading an
+  extension in every shell of a wenv.
 "
 
     while getopts ":h" opt; do

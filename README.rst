@@ -144,7 +144,7 @@ Usage
 ::
 
     USAGE
-      wenv [-h] <cmd> ...
+      wenv [-h] <cmd>
 
     OPTIONS
       -h                    Display this help message.
@@ -171,11 +171,13 @@ See the Walkthrough_ for further elaboration and examples.
 **Variables**
 
 -  `WENV_DIR`: The path to the base directory of this project.
--  `WENV_DEPS`: An array whose elements are the names of the wenvs that this
-   wenv is dependent on.
+-  `WENV_DEPS`: An array containing the names of the wenvs that this wenv is
+   dependent on.
 -  `WENV_PROJECT`: The value to use for the task's `project` attribute in
    Taskwarrior.
 -  `WENV_TASK`: The wenv's current active task number.
+-  `WENV_EXTENSIONS`: An array containing the names of the extensions to load
+    for the wenv.
 
 **Functions**
 
@@ -461,6 +463,30 @@ project to our previously created task with `ID` value `82`, we'd set
 start hello-world`. When you run `wenv stop`, `task stop 82` will run. This
 further reduces interaction with Taskwarrior by automatically managing active
 tasks based on the current project.
+
+Extensions
+~~~~~~~~~~
+
+Wenv extensions define reusable shell code that may be used across multiple
+wenvs. A wenv extension is nothing more than a shell file that you want to
+source in every shell of a wenv. Extensions are stored in
+`"$WENV_CFG/extensions"`. To load an extension, add its name to the
+`WENV_EXTENSIONS` array. For example, if we wanted to load the `c` and `edit`
+extensions (discussed below), our `wenv_def()` would look like:
+
+.. code-block:: bash
+
+    wenv_def() {
+        WENV_DIR="..."
+        WENV_EXTENSIONS=('c' 'edit')
+    }
+
+Then the files `"$WENV_CFG/extensions/c"` and `"$WENV_CFG/extensions/edit"`
+would be sourced in every shell of our wenv.
+
+An extenson can also be manually loaded with `wenv extend <extension>`. However,
+this will only source the extension file in the current shell, rather than in
+every shell of an active wenv.
 
 Predefined Functions
 ~~~~~~~~~~~~~~~~~~~~
