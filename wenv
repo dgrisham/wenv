@@ -700,7 +700,7 @@ OPTIONS
 
 SUBCOMMANDS
   load  Load an extension.
-  edit  Create or open extensions.
+  open  Create or edit existing extensions.
 
 DESCRIPTION
   Use  \`wenv task <cmd> -h\` for more information on a given subcommand <cmd>.
@@ -726,8 +726,8 @@ DESCRIPTION
         load)
             wenv_extension_load $@
             ;;
-        edit)
-            wenv_extension_edit $@
+        open)
+            wenv_extension_open $@
             ;;
         *)
             echo "$usage"
@@ -779,19 +779,19 @@ DESCRIPTION
     done
 }
 
-wenv_extension_edit() {
+wenv_extension_open() {
     local usage="\
 USAGE
-  wenv extension new [-h] <extension> [<extension> ...] - Create or open extension files.
+  wenv extension new [-h] <extension> [<extension> ...] - Create or edit existing extensions.
 
 OPTIONS
   -h                               Display this help message.
 
 ARGUMENTS
-  <extension> [<extension> ...]    The names of the extension file to open.
+  <extension> [<extension> ...]    The names of the extension files to open.
 
 DESCRIPTION
-  Opens one or more extension files in \$EDITOR. If opening a extension file
+  Opens one or more extension files in \$EDITOR. When opening a extension file
   that doesn't already exist, the file must be saved in the editor (it is not
   created automatically).
 "

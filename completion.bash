@@ -102,7 +102,7 @@ _wenv_extension() {
     if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
-        _wenv_comp "load edit"
+        _wenv_comp "load open"
     fi
 }
 
@@ -114,7 +114,7 @@ _wenv_extension_load() {
     fi
 }
 
-_wenv_extension_edit() {
+_wenv_extension_open() {
     if [[ $word == -* ]]; then
         _wenv_comp "-h"
     else
