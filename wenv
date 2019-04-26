@@ -36,7 +36,7 @@ SUBCOMMANDS
 Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
-    [ $# -eq 0 ] && echo "$usage" && return 1
+    [[ $# == 0 ]] && { echo "$usage" >&2 ; return 1 }
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -59,17 +59,14 @@ Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
         stop)
             wenv_stop $@
             ;;
-        task)
-            wenv_task $@
-            ;;
         'cd')
             wenv_cd $@
             ;;
         new)
             wenv_new $@
             ;;
-        bootstrap)
-            wenv_bootstrap $@
+        task)
+            wenv_task $@
             ;;
         edit)
             wenv_edit $@
@@ -77,11 +74,17 @@ Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
         rm|remove)
             wenv_remove $@
             ;;
+        mv|rename)
+            wenv_rename $@
+            ;;
         'source')
             wenv_source $@
             ;;
-        mv|rename)
-            wenv_rename $@
+        extend)
+            wenv_extend $@
+            ;;
+        bootstrap)
+            wenv_bootstrap $@
             ;;
     esac
 }
@@ -180,6 +183,8 @@ wenv_exec() {
     [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
+
+    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extend "$WENV_EXTENSIONS[@]"
 
     return 0
 }
@@ -412,8 +417,8 @@ DESCRIPTION
         esac
     done
 
-    if [[ "$#" -eq 0 && -n "$WENV" ]]; then
-        (( ${#WENV_DEPS[@]} != 0 )) && wenv_source "${WENV_DEPS[@]}"
+    if [[ "$#" == 0 && -n "$WENV" ]]; then
+        ((${#WENV_DEPS[@]} != 0)) && wenv_source "${WENV_DEPS[@]}"
         source "$WENV_CFG/wenvs/$WENV" >/dev/null
     fi
     local wenv
@@ -683,6 +688,42 @@ DESCRIPTION
     ! function_exists bootstrap_wenv && return 0
     bootstrap_wenv
     unset_quiet -f bootstrap_wenv
+}
+
+wenv_extend() {
+usage="\
+USAGE
+  wenv extend [-h] <extension> [<extension> ...] - Load wenv extensions.
+
+OPTIONS
+  -h        Display this help message.
+
+ARGUMENTS
+  <extension> [<extension> ...]    The names of the extension files to load.
+"
+
+    while getopts ":h" opt; do
+        case $opt in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
+    extensions="$WENV_CFG/extensions"
+    for extension in "$@"; do
+        if [[ ! -f "$extensions/$extension" ]]; then
+            echo "'$extension' not found in $extensions" >&2
+        fi
+        source "$extensions/$extension"
+    done
 }
 
 wenv_tmux_split() {

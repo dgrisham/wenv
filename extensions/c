@@ -1,0 +1,52 @@
+#!/usr/bin/env zsh
+
+c() {
+    local flag_r=0
+    local wname=""
+    while getopts ":rn:" opt; do
+        case $opt in
+            r)
+                flag_r=1
+                ;;
+            n)
+                wname="$OPTARG"
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local input="$1"
+    shift
+
+    [ "${wenv_dirs[$input]+0}" ] || { echo "no entry '$input'" >&2 ; return 1 }
+    dir="${wenv_dirs[$input]}"
+    (( flag_r == 1 )) && wname="$input"
+
+    local abs
+    if [[ $dir != /* ]]; then
+        abs=$(realpath --relative-to=. "$WENV_DIR/$dir")
+    else
+        abs=$dir
+    fi
+    cd "$abs"
+
+    [[ ! -z "$wname" ]] && tmux rename-window "$wname"
+}
+_c() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="${(k)wenv_dirs[@]}"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _c c
