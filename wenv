@@ -95,13 +95,15 @@ OPTIONS
   -t    Open the wenv in tmux. Default: true.
   -i    Run <wenv>'s startup function. Default: true.
   -q    Don't show <wenv>'s task list on startup. Default: false.
+  -d    Don't attach to the wenv's tmux session after starting. Default: false.
   -h    Display this help message.
 "
 
     local flag_t=1
     local flag_q=0
     local flag_i=1
-    while getopts ":tqih" opt; do
+    local flag_d=0
+    while getopts ":tqidh" opt; do
         case $opt in
             t)
                 flag_t=0
@@ -111,6 +113,9 @@ OPTIONS
                 ;;
             i)
                 flag_i=0
+                ;;
+            d)
+                flag_d=1
                 ;;
             h)
                 echo "$usage"
@@ -151,7 +156,7 @@ OPTIONS
         (('"$flag_q"' == 1)) || wenv task show
     }' ENTER
 
-    tmux attach-session -t "$wenv"
+    ((flag_d == 0)) && tmux attach-session -t "$wenv"
     return 0
 }
 
