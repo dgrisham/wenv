@@ -434,7 +434,7 @@ USAGE
   wenv cd [-r] [-h] <wenv> - cd into <wenv>'s base directory.
 
 OPTIONS
-  -r    Rename the current tmux window to the designated wenv's name.
+  -r    Rename the current tmux window to the designated wenv's name (<wenv>).
   -h    Display this help message.
 
 DESCRIPTION
@@ -732,7 +732,7 @@ DESCRIPTION
             wenv_extension_remove $@
             ;;
         *)
-            echo "$usage"
+            echo "$usage" >&2
             return 1
             ;;
     esac
