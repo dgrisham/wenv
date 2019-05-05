@@ -94,22 +94,25 @@ Installation
 ------------
 
 For now, the installation is manual -- fortunately, it's also relatively
-painless. The following steps (or variations on them) should get the job done:
+painless. The following steps (or variations on them) should get the job done
+(note that you may want to store this repo somewhere permanent and symlink to
+its contents instead of copying to make updates easier):
 
 1.  Clone this repository.
 2.  Put the `wenv` file in a directory that's in your `PATH` (e.g.
     `$HOME/.local/bin`). `wenv` is a Zsh script that defines all of the
     relevant functionality.
 3.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
-    put the `template` file there. Also, create a directory inside of that
-    `wenv` directory called `wenvs`, which will store the wenv files for all of
-    your projects. If you're in this repository, you can run the following lines
-    to complete this step:
+    put the `template` file there and `extensions` directory there. Also, create
+    a directory inside of that `wenv` directory called `wenvs`, which will store
+    the wenv files for all of your projects. If you're in this repository, you
+    can run the following lines to complete this step:
 
     .. code-block:: bash
 
-        mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/wenv/wenvs"
-        cp template "${XDG_CONFIG_HOME:-$HOME/.config}/wenv
+        export wenv_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
+        mkdir -p "$wenv_cfg/wenvs"
+        ln -s <path-to-this-repo>/{template,extensions} "$wenv_cfg"
 
 4.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
@@ -235,6 +238,7 @@ with the following function, called `wenv_def()`:
         WENV_DEPS=()
         WENV_PROJECT=''
         WENV_TASK=''
+        WENV_EXTENSIONS=()
 
         startup_wenv() {}
         bootstrap_wenv() {}
@@ -377,7 +381,7 @@ do this, we'd add `iptb` to our `WENV_DEPS`:
 .. code-block:: bash
 
     wenv_def() {
-        WENV_DIR="..."
+        # ...
         WENV_DEPS=('iptb')
     }
 
@@ -477,132 +481,15 @@ extensions (discussed below), our `wenv_def()` would look like:
 .. code-block:: bash
 
     wenv_def() {
-        WENV_DIR="..."
+        # ...
         WENV_EXTENSIONS=('c' 'edit')
     }
 
 Then the files `"$WENV_CFG/extensions/c"` and `"$WENV_CFG/extensions/edit"`
-would be sourced in every shell of our wenv.
-
-An extenson can also be manually loaded with `wenv extend <extension>`. However,
-this will only source the extension file in the current shell, rather than in
-every shell of an active wenv.
-
-Predefined Functions
-~~~~~~~~~~~~~~~~~~~~
-
-As mentioned at the beginning of this walkthrough, a new wenv comes with a few
-predefined variables/functions. The following subsections discuss these.
-
-`c()` and `wenv_dirs`
-+++++++++++++++++++++
-
-The default wenv template includes a line that declares an associative array
-called `wenv_dirs`, and also a provided `c()` function a few lines below that.
-The `c()` function accepts any argument that is a key in `wenv_dirs` and
-`cd`'s into the corresponding value. So, if `wenv_dirs` is defined like so:
-
-.. code-block:: bash
-
-    declare -Ag wenv_dirs=(
-        ['src']="$WENV_DIR/src"
-    )
-
-Then running `c src` will change to the `"$WENV_DIR/src"` directory. This is
-meant to provide a shortcut for `cd`'ing into directories related to the project
-other than `$WENV_DIR`. In this case, since the `src` directory is in our wenv,
-we can shorten the entry to the following
-
-    declare -Ag wenv_dirs=(
-        ['src']="src"
-    )
-
-`c()` assumes that any entry that doesn't start with `/` denotes a path relative
-to `$WENV_DIR`.
-
-We can also, of course, add entries for directories outside of the wenv:
-
-.. code-block:: bash
-
-    declare -Ag wenv_dirs=(
-        ['src']="$WENV_DIR/src"
-        ['http']="/srv/http"
-    )
-
-If we pass the `-r` flag to `c()`, the current tmux window will be renamed to
-the passed argument. For example, running
-
-.. code-block:: bash
-
-    $ c -r src
-
-will 1. change to the `"$WENV_DIR/src"` directory, and 2. rename the current
-tmux window to 'src'. If we wanted to rename the window to something other than
-'src', e.g. 'code', we can use the `-n` flag:
-
-.. code-block:: bash
-
-    $ c -n code src
-
-`c()` also comes with a predefined completion function for the keys of
-`wenv_dirs`, so you can tab-complete all possible inputs (in this case, `src`
-and `http`).
-
-.. _edit:
-
-`edit()` and `wenv_files`
-+++++++++++++++++++++++++
-
-`c()` and `wenv_dirs` are meant to provide a convenient interface for nimbly
-navigating frequently visited directories. `edit()` and `wenv_files`
-accomplish a similar goal, but with opening sets of files in your text editor.
-For example, if we had a `main.cpp` file in the base of our wenv that we wanted
-to open by running `edit main`, we'd add the following entry to `wenv_files`:
-
-.. code-block:: bash
-
-    declare -Ag wenv_files=(
-        ['main']='main.cpp'
-    )
-
-(Note that `edit()` expects your editor to be specified in the `EDITOR`
-environment variable.)
-
-Like `c()`, `edit()` will assume all relative paths are relative to
-`$WENV_DIR`. We can also use Zsh globs/expansions/etc., provided we enclose such
-entries with single-quotes:
-
-.. code-block:: bash
-
-    declare -Ag wenv_files=(
-        ['main']='main.cpp'
-        ['class']='class.{cpp,h}' # open the header and impl files for `class`
-        ['cpp']='*.cpp' # open all cpp files
-        ['src']='$(echo src/* | xargs -n1 | sort -r)' # open all files in `src`,
-                                                      # sorted in reverse order
-    )
-
-We can pass multiple arguments to `edit()` if we want to open multiple sets of
-files. For example, if we wanted to open `main.cpp` along with the class files,
-we could run
-
-.. code-block:: bash
-
-    $ edit main class
-
-If we pass `-r` when there are multiple arguments, the window will be renamed to
-the first argument. So, running
-
-.. code-block:: bash
-
-    $ edit -r main class
-
-will rename the tmux window to 'main'. And, just like with `c()`, we can use
-`-n` to specify a custom name. We could name the window `cpp` by running:
-
-.. code-block:: bash
-
-    $ edit -n cpp main class
+would be sourced in every shell of our wenv. See the documentation for the `c`
+and `edit` wenvs for more information on their usage (this can easily be done
+by running e.g. `wenv extension load c` then `c -h`, which will work regardless
+of whether you're in an active wenv).
 
 tmux
 ~~~~
