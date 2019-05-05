@@ -31,12 +31,13 @@ SUBCOMMANDS
   source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
   cd <wenv>             Change to <wenv>'s base directory.
   task <cmd>            Access the project task list.
+  extension <cmd>       Interact with wenv extensions.
   bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
-Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
+Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
-    [ $# -eq 0 ] && echo "$usage" && return 1
+    [[ $# == 0 ]] && { echo "$usage" >&2 ; return 1 }
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -59,17 +60,14 @@ Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
         stop)
             wenv_stop $@
             ;;
-        task)
-            wenv_task $@
-            ;;
         'cd')
             wenv_cd $@
             ;;
         new)
             wenv_new $@
             ;;
-        bootstrap)
-            wenv_bootstrap $@
+        task)
+            wenv_task $@
             ;;
         edit)
             wenv_edit $@
@@ -77,11 +75,17 @@ Use \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
         rm|remove)
             wenv_remove $@
             ;;
+        mv|rename)
+            wenv_rename $@
+            ;;
         'source')
             wenv_source $@
             ;;
-        mv|rename)
-            wenv_rename $@
+        extension)
+            wenv_extension $@
+            ;;
+        bootstrap)
+            wenv_bootstrap $@
             ;;
     esac
 }
@@ -180,6 +184,8 @@ wenv_exec() {
     [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
+
+    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "$WENV_EXTENSIONS[@]"
 
     return 0
 }
@@ -343,7 +349,7 @@ OPTIONS
 
     # nice bash syntax for setting var to first non-empty variable
     local wenv="${1:-${WENV}}"
-    [[ -f "$WENV_CFG/wenvs/$wenv" ]] && "$EDITOR" "$WENV_CFG/wenvs/$wenv"
+    [[ -f "$WENV_CFG/wenvs/$wenv" ]] && $EDITOR "$WENV_CFG/wenvs/$wenv"
 }
 
 wenv_remove() {
@@ -412,8 +418,8 @@ DESCRIPTION
         esac
     done
 
-    if [[ "$#" -eq 0 && -n "$WENV" ]]; then
-        (( ${#WENV_DEPS[@]} != 0 )) && wenv_source "${WENV_DEPS[@]}"
+    if [[ "$#" == 0 && -n "$WENV" ]]; then
+        ((${#WENV_DEPS[@]} != 0)) && wenv_source "${WENV_DEPS[@]}"
         source "$WENV_CFG/wenvs/$WENV" >/dev/null
     fi
     local wenv
@@ -429,7 +435,7 @@ USAGE
   wenv cd [-r] [-h] <wenv> - cd into <wenv>'s base directory.
 
 OPTIONS
-  -r    Rename the current tmux window to the designated wenv's name.
+  -r    Rename the current tmux window to the designated wenv's name (<wenv>).
   -h    Display this help message.
 
 DESCRIPTION
@@ -492,8 +498,8 @@ OPTIONS
   -h    Display this help message.
 
 SUBCOMMANDS
-  show    Show the task list for the active wenv.
-  add     Add a task to the active wenv's task list.
+  show  Show the task list for the active wenv.
+  add   Add a task to the active wenv's task list.
 
 DESCRIPTION
   As a convenient shorthand, running \`wenv task\` defaults to running
@@ -574,8 +580,7 @@ OPTIONS
 wenv_task_add() {
     local usage="\
 USAGE
-  wenv task add [-h] [-w <wenv>] [<mods>] <desc> - Add a task to the active
-                                                    wenv's task list.
+  wenv task add [-h] [-w <wenv>] [<mods>] <desc> - Add a task to the active wenv's task list.
 
 OPTIONS
   -w <wenv>    Add a task to <wenv>'s task list, instead of the active wenv's.
@@ -683,6 +688,188 @@ DESCRIPTION
     ! function_exists bootstrap_wenv && return 0
     bootstrap_wenv
     unset_quiet -f bootstrap_wenv
+}
+
+wenv_extension() {
+    local usage="\
+USAGE
+  wenv extension [-h] [<cmd>] - Interact with wenv extensions.
+
+OPTIONS
+  -h    Display this help message.
+
+SUBCOMMANDS
+  load  Load an extension.
+  open  Create or edit existing extensions.
+
+DESCRIPTION
+  Use  \`wenv task <cmd> -h\` for more information on a given subcommand <cmd>.
+"
+
+    while getopts ":h" opt; do
+        case $opt in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local arg="$1"
+    shift 2> /dev/null
+    case "$arg" in
+        load)
+            wenv_extension_load $@
+            ;;
+        open)
+            wenv_extension_open $@
+            ;;
+        remove)
+            wenv_extension_remove $@
+            ;;
+        *)
+            echo "$usage" >&2
+            return 1
+            ;;
+    esac
+}
+
+wenv_extension_load() {
+    local usage="\
+USAGE
+  wenv extension load [-h] <extension> [<extension> ...] - Source wenv extensions.
+
+OPTIONS
+  -h                               Display this help message.
+
+ARGUMENTS
+  <extension> [<extension> ...]    The names of the extension files to load.
+
+DESCRIPTION
+  This function sources the corresponding extension file at \$WENV_CFG/<extension>.
+  This will only source the extension file in the current shell. See the
+  documentation on the WENV_EXTENSIONS environment variable for loading an
+  extension in every shell of a wenv.
+"
+
+    while getopts ":h" opt; do
+        case $opt in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
+    extensions="$WENV_CFG/extensions"
+    for extension in "$@"; do
+        if [[ ! -f "$extensions/$extension" ]]; then
+            echo "'$extension' not found in $extensions" >&2
+            return 1
+        fi
+        source "$extensions/$extension"
+    done
+}
+
+wenv_extension_open() {
+    local usage="\
+USAGE
+  wenv extension new [-h] <extension> [<extension> ...] - Create or edit existing extensions.
+
+OPTIONS
+  -h                               Display this help message.
+
+ARGUMENTS
+  <extension> [<extension> ...]    The names of the extension files to open.
+
+DESCRIPTION
+  Opens one or more extension files in \$EDITOR. When opening a extension file
+  that doesn't already exist, the file will be created with a default shebang.
+"
+
+    while getopts ":h" opt; do
+        case $opt in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
+
+    local abs=()
+    for ext in $@; do
+        file="$WENV_CFG/extensions/$ext"
+        [[ ! -f "$file" ]] && echo '#!/usr/bin/env zsh' > "$file"
+        abs+=($file)
+    done
+    $EDITOR "$abs[@]"
+}
+
+wenv_extension_remove() {
+    local usage="\
+USAGE
+  wenv extension remove [-h] [-f] <extension> [<extension> ...] - Delete extension files.
+
+OPTIONS
+  -h    Display this help message.
+  -f    Force removal (passes \`-f\` flag to \`rm\`).
+
+DESCRIPTION
+  Removes extensions from \$WENV_CFG/extensions. If any of the passed extension
+  files don't exist, nothing will be removed.
+"
+
+    flag_f=0
+    while getopts ":fh" opt; do
+        case "$opt" in
+            f)
+                flag_f=1
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    declare -A abs
+    for ext in $@; do
+        local file="$WENV_CFG/extensions/$ext"
+        [[ ! -f "$file" ]] && { echo "Extension '$ext' does not exist" >&2 ; return 1 }
+        abs[$ext]="$file"
+    done
+
+    if ((flag_f == 1)); then
+        rm -f "${abs[@]}"
+    else
+        for ext in $@; do
+            rm "${abs[$ext]}"
+        done
+    fi
+    return 0
 }
 
 wenv_tmux_split() {
