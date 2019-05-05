@@ -1,0 +1,96 @@
+#!/usr/bin/env zsh
+
+edit() {
+    local usage="\
+USAGE
+  edit [-r] [-h] <file_key> [<file_key> ...]
+
+OPTIONS
+  -r    Rename the current tmux window to the first passed <file_key>.
+  -h    Display this help message.
+
+REQUIREMENTS
+  - EDITOR environment variable must be set.
+  - Define the global associative array \`wenv_files\` in your wenv file (see
+    examples below).
+
+DESCRIPTION
+  This extension provides an easy way to edit files related to a wenv. To use
+  this extension, a wenv must define an associative array \`wenv_files\` with
+  entries for the files. For example, if the base directory of your wenv has a
+  file main.cpp that you want to edit by running \`edit main\`, you'd define
+  \`wenv_files\` as
+
+    declare -Ag wenv_files=(
+        ['main']='main.cpp'
+    )
+
+  Then you can run \`edit main\` to open main.cpp in your editor. Note that
+  non-absolute paths will be treated as relative to WENV_DIR.
+
+  You can also use Zsh globs/expansions/etc. when defining sets of files to
+  open:
+
+    declare -Ag wenv_files=(
+        # open class.h and class.cpp
+        ['class']='class.{h,cpp}'
+        # open all .go files in WENV_DIR and all subdirectories
+        ['go']='\$(find . -name \*.go)'
+    )
+
+  Finally, note that you can tab-complete among all of the keys in \`wenv_files\`
+  when passing the <file_key> arguments.
+"
+
+    local flag_r=0
+    while getopts ":r:h" opt; do
+        case $opt in
+            r)
+                flag_r=1
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    (($# == 0)) && { echo "$usage" >&2 ; return 1 }
+
+    local files=()
+    for arg in $@; do
+        [ "${wenv_files[$arg]+0}" ] || { echo "no entry '$arg'" >&2 ; return 1 }
+        files+="${wenv_files[$arg]}"
+    done
+
+    local abs=()
+    for file in $files; do
+        if [[ $file != /* ]]; then
+            abs+=($(realpath --relative-to=. "$WENV_DIR/$file"))
+        else
+            abs+=($file)
+        fi
+    done
+
+    (( flag_r == 1 )) && tmux rename-window "$1"
+    eval "$EDITOR $abs"
+}
+_edit() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ ${word} == -* ]]; then
+        COMPREPLY=($(compgen -W "-r -h" -- ${word}))
+    else
+        local opts="${(k)wenv_files[@]}"
+        COMPREPLY=($(compgen -W "${opts}" -- ${word}))
+    fi
+}
+complete -F _edit edit

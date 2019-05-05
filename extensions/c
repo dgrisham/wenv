@@ -1,0 +1,90 @@
+#!/usr/bin/env zsh
+
+c() {
+    local usage="\
+USAGE
+  c [-r] [-h] <dir_key>
+
+OPTIONS
+  -r    Rename the current tmux window to the designated wenv's name (<wenv>).
+  -h    Display this help message.
+
+REQUIREMENTS
+  Define the global associative array \`wenv_dirs\` in your wenv file (see
+  examples below).
+
+DESCRIPTION
+  This extension provides an easy way to cd into directories related to a wenv.
+  To use this extension, a wenv must define an associative array \`wenv_dirs\`
+  with entries for the directories. For example, if you're working in a wenv
+  that uses an HTTP server hosted in /srv/http, you could define \`wenv_dirs\` as
+
+    declare -Ag wenv_dirs=(
+        ['http']='/srv/http'
+    )
+
+  Then you can run \`c http\` to change into the \`/srv/http\` directory.
+
+  By default, non-absolute paths will be treated as relative to WENV_DIR. So, to
+  add another entry for a folder called src in the base of your wenv, you'd
+  update \`wenv_dirs\` to
+
+    declare -Ag wenv_dirs=(
+        ['http']='/srv/http'
+        ['src']='src'
+    )
+
+  Finally, note that you can tab-complete among all of the keys in \`wenv_dirs\`
+  when passing the <dir_key> argument.
+"
+
+    local flag_r=0
+    while getopts ":rn:h" opt; do
+        case $opt in
+            r)
+                flag_r=1
+                ;;
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    (($# != 1)) && { echo "$usage" >&2 ; return 1 }
+    local input="$1"
+    shift
+
+    [ "${wenv_dirs[$input]+0}" ] || { echo "no entry '$input'" >&2 ; return 1 }
+    dir="${wenv_dirs[$input]}"
+
+    local abs
+    if [[ $dir != /* ]]; then
+        abs=$(realpath --relative-to=. "$WENV_DIR/$dir")
+    else
+        abs=$dir
+    fi
+    cd "$abs"
+
+    ((flag_r == 1)) && tmux rename-window "$input"
+}
+_c() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-r -h" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="${(k)wenv_dirs[@]}"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _c c

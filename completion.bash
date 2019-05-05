@@ -30,47 +30,11 @@ _wenv_cd() {
     fi
 }
 
-_wenv_rm() {
-    _wenv_remove
-}
-
-_wenv_remove() {
-    if [[ $word == -* ]]; then
-        _wenv_comp "-h"
-    else
+_wenv_new() {
+    if [[ ${prev} == "-i" ]]; then
         _show_wenvs
-    fi
-}
-
-_wenv_source() {
-    if [[ $word == -* ]]; then
-        _wenv_comp "-h"
-    else
-        _show_wenvs
-    fi
-}
-
-_wenv_edit() {
-    _show_wenvs
-}
-
-_wenv_rename() {
-    if [[ $word == -* ]]; then
-        _wenv_comp "-h"
-    else
-        _show_wenvs
-    fi
-}
-
-_wenv_mv() {
-    _wenv_rename
-}
-
-_wenv_exec() {
-    if [[ $word == -* ]]; then
-        _wenv_comp "-c -n -h"
-    else
-        _show_wenvs
+    elif [[ ${word} == -* ]]; then
+        _wenv_comp "-i -d -h"
     fi
 }
 
@@ -98,17 +62,85 @@ _wenv_task_show() {
     fi
 }
 
-_wenv_new() {
-    if [[ ${prev} == "-i" ]]; then
+_wenv_edit() {
+    _show_wenvs
+}
+
+_wenv_rm() {
+    _wenv_remove
+}
+
+_wenv_remove() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
         _show_wenvs
-    elif [[ ${word} == -* ]]; then
-        _wenv_comp "-i -d -h"
+    fi
+}
+
+_wenv_rename() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        _show_wenvs
+    fi
+}
+
+_wenv_mv() {
+    _wenv_rename
+}
+
+_wenv_source() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        _wenv_comp "load edit"
+    fi
+}
+
+_wenv_extension() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        _wenv_comp "load open remove"
+    fi
+}
+
+_wenv_extension_load() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        ls "$WENV_CFG/extensions"
+    fi
+}
+
+_wenv_extension_open() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        ls "$WENV_CFG/extensions"
+    fi
+}
+
+_wenv_extension_remove() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-h"
+    else
+        ls "$WENV_CFG/extensions"
     fi
 }
 
 _wenv_bootstrap() {
     if [[ $word == -* ]]; then
         _wenv_comp "-h"
+    else
+        _show_wenvs
+    fi
+}
+
+_wenv_exec() {
+    if [[ $word == -* ]]; then
+        _wenv_comp "-c -n -h"
     else
         _show_wenvs
     fi
@@ -126,8 +158,8 @@ _wenv() {
             if [[ $word == -* ]]; then
                 _wenv_comp '-h'
             else
-                local opts="start stop reset task cd new bootstrap edit rm \
-                            remove source exec mv"
+                local opts="start stop cd new task edit rm mv source \
+                            extension bootstrap exec"
                 COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
             fi
             ;;
