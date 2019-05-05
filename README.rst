@@ -472,12 +472,12 @@ tasks based on the current project.
 Extensions
 ~~~~~~~~~~
 
-Wenv extensions define reusable shell code that may be used across multiple
-wenvs. A wenv extension is nothing more than a shell file that you want to
-source in every shell of a wenv. Extensions are stored in
-`"$WENV_CFG/extensions"`. To load an extension, add its name to the
-`WENV_EXTENSIONS` array. For example, if we wanted to load the `c` and `edit`
-extensions (discussed below), our `wenv_def()` would look like:
+Wenv extensions define shell code that may be reused across multiple wenvs. A
+wenv extension is nothing more than a shell file that you want to source in every
+shell of a wenv. Extensions are stored in `"$WENV_CFG/extensions"`. To load an
+extension, add its name to the `WENV_EXTENSIONS` array. For example, if we
+wanted to load the `c` and `edit` extensions, our `wenv_def()` would look
+like:
 
 .. code-block:: bash
 
@@ -488,9 +488,9 @@ extensions (discussed below), our `wenv_def()` would look like:
 
 Then the files `"$WENV_CFG/extensions/c"` and `"$WENV_CFG/extensions/edit"`
 would be sourced in every shell of our wenv. See the documentation for the `c`
-and `edit` wenvs for more information on their usage (this can easily be done
-by running e.g. `wenv extension load c` then `c -h`, which will work regardless
-of whether you're in an active wenv).
+and `edit` wenvs for more information on their usage -- this can easily be done
+by running e.g. `wenv extension load c` then `c -h`, which will work
+regardless of whether you're in an active wenv.
 
 tmux
 ~~~~
