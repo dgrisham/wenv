@@ -11,3 +11,9 @@ wenv_def() {
     shutdown_wenv() {}
     bootstrap_wenv() {}
 }
+
+# for c extension
+# declare -Ag wenv_dirs=()
+
+# for edit extension
+# declare -Ag wenv_files=()
