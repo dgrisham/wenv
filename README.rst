@@ -162,6 +162,7 @@ Usage
       source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
       cd <wenv>             Change to <wenv>'s base directory.
       task <cmd>            Access the project task list.
+      extension <cmd>       Interact with wenv extensions.
       bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
     Run `wenv <cmd> -h` for more information on a given subcommand <cmd>.
@@ -180,7 +181,7 @@ See the Walkthrough_ for further elaboration and examples.
    Taskwarrior.
 -  `WENV_TASK`: The wenv's current active task number.
 -  `WENV_EXTENSIONS`: An array containing the names of the extensions to load
-    for the wenv.
+   for the wenv.
 
 **Functions**
 

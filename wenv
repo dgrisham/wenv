@@ -31,6 +31,7 @@ SUBCOMMANDS
   source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
   cd <wenv>             Change to <wenv>'s base directory.
   task <cmd>            Access the project task list.
+  extension <cmd>       Interact with wenv extensions.
   bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
 Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
