@@ -3,7 +3,7 @@
 c() {
     local usage="\
 USAGE
-  c [-r] [-h] <dir_key>
+  c [-r] [-h] [<dir_key>]
 
 OPTIONS
   -r    Rename the current tmux window to the designated wenv's name (<wenv>).
@@ -34,6 +34,8 @@ DESCRIPTION
         ['src']='src'
     )
 
+  If no <dir_key> is passed, this function will change into WENV_DIR.
+
   Finally, note that you can tab-complete among all of the keys in \`wenv_dirs\`
   when passing the <dir_key> argument.
 "
@@ -56,7 +58,7 @@ DESCRIPTION
     done
     shift $((OPTIND-1))
 
-    (($# != 1)) && { echo "$usage" >&2 ; return 1 }
+    (($# != 1)) && { cd "$WENV_DIR" ; return 0 }
     local input="$1"
     shift
 
