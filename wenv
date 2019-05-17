@@ -138,6 +138,9 @@ OPTIONS
     fi
     local wenv="$1"
 
+    # check if wenv is already running
+    tmux list-sessions | grep "$wenv" >/dev/null && { echo "wenv $wenv already running" ; return 1 }
+
     if ((flag_t == 0)); then
         wenv_stop
         wenv_exec $@ || return 1
