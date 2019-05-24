@@ -102,7 +102,7 @@ how wenvs work. And if you don't understand how shells work, using wenvs can hel
 you do so.
 
 .. [*] For more on this topic, see the talk `Preventing the Collapse of Civilation
-   by Jonathon Blow <https://www.youtube.com/watch?v=pW-SOdj4Kkk>_`.
+   by Jonathon Blow <https://www.youtube.com/watch?v=pW-SOdj4Kkk>`_.
 
 Installation
 ------------
