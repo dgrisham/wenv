@@ -840,7 +840,7 @@ DESCRIPTION
   files don't exist, nothing will be removed.
 "
 
-    flag_f=0
+    local flag_f=0
     while getopts ":fh" opt; do
         case "$opt" in
             f)
