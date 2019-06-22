@@ -937,7 +937,7 @@ wenv_tmux_layout() {
             [[ -n "$@" ]] && tmux send-keys "$*" 'Enter'
             tmux select-pane -U
             ;;
-        devloop)
+        devloop|monitor)
             local watch='git'
             [[ "$1" == '-w' ]] && watch="$2" && shift 2
             wenv_tmux_layout 'dev' "monitor $watch $*"
