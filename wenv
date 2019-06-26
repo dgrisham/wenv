@@ -318,9 +318,9 @@ OPTIONS
     [[ -z "$1" ]] && return 1
     local wenv="$1"
 
-    # generalize/clean this up
+    # TODO: generalize/clean this up
     if [[ $flag_d -eq 1 ]]; then
-        cat =(sed -r "s@WENV_DIR=.*?@WENV_DIR=\"`pwd`\"@" "$template") > "$WENV_CFG/wenvs/$wenv"
+        cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=\"`pwd`\"|" "$template") > "$WENV_CFG/wenvs/$wenv"
     else
         # this case shouldn't be exclusive from previous
         cp "$template" "$WENV_CFG/wenvs/$wenv"
