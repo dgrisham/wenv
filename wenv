@@ -265,7 +265,6 @@ wenv_load() {
         wenv_source "$wenv"
     elif [[ -n "$WENV" ]]; then
         run_wenv_def "$WENV"
-        wenv_def
         wenv_source
     else
         return 1
