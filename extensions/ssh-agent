@@ -1,0 +1,20 @@
+#!/bin/zsh
+
+export SSH_AUTH_SOCK=/tmp/ssh-agent.socket
+
+ssh_agent() {
+    case "$1" in
+        'start')
+            service ssh_agent start
+            ;;
+        'stop')
+            service ssh_agent stop
+            ;;
+        'status')
+            service ssh_agent status
+            ;;
+        *)
+            echo "invalid argument: $1" >2
+            ;;
+    esac
+}
