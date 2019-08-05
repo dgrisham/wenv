@@ -67,7 +67,7 @@ DESCRIPTION
 
     local abs
     if [[ $dir != /* ]]; then
-        abs=$(realpath --relative-to=. "$WENV_DIR/$dir")
+        abs=$(realpath "$WENV_DIR/$dir")
     else
         abs=$dir
     fi

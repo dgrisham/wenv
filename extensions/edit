@@ -47,6 +47,7 @@ DESCRIPTION
         case $opt in
             r)
                 flag_r=1
+                shift
                 ;;
             h)
                 echo "$usage"
@@ -57,7 +58,6 @@ DESCRIPTION
                 ;;
         esac
     done
-    shift $((OPTIND-1))
 
     (($# == 0)) && { echo "$usage" >&2 ; return 1 }
 
@@ -70,7 +70,7 @@ DESCRIPTION
     local abs=()
     for file in $files; do
         if [[ $file != /* ]]; then
-            abs+=($(realpath --relative-to=. "$WENV_DIR/$file"))
+            abs+=($(realpath "$WENV_DIR/$file"))
         else
             abs+=($file)
         fi
