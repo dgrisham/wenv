@@ -413,7 +413,7 @@ DESCRIPTION
     done
 
     if (($# == 0)); then
-        source_wenvs_recursively $WENV
+        source_wenvs_recursively "$WENV"
         run_wenv_def "$WENV"
     else
         source_wenvs_recursively $@
@@ -428,8 +428,8 @@ source_wenvs_recursively() {
     for wenv in $@; do
         ! is_wenv "$wenv" && { echo "error: '$wenv' is not a wenv" >&2 ; continue }
         load_wenv_vars "$wenv"
-        ((${#WENV_DEPS[@]} != 0)) && source_wenvs_recursively "${WENV_DEPS[@]}"
         ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
+        ((${#WENV_DEPS[@]} != 0)) && source_wenvs_recursively "${WENV_DEPS[@]}"
         source "$WENV_CFG/wenvs/$wenv" >/dev/null
     done
     unset_wenv_vars
@@ -776,7 +776,7 @@ DESCRIPTION
     shift $((OPTIND-1))
 
     [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
-    extensions="$WENV_CFG/extensions"
+    local extensions="$WENV_CFG/extensions"
     for extension in "$@"; do
         if [[ ! -f "$extensions/$extension" ]]; then
             echo "'$extension' not found in $extensions" >&2
