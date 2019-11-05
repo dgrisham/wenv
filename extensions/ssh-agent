@@ -5,13 +5,13 @@ export SSH_AUTH_SOCK=/tmp/ssh-agent.socket
 ssh_agent() {
     case "$1" in
         'start')
-            service ssh_agent start
+           systemctl --user start ssh-agent
             ;;
         'stop')
-            service ssh_agent stop
+            systemctl --user stop ssh-agent
             ;;
         'status')
-            service ssh_agent status
+            systemctl --user status ssh-agent
             ;;
         *)
             echo "invalid argument: $1" >2
