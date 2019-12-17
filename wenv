@@ -906,6 +906,9 @@ ARGUMENTS
                 echo "$usage"
                 return 0
                 ;;
+            --)
+                break
+                ;;
             \?)
                 echo "unknown option: -$OPTARG" >&2
                 return 1
