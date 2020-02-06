@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-export SSH_AUTH_SOCK=/tmp/ssh-agent.socket
+export SSH_AUTH_SOCK=/run/user/1000/ssh-agent.socket
 
 ssh_agent() {
     case "$1" in
