@@ -7,7 +7,7 @@ _wenv_comp() {
 }
 
 _show_wenvs() {
-    ls "$WENV_CFG/wenvs"
+    find "$WENV_CFG/wenvs" ! -type d -printf '%P\n'
 }
 
 _wenv_start() {
@@ -158,8 +158,7 @@ _wenv() {
             if [[ $word == -* ]]; then
                 _wenv_comp '-h'
             else
-                local opts="start stop cd new task edit rm mv source \
-                            extension bootstrap exec"
+                local opts="start stop cd new task edit rm mv source extension bootstrap exec"
                 COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
             fi
             ;;
