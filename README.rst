@@ -113,7 +113,20 @@ painless. The following steps (or variations on them) should get the job done
 its contents instead of copying to make updates easier):
 
 1.  Clone this repository.
-2.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
+2.  Put the `wenv` and `completion.bash` files wherever you like, and add the
+    following lines to source them in your Zsh profile (or another Zsh startup
+    file):
+
+    .. code-block:: bash
+
+        # source wenv file
+        source <path-to-wenv-file> 
+        # enable bash completion functions 
+        autoload bashcompinit
+        bashcompinit 
+        # source wenv completion file 
+        source <path-to-completion.bash>
+3.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
     put the `template` file there and `extensions` directory there. Also, create
     a directory inside of that `wenv` directory called `wenvs`, which will store
     the wenv files for all of your projects. If you're in this repository, you
@@ -125,7 +138,7 @@ its contents instead of copying to make updates easier):
         mkdir -p "$wenv_cfg/wenvs"
         ln -s <path-to-this-repo>/{template,extensions} "$wenv_cfg"
 
-3.  In order for wenvs to work with `tmux`, the following line should be added
+4.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
     .. code-block:: bash
@@ -134,19 +147,6 @@ its contents instead of copying to make updates easier):
 
     This makes it so that the wenv associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
-4.  Put the `wenv` and `completion.bash` files wherever you like, and add the
-    following lines to source it in your Zsh profile (or another Zsh startup
-    file):
-
-    .. code-block:: bash
-
-        # source wenv file
-        source <path-to-wenv-file> 
-        # enable bash completion functions 
-        autoload
-        bashcompinit bashcompinit 
-        # source wenv completion file 
-        source <path-to-completion.bash>
 
 Dependencies
 ~~~~~~~~~~~~
