@@ -113,7 +113,19 @@ painless. The following steps (or variations on them) should get the job done
 its contents instead of copying to make updates easier):
 
 1.  Clone this repository.
-2.  Put the `wenv` and `completion.bash` files wherever you like, and add the
+2.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
+    put the `template` file there and `extensions` directory there. Also, create
+    a directory inside of that `wenv` directory called `wenvs`, which will store
+    the wenv files for all of your projects. If you're in this repository, you
+    can run the following lines to complete this step:
+
+    .. code-block:: bash
+
+        export wenv_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
+        mkdir -p "$wenv_cfg/wenvs"
+        ln -s <path-to-this-repo>/{template,extensions} "$wenv_cfg"
+
+3.  Put the `wenv` and `completion.bash` files wherever you like, and add the
     following lines to source them in your Zsh profile (or another Zsh startup
     file):
 
@@ -126,17 +138,6 @@ its contents instead of copying to make updates easier):
         bashcompinit 
         # source wenv completion file 
         source <path-to-completion.bash>
-3.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
-    put the `template` file there and `extensions` directory there. Also, create
-    a directory inside of that `wenv` directory called `wenvs`, which will store
-    the wenv files for all of your projects. If you're in this repository, you
-    can run the following lines to complete this step:
-
-    .. code-block:: bash
-
-        export wenv_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
-        mkdir -p "$wenv_cfg/wenvs"
-        ln -s <path-to-this-repo>/{template,extensions} "$wenv_cfg"
 
 4.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
