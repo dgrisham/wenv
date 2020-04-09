@@ -297,21 +297,21 @@ OPTIONS
     while getopts ":d:i:h" opt; do
         case $opt in
             d)
-                [[ ! -z "$OPTARG" ]] && local wenv_dir="$OPTARG"
+                local wenv_dir="$OPTARG"
                 ;;
             i)
-                [[ ! -z "$OPTARG" ]] && template="$WENV_CFG/wenvs/${OPTARG}"
+                template="$WENV_CFG/wenvs/${OPTARG}"
                 ;;
             h)
                 echo "$usage"
                 return 0
                 ;;
             :)
-                echo "unknown option: $OPTARG requires and argument" >&2
+                echo "unknown option: $OPTARG requires an argument" >&2
                 return 1
                 ;;
             \?)
-                echo "unknown option: -$OPTARG start" >&2
+                echo "unknown option: -$OPTARG" >&2
                 return 1
                 ;;
         esac
@@ -321,7 +321,7 @@ OPTIONS
     [[ -z "$1" ]] && return 1
     local wenv="$1"
 
-    cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=$wenv_dir|$template") > "$WENV_CFG/wenvs/$wenv"
+    cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=$wenv_dir| $template") > "$WENV_CFG/wenvs/$wenv"
 
     wenv_edit "$wenv"
 }
