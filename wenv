@@ -283,27 +283,32 @@ run_wenv_def() {
 wenv_new() {
     local usage="\
 USAGE
-  wenv new [-d] [-i <wenv>] [-h] <name> - Create a new wenv called <name>.
+  wenv new [-d <dir>] [-i <wenv>] [-h] <name> - Create a new wenv called <name>.
 
 OPTIONS
-  -d        Set the cwd as the new wenv's base directory (i.e. WENV_DIR).
+  -d        Initialize wenv with <dir> as the new wenv's base directory rather than the current working directory.
   -i <wenv> Use <wenv>'s wenv file as the initial definition for the new wenv.
   -h        Display this help message.
 "
 
     local template="$WENV_CFG/template"
     local flag_d=0
-    while getopts ":di:h" opt; do
+    local wenv_dir=$(pwd)
+    while getopts ":d:i:h" opt; do
         case $opt in
             d)
-                flag_d=1
+                local wenv_dir="$OPTARG"
                 ;;
             i)
-                [[ ! -z "$OPTARG" ]] && template="$WENV_CFG/wenvs/${OPTARG}"
+                template="$WENV_CFG/wenvs/${OPTARG}"
                 ;;
             h)
                 echo "$usage"
                 return 0
+                ;;
+            :)
+                echo "unknown option: $OPTARG requires an argument" >&2
+                return 1
                 ;;
             \?)
                 echo "unknown option: -$OPTARG" >&2
@@ -316,13 +321,8 @@ OPTIONS
     [[ -z "$1" ]] && return 1
     local wenv="$1"
 
-    # TODO: generalize/clean this up
-    if [[ $flag_d -eq 1 ]]; then
-        cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=\"`pwd`\"|" "$template") > "$WENV_CFG/wenvs/$wenv"
-    else
-        # this case shouldn't be exclusive from previous
-        cp "$template" "$WENV_CFG/wenvs/$wenv"
-    fi
+    cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=$wenv_dir| $template") > "$WENV_CFG/wenvs/$wenv"
+
     wenv_edit "$wenv"
 }
 
