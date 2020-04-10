@@ -7,7 +7,7 @@ _wenv_comp() {
 }
 
 _show_wenvs() {
-    find "$WENV_CFG/wenvs" ! -type d -printf '%P\n'
+    find "$WENV_CFG/wenvs" ! -type d -exec basename {} \;
 }
 
 _wenv_start() {
