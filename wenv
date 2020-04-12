@@ -25,6 +25,7 @@ SUBCOMMANDS
   start <wenv>          Start the working environment <wenv>.
   stop                  Stop the current working environment.
   new                   Create a new working environment.
+  list                  List all wenvs
   edit <wenv>           Edit the wenv file for <wenv>.
   rename <old> <new>    Rename wenv <old> to <new>.
   remove <wenv>         Delete the wenv file for <wenv>.
@@ -65,6 +66,9 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
             ;;
         new)
             wenv_new $@
+            ;;
+        ls|list)
+            wenv_list $@
             ;;
         task)
             wenv_task $@
@@ -351,6 +355,31 @@ OPTIONS
     # nice bash syntax for setting var to first non-empty variable
     local wenv="${1:-${WENV}}"
     [[ -f "$WENV_CFG/wenvs/$wenv" ]] && $EDITOR "$WENV_CFG/wenvs/$wenv"
+}
+
+wenv_list() {
+    local usage="\
+USAGE
+  wenv list [-h] - List wenvs.
+
+OPTIONS
+  -h        Display this help message.
+"
+
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    ls -1 "$WENV_CFG/wenvs"
 }
 
 wenv_remove() {
