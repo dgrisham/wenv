@@ -321,7 +321,7 @@ OPTIONS
     [[ -z "$1" ]] && return 1
     local wenv="$1"
 
-    cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=$wenv_dir| $template") > "$WENV_CFG/wenvs/$wenv"
+    cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=\"$wenv_dir\"|" "$template") > "$WENV_CFG/wenvs/$wenv"
 
     wenv_edit "$wenv"
 }
