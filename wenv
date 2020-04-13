@@ -379,7 +379,7 @@ OPTIONS
         esac
     done
 
-    ls -1 "$WENV_CFG/wenvs"
+    find "$WENV_CFG/wenvs" ! -type d | perl -pe "s|$WENV_CFG/wenvs/||" | sort
 }
 
 wenv_remove() {
