@@ -296,12 +296,11 @@ OPTIONS
 "
 
     local template="$WENV_CFG/template"
-    local flag_d=0
     local wenv_dir=$(pwd)
     while getopts ":d:i:h" opt; do
         case $opt in
             d)
-                local wenv_dir="$OPTARG"
+                wenv_dir="$OPTARG"
                 ;;
             i)
                 template="$WENV_CFG/wenvs/${OPTARG}"
