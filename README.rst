@@ -144,7 +144,7 @@ its contents instead of copying to make updates easier):
 
     .. code-block:: bash
 
-        eval "$WENV_EXEC"
+        [[ -n "$WENV" ]] && wenv_exec -c "$WENV"
 
     This makes it so that the wenv associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
