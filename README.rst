@@ -506,17 +506,3 @@ would be sourced in every shell of our wenv. See the documentation for the `c`
 and `edit` wenvs for more information on their usage -- this can easily be done
 by running e.g. `wenv extension load c` then `c -h`, which will work
 regardless of whether you're in an active wenv.
-
-tmux
-~~~~
-
-A wenv that opens in tmux sets a few tmux keybindings for opening new
-panes/windows and activating the current wenv in them. By default, these are
-bound to:
-
--   `-`: Split window vertically
--   `\\`: Split window horizontally
--   `c`: New window
-
-These are currently hardcoded in the `wenv_start()` function, so if you want to
-change the bindings you'll have to edit that function.
