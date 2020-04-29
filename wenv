@@ -162,9 +162,6 @@ OPTIONS
     echo -e '
         wenv_exec '"$@"' || return 1
         tmux set-environment WENV "$WENV"
-        tmux bind-key - split-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
-        tmux bind-key \\\\ split-window -h -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
-        tmux bind-key c new-window -c "#{pane_current_path}" '"'"'WENV_EXEC="unset WENV; wenv_exec -c \"$WENV\"" zsh -i'"'"'
         (('"$flag_i"' == 1)) && startup_wenv
         clear
         (('"$flag_q"' == 1)) || wenv task show
