@@ -5,6 +5,7 @@ wenv_def() {
     WENV_DEPS=()
     WENV_PROJECT='wenv'
     WENV_TASK=''
+    WENV_EXTENSIONS=('c')
 
     bootstrap_wenv() {}
     startup_wenv() {}
