@@ -97,7 +97,7 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
 wenv_start() {
     local usage="\
 USAGE
-  wenv start [-t] [-i] [-q] [-h] <wenv> - Start working environemnt <wenv>.
+  wenv start [-t] [-i] [-q] [-h] <wenv> - Start working environemnt <wenv>. If <wenv> is already running, attach to it.
 
 OPTIONS
   -t    Open the wenv in tmux. Default: true.
@@ -143,7 +143,11 @@ OPTIONS
     local wenv="$1"
 
     # check if wenv is already running
-    tmux list-sessions | grep "^$wenv:" >/dev/null && { echo "wenv $wenv already running" ; return 1 }
+    tmux list-sessions | grep "^$wenv:" >/dev/null && {
+        echo "wenv $wenv already running"
+        ((flag_d == 0)) && tmux attach-session -t "$wenv"
+        return 0
+    }
 
     if ((flag_t == 0)); then
         wenv_stop
@@ -917,8 +921,7 @@ OPTIONS
   -h        Display this help message.
 
 ARGUMENTS
-  h|v|c    \`h\`, \`v\`, or \`c\` to open a horizontal pane, vertical pane, or new
-           window, resp.
+  h|v|c    \`h\`, \`v\`, or \`c\` to open a horizontal pane, vertical pane, or new window, resp.
   <cmd>    The command to run in the newly-opened terminal, if any.
 "
 
