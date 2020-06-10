@@ -139,6 +139,7 @@ OPTIONS
     shift $((OPTIND-1))
 
     if [[ $# == 0 || ! -f "$WENV_CFG/wenvs/$1" ]]; then
+        echo "wenv '$1' not found"
         return 1
     fi
     local wenv="$1"
