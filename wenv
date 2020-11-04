@@ -281,7 +281,8 @@ unset_wenv_vars() {
 run_wenv_def() {
     [[ -z "$1" ]] && return 1
     local wenv="$1"
-    eval "$(source $WENV_CFG/wenvs/$wenv && declare -f wenv_def)"
+    unset_quiet -f wenv_def
+    source $WENV_CFG/wenvs/$wenv >/dev/null 2>&1
     function_exists wenv_def || return 1
     wenv_def
     unset_quiet -f wenv_def
