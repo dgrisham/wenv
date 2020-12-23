@@ -33,8 +33,6 @@
 wenv_def() {
     WENV_DIR="$HOME/scratch/webdev-practice"
     WENV_DEPS=()
-    WENV_PROJECT=''
-    WENV_TASK=''
 
     startup_wenv() {
         tmux rename-window js
