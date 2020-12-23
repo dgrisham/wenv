@@ -38,12 +38,12 @@ wenv_def() {
 
     startup_wenv() {
         tmux rename-window js
-        wenv_tmux_split v
+        tmux split
         tmux resize-pane -y 7
         tmux send-keys 'python -m http.server' 'Enter'
         tmux select-pane -U
 
-        wenv_tmux_split -n html-css window 'edit html css'
+        tmux neww -n html-css 'edit html css'
         tmux select-window -t js
         edit js
     }
