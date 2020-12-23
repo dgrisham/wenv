@@ -3,8 +3,6 @@
 wenv_def() {
     WENV_DIR="$SRC/wenv"
     WENV_DEPS=()
-    WENV_PROJECT='wenv'
-    WENV_TASK=''
     WENV_EXTENSIONS=('c')
 
     bootstrap_wenv() {}
@@ -32,7 +30,6 @@ SUBCOMMANDS
   remove <wenv>         Delete the wenv file for <wenv>.
   source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
   cd <wenv>             Change to <wenv>'s base directory.
-  task <cmd>            Access the project task list.
   extension <cmd>       Interact with wenv extensions.
   bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
@@ -71,9 +68,6 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
         ls|list)
             wenv_list $@
             ;;
-        task)
-            wenv_task $@
-            ;;
         edit)
             wenv_edit $@
             ;;
@@ -103,7 +97,6 @@ USAGE
 OPTIONS
   -t    Open the wenv in tmux. Default: true.
   -i    Run <wenv>'s startup function. Default: true.
-  -q    Don't show <wenv>'s task list on startup. Default: false.
   -d    Don't attach to the wenv's tmux session after starting. Default: false.
   -h    Display this help message.
 "
@@ -155,7 +148,6 @@ OPTIONS
         wenv_stop
         wenv_exec $@ || return 1
         ((flag_i == 1)) && startup_wenv
-        ((flag_q == 1)) || wenv task show
         return 0
     fi
 
@@ -170,7 +162,6 @@ OPTIONS
         tmux set-environment WENV "$WENV"
         (('"$flag_i"' == 1)) && startup_wenv
         clear
-        (('"$flag_q"' == 1)) || wenv task show
     '> "$tmp_start_file"
 
     tmux send -t "$wenv" "source $tmp_start_file && rm -f $tmp_start_file" ENTER
@@ -196,8 +187,6 @@ wenv_exec() {
 
     export ORIGINAL_PS1="$PS1"
     export PS1="($WENV) $ORIGINAL_PS1"
-
-    [[ -n "$WENV_TASK" ]] && task start "$WENV_TASK" >/dev/null 2>&1
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
@@ -247,8 +236,6 @@ OPTIONS
 
     wenv_cd
 
-    [[ -n "$WENV_TASK" ]] && task "$WENV_TASK" stop
-
     ((flag_s == 1)) && shutdown_wenv
     [[ $? -ne 0 ]] && ((flag_f != 1)) && { echo "error: shutdown_wenv failed" ; return 1 }
     wenv_clean_up
@@ -275,7 +262,7 @@ load_wenv_vars() {
 }
 
 unset_wenv_vars() {
-    unset_quiet WENV_{DIR,DEPS,PROJECT,TASK}
+    unset_quiet WENV_{DIR,DEPS}
 }
 
 run_wenv_def() {
@@ -534,141 +521,6 @@ DESCRIPTION
     return 0
 }
 
-wenv_task() {
-    local usage="\
-USAGE
-  wenv task [-h] [<cmd>] - Access the active wenv's tasks.
-
-OPTIONS
-  -h    Display this help message.
-
-SUBCOMMANDS
-  show  Show the task list for the active wenv.
-  add   Add a task to the active wenv's task list.
-
-DESCRIPTION
-  As a convenient shorthand, running \`wenv task\` defaults to running
-  \`wenv task show\`.
-
-  Use  \`wenv task <cmd> -h\` for more information on a given subcommand <cmd>.
-"
-
-    while getopts ":h" opt; do
-        case "$opt" in
-            h)
-                echo "$usage"
-                return 0
-                ;;
-            \?)
-                echo "unknown option: -$OPTARG" >&2
-                return 1
-                ;;
-        esac
-    done
-
-    local arg="$1"
-    shift 2> /dev/null
-    case "$arg" in
-        s|show)
-            wenv_task_show $@
-            ;;
-        a|add)
-            wenv_task_add $@
-            ;;
-        *)
-            wenv_task_show "$arg" $@
-            ;;
-    esac
-}
-
-wenv_task_show() {
-    local usage="\
-USAGE
-  wenv task show [-h] - Show the tasks for the active wenv.
-
-OPTIONS
-  -w <wenv>    Show <wenv>'s task list, instead of the active wenv's.
-  -h           Display this help message.
-"
-
-    local wenv="${WENV_PROJECT:-${WENV}}"
-    [[ -z "$wenv" ]] && return 1
-    local flag_w=0
-    while getopts ":w:h" opt; do
-        case $opt in
-            w)
-                [[ ! -z "$OPTARG" ]] && wenv="$OPTARG"
-                ;;
-            h)
-                echo "$usage"
-                return 0
-                ;;
-            --)
-                break
-                ;;
-            \?)
-                echo "unknown option: -$OPTARG" >&2
-                return 1
-                ;;
-        esac
-    done
-    shift $((OPTIND-1))
-
-    # TODO: document or delete this
-    local report="$1"
-    [[ -z "$report" ]] && report="project"
-
-    echo "$wenv"
-    task "$report" project:"$wenv"
-}
-
-wenv_task_add() {
-    local usage="\
-USAGE
-  wenv task add [-h] [-w <wenv>] [<mods>] <desc> - Add a task to the active wenv's task list.
-
-OPTIONS
-  -w <wenv>    Add a task to <wenv>'s task list, instead of the active wenv's.
-  <mods>       List of Taskwarrior modifiers. See `man task` for more details.
-  -h           Display this help message.
-
-DESCRIPTION
-  This command accepts an optional series of Taskwarrior attributes <attrs>,
-  followed by a description for the task <desc>. The task's 'project' field is
-  automatically set to \$WENV_PROJECT if this value is set by the wenv's
-  definition, otherwise it's set to the wenv name.
-"
-
-    [[ -z "$@" ]] && return 1
-    local wenv="${WENV_PROJECT:-${WENV}}"
-    local flag_w=0
-    while getopts ":w:h" opt; do
-        case $opt in
-            w)
-                [[ ! -z "$OPTARG" ]] && local wenv="$OPTARG"
-                ;;
-            h)
-                echo "$usage"
-                return 0
-                ;;
-            --)
-                break
-                ;;
-            \?)
-                echo "unknown option: -$OPTARG" >&2
-                return 1
-                ;;
-        esac
-    done
-    shift $((OPTIND-1))
-
-    # last passed argument is description (usually quoted string)
-    local desc="${@[$#]}"
-    # all other args are passed to task warrior (yeah, this is ugly)
-    local task_args=${@:1:$(($# - 1))}
-    task add project:"$wenv" "$task_args" -- "$desc"
-}
-
 wenv_rename() {
     local usage="\
 USAGE
@@ -746,7 +598,7 @@ SUBCOMMANDS
   open  Create or edit existing extensions.
 
 DESCRIPTION
-  Use  \`wenv task <cmd> -h\` for more information on a given subcommand <cmd>.
+  Use  \`wenv extension <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
     while getopts ":h" opt; do
@@ -983,29 +835,6 @@ wenv_tmux_layout() {
             local watch='git'
             [[ "$1" == '-w' ]] && watch="$2" && shift 2
             wenv_tmux_layout 'dev' "monitor $watch $*"
-            ;;
-        dev-tasks)
-            local watch='git'
-            [[ "$1" == '-w' ]] && watch="$2" && shift 2
-            wenv_tmux_split v
-            tmux resize-pane -y 7
-            [[ -n "$@" ]] && tmux send-keys "monitor $watch $@" 'Enter'
-            wenv_tmux_split h
-            tmux send-keys 'wenv task show' 'Enter'
-            tmux select-pane -L
-            tmux select-pane -U
-            ;;
-        tasks)
-            wenv_tmux_split v
-            tmux resize-pane -y 7
-            tmux send-keys 'wenv task show' 'Enter'
-            tmux select-pane -U
-            ;;
-        split-tasks)
-            wenv_tmux_layout tasks
-            wenv_tmux_split h
-            [[ -n "$@" ]] && tmux send-keys "$@" 'Enter'
-            tmux select-pane -L
             ;;
         *)
             return 1

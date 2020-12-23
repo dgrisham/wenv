@@ -3,8 +3,6 @@
 wenv_def() {
     WENV_DIR=""
     WENV_DEPS=()
-    WENV_PROJECT=''
-    WENV_TASK=''
     WENV_EXTENSIONS=('c')
 
     startup_wenv() {}
