@@ -76,13 +76,6 @@ in the IPTB project file that would let me automatically run commands like `sudo
 systemctl start docker` when I started working on the project and `sudo
 systemctl stop docker` when I was finished.
 
-Another potential feature that came to mind was the ability to wrap `Taskwarrior
-<https://taskwarrior.org/>`_ commands to show only the tasks associated with the
-active project. Taskwarrior is a great tool, but I don't want to have to type out
-and think about a project's name every time I want to add or show its tasks. I'd
-rather have commands that mean "show me the tasks associated with the project I'm
-working on" and "add a task for the active project with this description".
-
 The wenv framework arose from this increasing complexity. However, it never left
 the realm of Zsh scripting. A project's wenv is defined by Zsh environment
 variables and functions, and the wenv 'framework' is just a bunch of Zsh
@@ -154,7 +147,6 @@ Dependencies
 
 -   Zsh
 -   tmux
--   Taskwarrior
 
 Usage
 -----
@@ -176,7 +168,6 @@ Usage
       remove <wenv>         Delete the wenv file for <wenv>.
       source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
       cd <wenv>             Change to <wenv>'s base directory.
-      task <cmd>            Access the project task list.
       extension <cmd>       Interact with wenv extensions.
       bootstrap <wenv>      Run <wenv>'s bootstrap function.
 
@@ -192,9 +183,6 @@ See the Walkthrough_ for further elaboration and examples.
 -  `WENV_DIR`: The path to the base directory of this project.
 -  `WENV_DEPS`: An array containing the names of the wenvs that this wenv is
    dependent on.
--  `WENV_PROJECT`: The value to use for the task's `project` attribute in
-   Taskwarrior.
--  `WENV_TASK`: The wenv's current active task number.
 -  `WENV_EXTENSIONS`: An array containing the names of the extensions to load
    for the wenv.
 
@@ -252,8 +240,6 @@ with the following function, called `wenv_def()`:
     wenv_def() {
         WENV_DIR="/home/grish/hello-world"
         WENV_DEPS=()
-        WENV_PROJECT=''
-        WENV_TASK=''
         WENV_EXTENSIONS=()
 
         startup_wenv() {}
@@ -333,15 +319,14 @@ We can also open a file in our text editor in the new pane:
     }
 
 Other tmux commands can be useful in specifying a layout as well. For example, if
-we wanted to create a small vertical pane under the initial pane, show the active
-Taskwarrior task, then refocus on the larger pane:
+we wanted to create a small vertical pane under the initial pane and then refocus 
+on the larger pane:
 
 .. code-block:: bash
 
     startup_wenv() {
         wenv_tmux_split v
         tmux resize-pane -y 7
-        task active
         tmux select-pane -U
     }
 
@@ -400,89 +385,6 @@ do this, we'd add `iptb` to our `WENV_DEPS`:
         # ...
         WENV_DEPS=('iptb')
     }
-
-Taskwarrior Functionality
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-As mentioned in the introduction, I thought it would be useful to wrap
-Taskwarrior commands within wenv commands. This would allow me to reduce mental
-overhead of using Taskwarrior. Taskwarrior essentially maintains a global task
-list and allows you to interact with subsets based on filters you provide. Since
-the wenv environment contains information about the current project, wenv
-commands can automatically pass the project name to Taskwarrior. This makes
-adding and showing tasks related to the project easier, because you don't have
-to type in the project name every time, and less error-prone, since the shell is
-filling that field in for you.
-
-Taskwarrior Config
-++++++++++++++++++
-
-If you're new to Taskwarrior, the following `taskrc` example should get you
-started (there are many Taskwarrior features beyond what's used here):
-
-.. code-block:: bash
-
-    data.location=~/.task
-
-    include /usr/share/doc/task/rc/dark-gray-256.theme
-
-    color.active=black on white
-    report.active.columns=id,project,description
-    report.active.labels=ID,Project,Description
-
-    report.project.columns=id,description
-    report.project.labels=ID,Description
-    report.project.filter=(status:pending or status:waiting)
-
-This sets the two task reports used by wenvs: `active` and `project`. The
-`active` report is used for showing all active tasks (which you can see by
-running `task active`), while the `project` report shows all tasks related to
-a given project.
-
-Taskwarrior Wenv Commands
-+++++++++++++++++++++++++
-
-As an example, let's say the `hello-world` wenv is active and we want to add a
-task for this project with the description 'add new feature'. We'd use the wenv
-command:
-
-.. code-block:: bash
-
-    wenv task add 'add new feature'
-
-This would consequently run the following Taskwarrior command:
-
-.. code-block:: bash
-
-    task add project:'hello-world' -- 'add new feature'
-
-Then, if we want to show the tasks associated with the current wenv, we'd run
-`wenv task show`. In this case, the output would look something like:
-
-.. code-block:: bash
-
-    $ wenv task show
-    hello-world
-
-    ID Description
-    82 add new feature
-
-    1 task
-
-Note that simply running `wenv task` defaults to `wenv task show`.
-
-By default, the Taskwarrior `project` attribute is set to the name of the wenv.
-To override this with a different value, set `WENV_PROJECT` to the desired
-string in `wenv_def()`.
-
-Additionally, the wenv framework can automatically start and stop a project's
-active tasks. This is done by filling in the `WENV_TASK` value in
-`wenv_def()`. So, if we wanted to set the active task for our `hello-world`
-project to our previously created task with `ID` value `82`, we'd set
-`WENV_TASK=82`. Then `task start 82` will run the next time you run `wenv
-start hello-world`. When you run `wenv stop`, `task stop 82` will run. This
-further reduces interaction with Taskwarrior by automatically managing active
-tasks based on the current project.
 
 Extensions
 ~~~~~~~~~~
