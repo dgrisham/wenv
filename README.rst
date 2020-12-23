@@ -293,21 +293,15 @@ Or opening programs like text editors:
         $EDITOR main.cpp
     }
 
-Additionally, the utility function `wenv_tmux_split` can be used to define an
-initial tmux layout for the project. `wenv_tmux_split` will create a new tmux
-pane or window and load the active wenv's environment in the new pane/window. It
-accepts two arguments:
-
-1.  `h`, `v`, or `c` to specify whether to open a horizontal pane, vertical
-    pane, or new window, resp.
-2.  (Optional) The command to run in the newly opened pane/window.
+Additionally the `startup_wenv()` function can be used to automatically create
+Tmux layouts for the project. 
 
 So, we can start our wenv with a horizontal split with the startup function:
 
 .. code-block:: bash
 
     startup_wenv() {
-        wenv_tmux_split h
+        tmux split -h
     }
 
 We can also open a file in our text editor in the new pane:
@@ -315,7 +309,7 @@ We can also open a file in our text editor in the new pane:
 .. code-block:: bash
 
     startup_wenv() {
-        wenv_tmux_split h "$EDITOR main.cpp"
+        tmux split -h "$EDITOR main.cpp"
     }
 
 Other tmux commands can be useful in specifying a layout as well. For example, if
@@ -325,7 +319,7 @@ on the larger pane:
 .. code-block:: bash
 
     startup_wenv() {
-        wenv_tmux_split v
+        tmux split
         tmux resize-pane -y 7
         tmux select-pane -U
     }
