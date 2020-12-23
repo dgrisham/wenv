@@ -597,9 +597,8 @@ SUBCOMMANDS
   load  Load an extension.
   open  Create or edit existing extensions.
 
-TODO
 DESCRIPTION
-  Use  \`wenv task <cmd> -h\` for more information on a given subcommand <cmd>.
+  Use  \`wenv extension <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
     while getopts ":h" opt; do
