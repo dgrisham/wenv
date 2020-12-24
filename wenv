@@ -139,12 +139,13 @@ OPTIONS
     # check if wenv is already running
     tmux list-sessions | grep "^$wenv:" >/dev/null && {
         echo "wenv $wenv already running"
-        ((flag_d == 0)) || return 0
 
-        [[ -n $TMUX ]] && tmux switch -t "$wenv" \; display-message 'attached to existing session for wenv '"'$wenv'" && return 0
+        ((flag_d == 0)) && {
+            {[[ -n $TMUX ]] && tmux switch -t "$wenv" \; display-message 'attached to existing session for wenv '"'$wenv'"} ||
+                tmux attach-session -t "$wenv" \; display-message 'attached to existing session for wenv '"'$wenv'"
+        }
 
-        tmux attach-session -t "$wenv" \; display-message 'attached to existing session for wenv '"'$wenv'" && return 0
-        
+        return 0
     }
 
     if ((flag_t == 0)); then
