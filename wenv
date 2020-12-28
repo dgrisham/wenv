@@ -174,7 +174,14 @@ OPTIONS
 
     tmux send -t "$wenv" "source $tmp_start_file && rm -f $tmp_start_file" ENTER
 
-    ((flag_d == 0)) && tmux attach-session -t "$wenv"
+    ((flag_d == 0)) && {
+        # switch to session if we are already in tmux
+        {[[ -n $TMUX ]] && tmux switch -t "$wenv"} ||
+            # attach to session if we are not in tmux yet
+            tmux attach-session -t "$wenv"
+    } ||
+        # pass the -d flag and it is already running we let the user know
+        echo "started wenv: $wenv "
     return 0
 }
 
