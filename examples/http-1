@@ -26,8 +26,6 @@
 wenv_def() {
     WENV_DIR="$HOME/scratch/webdev-practice"
     WENV_DEPS=()
-    WENV_PROJECT=''
-    WENV_TASK=''
 
     startup_wenv() {
         wenv_tmux_split -n http window 'python -m http.server'
