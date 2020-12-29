@@ -38,30 +38,6 @@ _wenv_new() {
     fi
 }
 
-_wenv_task() {
-    if [[ $word == -* ]]; then
-        _wenv_comp "-h"
-    else
-        _wenv_comp "show add"
-    fi
-}
-
-_wenv_task_add() {
-    if [[ ${prev} == "-w" ]]; then
-        _show_wenvs
-    elif [[ ${word} == -* ]]; then
-        _wenv_comp "-w -h"
-    fi
-}
-
-_wenv_task_show() {
-    if [[ ${prev} == "-w" ]]; then
-        _show_wenvs
-    elif [[ ${word} == -* ]]; then
-        _wenv_comp "-w -h"
-    fi
-}
-
 _wenv_edit() {
     _show_wenvs
 }
@@ -158,7 +134,7 @@ _wenv() {
             if [[ $word == -* ]]; then
                 _wenv_comp '-h'
             else
-                local opts="start stop cd new task edit rm mv source extension bootstrap exec"
+                local opts="start stop cd new edit rm mv source extension bootstrap exec"
                 COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
             fi
             ;;
