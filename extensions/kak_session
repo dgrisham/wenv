@@ -1,0 +1,18 @@
+#!/usr/bin/env zsh
+
+alias kak_cmd='/usr/bin/kak'
+
+kak_session() {
+    local server_name=$(sed 's/\//-/' <<< $WENV)
+
+    # See if the socker file alread exists
+    local socket_file=$(grep $server_name <<< $(kak_cmd -l))
+
+    # if the socket doesn't exist, create it
+    # [[ $socket_file == "" ]] && echo kak_cmd -d -s $server_name &
+    [[ $socket_file == "" ]] && kak_cmd -d -s $server_name &
+
+    # echo kak_cmd -c $server_name $@
+    kak_cmd -c $server_name $@
+}
+alias kak='kak_session'

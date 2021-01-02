@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-c() {
+__c() {
     local usage="\
 USAGE
   c [-r] [-h] [<dir_key>]
@@ -75,6 +75,7 @@ DESCRIPTION
 
     ((flag_r == 1)) && tmux rename-window "$input"
 }
+alias c='__c'
 _c() {
     COMPREPLY=()
     complete +o default
