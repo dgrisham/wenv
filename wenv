@@ -586,8 +586,9 @@ OPTIONS
   -h    Display this help message.
 
 SUBCOMMANDS
+  edit  Create or edit existing extensions.
   load  Load an extension.
-  open  Create or edit existing extensions.
+  rm    Remove an extension.
 
 DESCRIPTION
   Use  \`wenv extension <cmd> -h\` for more information on a given subcommand <cmd>.
@@ -613,10 +614,10 @@ DESCRIPTION
         load)
             wenv_extension_load $@
             ;;
-        open)
-            wenv_extension_open $@
+        edit)
+            wenv_extension_edit $@
             ;;
-        remove)
+        rm|remove)
             wenv_extension_remove $@
             ;;
         *)
@@ -669,7 +670,7 @@ DESCRIPTION
     done
 }
 
-wenv_extension_open() {
+wenv_extension_edit() {
     local usage="\
 USAGE
   wenv extension new [-h] <extension> [<extension> ...] - Create or edit existing extensions.
@@ -678,10 +679,10 @@ OPTIONS
   -h                               Display this help message.
 
 ARGUMENTS
-  <extension> [<extension> ...]    The names of the extension files to open.
+  <extension> [<extension> ...]    The names of the extension files to create/edit.
 
 DESCRIPTION
-  Opens one or more extension files in \$EDITOR. When opening a extension file
+  Opens one or more extension files in \$EDITOR. When editing a extension file
   that doesn't already exist, the file will be created with a default shebang.
 "
 
