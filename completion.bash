@@ -7,7 +7,7 @@ _wenv_comp() {
 }
 
 _show_wenvs() {
-    find "$WENV_CFG/wenvs" ! -type d | perl -pe "s|$WENV_CFG/wenvs/||"
+    find "$WENV_CFG/wenvs" ! -name ".gitignore" ! -path '*/\.git/*' ! -type d | perl -pe "s|$WENV_CFG/wenvs/||"
 }
 
 _wenv_start() {
