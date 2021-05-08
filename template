@@ -3,7 +3,7 @@
 wenv_def() {
     WENV_DIR=""
     WENV_DEPS=()
-    WENV_EXTENSIONS=('c')
+    WENV_EXTENSIONS=('c' 'kak_session')
 
     startup_wenv() {}
     shutdown_wenv() {}

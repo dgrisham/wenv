@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-edit() {
+__edit() {
     local usage="\
 USAGE
   edit [-r] [-h] <file_key> [<file_key> ...]
@@ -79,6 +79,7 @@ DESCRIPTION
     (( flag_r == 1 )) && tmux rename-window "$1"
     eval "$EDITOR $abs"
 }
+alias edit='__edit'
 _edit() {
     COMPREPLY=()
     complete +o default
@@ -93,4 +94,4 @@ _edit() {
         COMPREPLY=($(compgen -W "${opts}" -- ${word}))
     fi
 }
-complete -F _edit edit
+complete -F _edit __edit

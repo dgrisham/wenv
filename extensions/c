@@ -90,4 +90,4 @@ _c() {
         COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
     fi
 }
-complete -F _c c
+complete -F _c __c
