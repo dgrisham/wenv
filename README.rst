@@ -85,10 +85,10 @@ and tmux environments.
 
 The advantages that stem from this tool being 'lightweight' go beyond the usual
 ideas of load time/etc. The art of shell scripting is slowly being lost to more
-integrated and high-level tools. While those tools definitely have their place,
-there are disadvantages to the lower resolution [*]_. The lightweight nature of
-the wenv project aims to achieve many of the advantages that higher level tools
-offer while staying at the level of abstraction of the shell. This means that
+integrated and high-level tools. While those tools might have their place
+(debatable), there are disadvantages to the lower resolution [*]_. The lightweight 
+nature of the wenv project aims to achieve many of the advantages that higher level 
+tools offer while staying at the level of abstraction of the shell. This means that
 wenvs require minimal understand on the user's part beyond shell scripting -- if
 you understand how shells work, then you're only a few steps from understanding
 how wenvs work. And if you don't understand how shells work, using wenvs can help
