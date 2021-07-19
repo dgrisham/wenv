@@ -127,8 +127,8 @@ its contents instead of copying to make updates easier):
         # source wenv file
         source <path-to-wenv-file> 
         # enable bash completion functions 
-        autoload bashcompinit
-        bashcompinit 
+        autoload -Uz compinit && compinit -u
+        autoload bashcompinit && bashcompinit 
         # source wenv completion file 
         source <path-to-completion.bash>
 
