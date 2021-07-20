@@ -119,8 +119,7 @@ its contents instead of copying to make updates easier):
         ln -s <path-to-this-repo>/{template,extensions} "$wenv_cfg"
 
 3.  Put the `wenv` and `completion.bash` files wherever you like, and add the
-    following lines to source them in your Zsh profile (or another Zsh startup
-    file):
+    following lines to source them in your `.zshrc`:
 
     .. code-block:: bash
 
