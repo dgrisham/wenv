@@ -220,12 +220,6 @@ OPTIONS
     done
     shift $((OPTIND-1))
 
-    # make sure we're in a git repo and the force flag isn't set
-    # if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ((flag_f != 1)); then
-    #     git diff-index --quiet HEAD -- 2>/dev/null
-    #     [[ $? -ne 0 ]] && [[ $? -ne 128 ]] && { echo "Error: Dirty working tree. Please clean up and try again." ; return 1 }
-    # fi
-
     wenv_cd
 
     ((flag_s == 1)) && shutdown_wenv
