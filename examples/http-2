@@ -33,6 +33,7 @@
 wenv_def() {
     WENV_DIR="$HOME/scratch/webdev-practice"
     WENV_DEPS=()
+    WENV_EXTENSIONS=('c' 'edit')
 
     startup_wenv() {
         tmux rename-window js
@@ -41,7 +42,7 @@ wenv_def() {
         tmux send-keys 'python -m http.server' 'Enter'
         tmux select-pane -U
 
-        tmux neww -n html-css 'edit html css'
+        tmux new -n html-css 'edit html css'
         tmux select-window -t js
         edit js
     }
@@ -49,120 +50,11 @@ wenv_def() {
     bootstrap_wenv() {}
 }
 
-declare -Ag wenv_dirs=(
-    ['js']='src/js'
-    ['css']='src/css'
-)
-declare -Ag wenv_files=(
-    ['html']='index.html'
-    ['js']="${wenv_dirs[js]}/scripts.js"
-    ['css']="${wenv_dirs[css]}/styles.css"
-)
+declare -Ag wenv_dirs
+wenv_dirs[js]='src/js'
+wenv_dirs[css]='src/css'
 
-c() {
-    local flag_r=0
-    local wname=""
-    while getopts ":rn:" opt; do
-        case $opt in
-            r)
-                flag_r=1
-                ;;
-            n)
-                wname="$OPTARG"
-                ;;
-            \?)
-                echo "unknown option: -$OPTARG" >&2
-                ;;
-        esac
-    done
-    shift $((OPTIND-1))
-
-    local input="$1"
-    shift
-
-    [ "${wenv_dirs[$input]+0}" ] || { echo "no entry '$input'" >&2 ; return 1 }
-    dir="${wenv_dirs[$input]}"
-    (( flag_r == 1 )) && wname="$input"
-
-    local abs
-    if [[ $dir != /* ]]; then
-        abs=$(realpath --relative-to=. "$WENV_DIR/$dir")
-    else
-        abs=$dir
-    fi
-    cd "$abs"
-
-    [[ ! -z "$wname" ]] && tmux rename-window "$wname"
-}
-_c() {
-    COMPREPLY=()
-    complete +o default
-
-    local word="${COMP_WORDS[COMP_CWORD]}"
-    local prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
-        COMPREPLY=( $(compgen -W "-r" -- ${word}) )
-    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
-        local opts="${(k)wenv_dirs[@]}"
-        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
-    fi
-}
-complete -F _c c
-
-edit() {
-    local flag_r=0
-    local wname=""
-    local opts=""
-    while getopts ":rn:o:" opt; do
-        case $opt in
-            r)
-                flag_r=1
-                ;;
-            n)
-                wname="$OPTARG"
-                ;;
-            o)
-                opts="$OPTARG"
-                ;;
-            \?)
-                echo "unknown option: -$OPTARG" >&2
-                ;;
-        esac
-    done
-    shift $((OPTIND-1))
-
-    local files=()
-    for arg in $@; do
-        [ "${wenv_files[$arg]+0}" ] || { echo "no entry '$arg'" >&2 ; return 1 }
-        files+="${wenv_files[$arg]}"
-    done
-    (( flag_r == 1 )) && wname="$1"
-
-    local abs=()
-    for file in $files; do
-        if [[ $file != /* ]]; then
-            abs+=($(realpath --relative-to=. "$WENV_DIR/$file"))
-        else
-            abs+=($file)
-        fi
-    done
-
-    [[ ! -z "$wname" ]] && tmux rename-window "$wname"
-    eval "$EDITOR $opts $abs"
-}
-_edit() {
-    COMPREPLY=()
-    complete +o default
-
-    local word="${COMP_WORDS[COMP_CWORD]}"
-    local prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    if [[ ${word} == -* ]]; then
-        COMPREPLY=( $(compgen -W "-r -n -o" -- ${word}) )
-    else
-        local opts="${(k)wenv_files[@]}"
-        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
-    fi
-}
-complete -F _edit edit
+declare -Ag wenv_files
+wenv_files[html]='index.html'
+wenv_files[js]="${wenv_dirs[js]}/scripts.js"
+wenv_files[css]="${wenv_dirs[css]}/styles.css"
