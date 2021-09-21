@@ -178,7 +178,7 @@ wenv_exec() {
     wenv_source "$WENV" || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
     export ORIGINAL_PS1="$PS1"
-    export PS1="($WENV)"$'\n'"$ORIGINAL_PS1"
+    export PS1="($WENV)$ORIGINAL_PS1"
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
