@@ -12,7 +12,7 @@ wenv_def() {
 
 export WENV_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
 
-_wenv() {
+__wenv() {
     local usage="\
 USAGE
   wenv [-h] <cmd>
@@ -88,7 +88,7 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
             ;;
     esac
 }
-alias wenv='noglob _wenv'
+alias wenv='noglob __wenv'
 
 wenv_start() {
     local usage="\
