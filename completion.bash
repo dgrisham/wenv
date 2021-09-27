@@ -150,4 +150,4 @@ _wenv() {
             ;;
     esac
 }
-complete -F _wenv wenv
+complete -F _wenv __wenv
