@@ -191,11 +191,7 @@ wenv_exec() {
     wenv_source "$WENV" || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
     export ORIGINAL_PS1="$PS1"
-    if function_exists add_wenv_to_prompt; then
-        export PS1=$(add_wenv_to_prompt "$ORIGINAL_PS1")
-    else
-        export PS1="($WENV).$ORIGINAL_PS1"
-    fi
+    export PS1="($WENV) $ORIGINAL_PS1"
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
