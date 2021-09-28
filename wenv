@@ -128,21 +128,15 @@ OPTIONS
     shift $((OPTIND-1))
 
     (($# == 0)) && return 1
-    # expand the $@ wenvs args here, as it may be a glob
-    local wenvs=($(eval echo "$WENV_CFG/wenvs/$@"))
-    (($(wc -w <<<$wenvs) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
 
-    (($# == 0)) && return 1
-    # expand the $@ wenvs args here, as it may be a glob
-    local wenvs=($(eval echo "$WENV_CFG/wenvs/$@"))
-    # local wenvs=($(eval echo "$WENV_CFG/wenvs/{$(tr ' ' ',' <<<$@)}"))
-    (($(wc -w <<<$wenvs) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
+    # expand the $@ wenv args into an array here, handling globs/multiple wenvs/etc.
+    # the `sed` command prefixes every wenv with $WENV_CFG/wenvs, while the `eval echo` handles glob expansions
+    local wenv_files=($(eval echo $(sed "s|[^ ]* *|$WENV_CFG/wenvs/&|g" <<< $@)))
+    (($(wc -w <<< $wenv_files) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
 
-    for wenv_file in $wenvs; do
+    for wenv_file in $wenv_files; do
 
         local wenv=${wenv_file#"$WENV_CFG/wenvs/"}
-        echo "wenv: $wenv"
-        echo "wenv_file: $wenv_file"
 
         if [[ ! -f $wenv_file ]]; then
             echo "wenv '$wenv' does not exist" >&2
