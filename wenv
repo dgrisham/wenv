@@ -131,33 +131,51 @@ OPTIONS
     fi
     local wenv="$1"
 
-    if ! tmux list-sessions | grep "^$wenv:" >/dev/null; then # wenv isn't running yet, start it
-        # create tmux session for wenv
-        tmux new-session -d -s "$wenv"
+    (($# == 0)) && return 1
+    # expand the $@ wenvs args here, as it may be a glob
+    local wenvs=($(eval echo "$WENV_CFG/wenvs/$@"))
+    # local wenvs=($(eval echo "$WENV_CFG/wenvs/{$(tr ' ' ',' <<<$@)}"))
+    (($(wc -w <<<$wenvs) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
 
-        mkdir -p /tmp/wenv
-        # replace / with - for wenvs in subdirectories
-        local tmp_start_file="/tmp/wenv/start-$(echo $wenv | perl -pe 's|/|-|')"
-        [[ -f "$tmp_start_file" ]] && rm -f "$tmp_start_file"
-        echo -e '
-            wenv_exec '"$@"' || return 1
-            tmux set-environment WENV "$WENV"
-            (('"$flag_i"' == 1)) && startup_wenv
-            clear
-        '> "$tmp_start_file"
+    for wenv_file in $wenvs; do
 
-        tmux send -t "$wenv" "source $tmp_start_file && rm -f $tmp_start_file" ENTER
+        local wenv=${wenv_file#"$WENV_CFG/wenvs/"}
+        echo "wenv: $wenv"
+        echo "wenv_file: $wenv_file"
 
-        ((flag_d == 1)) && { echo "started wenv '$wenv' " ; return 0 }
-    else # wenv is already running
-        ((flag_d == 1)) && { echo "wenv '$wenv' already running" ; return 0 }
-    fi
+        if [[ ! -f $wenv_file ]]; then
+            echo "wenv '$wenv' does not exist" >&2
+            continue
+        fi
 
-    if [[ -n $TMUX ]]; then # we're in tmux, switch to specified wenv's session
-        tmux switch -t "$wenv"
-    else # not in tmux, attach to specified wenv's session
-        tmux attach-session -t "$wenv"
-    fi
+        if ! tmux list-sessions | grep "^$wenv:" >/dev/null; then # wenv isn't running yet, start it
+            # create tmux session for wenv
+            tmux new-session -d -s "$wenv"
+
+            mkdir -p /tmp/wenv
+            # replace / with - for wenvs in subdirectories
+            local tmp_start_file="/tmp/wenv/start-$(echo $wenv | perl -pe 's|/|-|')"
+            [[ -f "$tmp_start_file" ]] && rm -f "$tmp_start_file"
+            echo -e '
+                wenv_exec '"$@"' || return 1
+                tmux set-environment WENV "$WENV"
+                (('"$flag_i"' == 1)) && startup_wenv
+                clear
+            '> "$tmp_start_file"
+
+            tmux send -t "$wenv" "source $tmp_start_file && rm -f $tmp_start_file" ENTER
+
+            ((flag_d == 1)) && { echo "started wenv '$wenv' " ; return 0 }
+        else # wenv is already running
+            ((flag_d == 1)) && { echo "wenv '$wenv' already running" ; return 0 }
+        fi
+
+        if [[ -n $TMUX ]]; then # we're in tmux, switch to specified wenv's session
+            tmux switch -t "$wenv"
+        else # not in tmux, attach to specified wenv's session
+            tmux attach-session -t "$wenv"
+        fi
+    done
 
     return 0
 }
@@ -178,7 +196,11 @@ wenv_exec() {
     wenv_source "$WENV" || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
     export ORIGINAL_PS1="$PS1"
-    export PS1="($WENV)"$'\n'"$ORIGINAL_PS1"
+    if function_exists add_wenv_to_prompt; then
+        export PS1=$(add_wenv_to_prompt "$ORIGINAL_PS1")
+    else
+        export PS1="($WENV).$ORIGINAL_PS1"
+    fi
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
