@@ -128,11 +128,13 @@ OPTIONS
     shift $((OPTIND-1))
 
     (($# == 0)) && return 1
-    # expand the $@ wenvs args here, as it may be a glob
-    local wenvs=($(eval echo "$WENV_CFG/wenvs/$@"))
-    (($(wc -w <<<$wenvs) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
 
-    for wenv_file in $wenvs; do
+    # expand the $@ wenv args into an array here, handling globs/multiple wenvs/etc.
+    # the `sed` command prefixes every wenv with $WENV_CFG/wenvs, while the `eval echo` handles glob expansions
+    local wenv_files=($(eval echo $(sed "s|[^ ]* *|$WENV_CFG/wenvs/&|g" <<< $@)))
+    (($(wc -w <<< $wenv_files) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
+
+    for wenv_file in $wenv_files; do
 
         local wenv=${wenv_file#"$WENV_CFG/wenvs/"}
 
@@ -189,7 +191,7 @@ wenv_exec() {
     wenv_source "$WENV" || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
     export ORIGINAL_PS1="$PS1"
-    export PS1="($WENV)"$'\n'"$ORIGINAL_PS1"
+    export PS1="($WENV) $ORIGINAL_PS1"
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
