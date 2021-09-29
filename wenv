@@ -190,9 +190,6 @@ wenv_exec() {
     run_wenv_def "$WENV" || { echo "wenv_def() not defined for wenv '$WENV'" >&2 ; return 1 }
     wenv_source "$WENV" || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
-    export ORIGINAL_PS1="$PS1"
-    export PS1="($WENV) $ORIGINAL_PS1"
-
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
     return 0
@@ -251,7 +248,6 @@ wenv_clean_up() {
         tmux set-environment WENV ''
         tmux rename-session $(tmux display-message -p '#{session_id}' | tr -d '$')
     fi
-    export PS1="$ORIGINAL_PS1"
 }
 
 load_wenv_vars() {
