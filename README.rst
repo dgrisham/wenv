@@ -86,8 +86,8 @@ and tmux environments.
 The advantages that stem from this tool being 'lightweight' go beyond the usual
 ideas of load time/etc. The art of shell scripting is slowly being lost to more
 integrated and high-level tools. While those tools might have their place
-(debatable), there are disadvantages to the lower resolution [*]_. The lightweight 
-nature of the wenv project aims to achieve many of the advantages that higher level 
+(debatable), there are disadvantages to the lower resolution [*]_. The lightweight
+nature of the wenv project aims to achieve many of the advantages that higher level
 tools offer while staying at the level of abstraction of the shell. This means that
 wenvs require minimal understand on the user's part beyond shell scripting -- if
 you understand how shells work, then you're only a few steps from understanding
@@ -112,7 +112,7 @@ its contents instead of copying to make updates easier):
     the wenv files for all of your projects. If you're in this repository, you
     can run the following lines to complete this step:
 
-    .. code-block:: bash
+    .. code-block:: zsh
 
         export wenv_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
         mkdir -p "$wenv_cfg/wenvs"
@@ -121,25 +121,45 @@ its contents instead of copying to make updates easier):
 3.  Put the `wenv` and `completion.bash` files wherever you like, and add the
     following lines to source them in your `.zshrc`:
 
-    .. code-block:: bash
+    .. code-block:: zsh
 
         # source wenv file
-        source <path-to-wenv-file> 
-        # enable bash completion functions 
+        source <path-to-wenv-file>
+        # enable bash completion functions
         autoload -Uz compinit && compinit -u
-        autoload bashcompinit && bashcompinit 
-        # source wenv completion file 
+        autoload bashcompinit && bashcompinit
+        # source wenv completion file
         source <path-to-completion.bash>
 
 4.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
-    .. code-block:: bash
+    .. code-block:: zsh
 
         [[ -n "$WENV" ]] && wenv_exec -c "$WENV"
 
     This makes it so that the wenv associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
+
+5.  (recommended) It's useful to have the name of the wenv in your prompt, as both
+    an easy reference for which wenv you're in and sometimes as a debugging tool to
+    verify whether a wenv properly loaded. This used to be the default, but for better
+    flexibility it's now up to the user to configure this.
+
+    A simple way to do this would be to add the following lines to your `zshrc`:
+
+    .. code-block:: zsh
+
+        wenv_prompt() {
+            [[ -n "$WENV" ]] && echo "($WENV) "
+        }
+
+        setopt prompt_subst
+        PS1="\$(wenv_prompt)$PS1"
+
+    This prepends the name of the active wenv in parentheses, followed by a space, before your prompt.
+    This may be added before or after the code added in step 4.
+    For more information on the `prompt_subst` option in Zsh, see https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.
 
 Dependencies
 ~~~~~~~~~~~~
@@ -223,7 +243,7 @@ Creating a wenv
 
 Here's an example that creates a wenv for a project called 'hello-world':
 
-.. code-block:: bash
+.. code-block:: zsh
 
     $ mkdir hello-world
     $ cd hello-world
@@ -234,7 +254,7 @@ file called `hello-world`. The template file provides a base structure for a new
 wenv. On my machine, the above wenv command creates a new wenv file that starts
 with the following function, called `wenv_def()`:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     wenv_def() {
         WENV_DIR="/home/grish/hello-world"
@@ -278,7 +298,7 @@ Now let's talk about what you can do when starting a wenv. The `startup_wenv()`
 function is run whenever you activate a wenv with `wenv start <wenv>`. This can
 be useful for running startup commands, e.g.
 
-.. code-block:: bash
+.. code-block:: zsh
 
     startup_wenv() {
         sudo systemctl start docker
@@ -286,18 +306,18 @@ be useful for running startup commands, e.g.
 
 Or opening programs like text editors:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     startup_wenv() {
         $EDITOR main.cpp
     }
 
 Additionally the `startup_wenv()` function can be used to automatically create
-Tmux layouts for the project. 
+Tmux layouts for the project.
 
 So, we can start our wenv with a horizontal split with the startup function:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     startup_wenv() {
         tmux split -h
@@ -305,17 +325,17 @@ So, we can start our wenv with a horizontal split with the startup function:
 
 We can also open a file in our text editor in the new pane:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     startup_wenv() {
         tmux split -h "$EDITOR main.cpp"
     }
 
 Other tmux commands can be useful in specifying a layout as well. For example, if
-we wanted to create a small vertical pane under the initial pane then refocus 
+we wanted to create a small vertical pane under the initial pane then refocus
 on the larger pane:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     startup_wenv() {
         tmux split
@@ -337,7 +357,7 @@ deactivate the current wenv with `wenv stop`. So, if we have a wenv whose
 `startup_wenv()` function runs `sudo systemctl start docker`, our
 `shutdown_wenv()` might be:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     shutdown_wenv() {
         sudo systemctl stop docker
@@ -354,7 +374,7 @@ flag to `wenv stop` to close the wenv even if `shutdown_wenv()` fails.
 every wenv in `WENV_DEPS` is sourced when starting the wenv. Let's take the
 example of a wenv for IPTB (which we'll call `iptb`):
 
-.. code-block:: bash
+.. code-block:: zsh
 
     wenv_def() {
         # ...
@@ -372,7 +392,7 @@ variable's value. Alternatively, we could just source the `iptb` wenv and get
 all of its environment variables every time we start any wenv that uses IPTB. To
 do this, we'd add `iptb` to our `WENV_DEPS`:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     wenv_def() {
         # ...
@@ -389,7 +409,7 @@ extension, add its name to the `WENV_EXTENSIONS` array. For example, if we
 wanted to load the `c` and `edit` extensions, our `wenv_def()` would look
 like:
 
-.. code-block:: bash
+.. code-block:: zsh
 
     wenv_def() {
         # ...
