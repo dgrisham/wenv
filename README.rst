@@ -151,15 +151,15 @@ its contents instead of copying to make updates easier):
     .. code-block:: zsh
 
         wenv_prompt() {
-            [[ -n "$WENV" ]] && echo "($WENV)"
+            [[ -n "$WENV" ]] && echo "($WENV) "
         }
 
         setopt prompt_subst
-        PS1="\$(wenv_prompt) $PS1"
+        PS1="\$(wenv_prompt)$PS1"
 
-    This prepends the name of the wenv, in parentheses, before your prompt. This may
-    be added before or after the code added in step 4. For more information on the `prompt_subst`
-    option in Zsh, see https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.
+    This prepends the name of the active wenv in parentheses, followed by a space, before your prompt.
+    This may be added before or after the code added in step 4.
+    For more information on the `prompt_subst` option in Zsh, see https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.
 
 Dependencies
 ~~~~~~~~~~~~
