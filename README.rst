@@ -143,7 +143,7 @@ its contents instead of copying to make updates easier):
 
 ### Recommended
 
-1. **Wenv name in prompt**
+1.  **Wenv name in prompt**
 
     It's useful to have the name of the wenv in your prompt, as both
     an easy reference for which wenv you're in and sometimes as a debugging tool to
