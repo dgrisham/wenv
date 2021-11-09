@@ -141,7 +141,11 @@ its contents instead of copying to make updates easier):
     This makes it so that the wenv associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
 
-5.  (recommended) It's useful to have the name of the wenv in your prompt, as both
+### Recommended
+
+1. **Wenv name in prompt**
+
+    It's useful to have the name of the wenv in your prompt, as both
     an easy reference for which wenv you're in and sometimes as a debugging tool to
     verify whether a wenv properly loaded. This used to be the default, but for better
     flexibility it's now up to the user to configure this.
@@ -160,6 +164,21 @@ its contents instead of copying to make updates easier):
     This prepends the name of the active wenv in parentheses, followed by a space, before your prompt.
     This may be added before or after the code added in step 4.
     For more information on the `prompt_subst` option in Zsh, see https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.
+
+2.  **Clean wenv startup history**
+
+    When you run the `wenv start` command, you'll get the following command in your history:
+
+    ```
+     source $tmp_start_file && rm -f $tmp_start_file
+    ```
+
+    Notice that it's prefixed with space -- this means that if you have the `HIST_IGNORE_SPACE` Zsh option set, that command
+    won't be saved in your shell history. To set this option, add the following to your `zshrc`:
+
+    ```
+    setopt HIST_IGNORE_SPACE
+    ```
 
 Dependencies
 ~~~~~~~~~~~~
