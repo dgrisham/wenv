@@ -100,6 +100,15 @@ you do so.
 Installation
 ------------
 
+Dependencies
+~~~~~~~~~~~~
+
+-   Zsh
+-   tmux
+
+Steps
+~~~~~
+
 For now, the installation is manual -- fortunately, it's also relatively
 painless. The following steps (or variations on them) should get the job done
 (note that you may want to store this repo somewhere permanent and symlink to
@@ -179,12 +188,6 @@ won't be saved in your shell history. To set this option, add the following to y
 .. code-block:: zsh
 
     setopt HIST_IGNORE_SPACE
-
-Dependencies
-~~~~~~~~~~~~
-
--   Zsh
--   tmux
 
 Usage
 -----
