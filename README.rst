@@ -169,16 +169,16 @@ its contents instead of copying to make updates easier):
 
     When you run the `wenv start` command, you'll get the following command in your history:
 
-    ```
-     source $tmp_start_file && rm -f $tmp_start_file
-    ```
+    .. code-block:: zsh
+
+        source $tmp_start_file && rm -f $tmp_start_file
 
     Notice that it's prefixed with space -- this means that if you have the `HIST_IGNORE_SPACE` Zsh option set, that command
     won't be saved in your shell history. To set this option, add the following to your `zshrc`:
 
-    ```
-    setopt HIST_IGNORE_SPACE
-    ```
+    .. code-block:: zsh
+
+        setopt HIST_IGNORE_SPACE
 
 Dependencies
 ~~~~~~~~~~~~
