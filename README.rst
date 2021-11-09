@@ -141,39 +141,44 @@ its contents instead of copying to make updates easier):
     This makes it so that the wenv associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.
 
-### Recommended
+Recommended
+~~~~~~~~~~~
 
-1.  **Wenv name in prompt**
+**Wenv name in prompt**
 
-    It's useful to have the name of the wenv in your prompt, as both
-    an easy reference for which wenv you're in and sometimes as a debugging tool to
-    verify whether a wenv properly loaded. This used to be the default, but for better
-    flexibility it's now up to the user to configure this.
+It's useful to have the name of the wenv in your prompt, as both an easy reference for which wenv you're in and
+sometimes as a debugging tool to verify whether a wenv properly loaded. This used to be the default, but for better
+flexibility it's now up to the user to configure this.
 
-    A simple way to do this would be to add the following lines to your `zshrc`:
+A simple way to do this would be to add the following lines to your `zshrc`:
 
-    .. code-block:: zsh
+.. code-block:: zsh
 
-        wenv_prompt() {
-            [[ -n "$WENV" ]] && echo "($WENV) "
-        }
+    wenv_prompt() {
+        [[ -n "$WENV" ]] && echo "($WENV) "
+    }
 
-        setopt prompt_subst
-        PS1="\$(wenv_prompt)$PS1"
+    setopt prompt_subst
+    PS1="\$(wenv_prompt)$PS1"
 
-    This prepends the name of the active wenv in parentheses, followed by a space, before your prompt.
-    This may be added before or after the code added in step 4.
-    For more information on the `prompt_subst` option in Zsh, see https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.
+This prepends the name of the active wenv in parentheses, followed by a space, before your prompt.  This may be
+added before or after the code added in step 4.  For more information on the `prompt_subst` option in Zsh, see
+https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.
 
-2.  **Clean wenv startup history**
+**Clean wenv startup history**
 
-    When you run the `wenv start` command, you'll get the following command in your history: ` source $tmp_start_file && rm -f $tmp_start_file`
-    Notice that it's prefixed with space -- this means that if you have the `HIST_IGNORE_SPACE` Zsh option set, that command
-    won't be saved in your shell history. To set this option, add the following to your `zshrc`:
+When you run the `wenv start` command, you'll get the following command in your shell's history:
 
-    .. code-block:: zsh
+.. code-block:: zsh
 
-        setopt HIST_IGNORE_SPACE
+    source $tmp_start_file && rm -f $tmp_start_file
+
+This command is prefixed with space -- this means that if you have the `HIST_IGNORE_SPACE` Zsh option set, that command
+won't be saved in your shell history. To set this option, add the following to your `zshrc`:
+
+.. code-block:: zsh
+
+    setopt HIST_IGNORE_SPACE
 
 Dependencies
 ~~~~~~~~~~~~
