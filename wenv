@@ -158,7 +158,7 @@ OPTIONS
                 clear
             '> "$tmp_start_file"
 
-            tmux send -t "$wenv" "source $tmp_start_file && rm -f $tmp_start_file" ENTER
+            tmux send -t "$wenv" " source $tmp_start_file && rm -f $tmp_start_file" ENTER
 
             ((flag_d == 1)) && { echo "started wenv '$wenv' " ; continue }
         else # wenv is already running
