@@ -457,7 +457,11 @@ DESCRIPTION
 source_wenvs_recursively() {
     local wenv
     for wenv in $@; do
-        ! is_wenv "$wenv" && { echo "error: '$wenv' is not a wenv" >&2 ; continue }
+        if ! is_wenv "$1"; then
+            echo "wenv '$1' doesn't exist" >&2
+            return 1
+        fi
+
         load_wenv_vars "$wenv"
         ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
         ((${#WENV_DEPS[@]} != 0)) && source_wenvs_recursively "${WENV_DEPS[@]}" && load_wenv_vars "$wenv"
@@ -507,6 +511,7 @@ DESCRIPTION
         ((flag_r == 1)) && tmux rename-window "$WENV"
         return 0
     fi
+
     if ! is_wenv "$1"; then
         echo "wenv '$1' doesn't exist" >&2
         return 1
@@ -583,8 +588,12 @@ DESCRIPTION
         esac
     done
 
-    ! is_wenv "$1" && return 1
+    if ! is_wenv "$1"; then
+        echo "wenv '$1' doesn't exist" >&2
+        return 1
+    fi
     local wenv="$1"
+
     run_wenv_def "$wenv"
     if ! function_exists bootstrap_wenv; then
         echo "bootstrap_wenv not defined for wenv '$1'" >&2
