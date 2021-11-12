@@ -310,6 +310,13 @@ OPTIONS
     [[ -z "$1" ]] && return 1
     local wenv="$1"
 
+    if is_wenv "$1"; then
+        echo "wenv '$wenv' already exists" >&2
+        printf "overwrite? [yN] " >&2
+        [[ ! $(read -e) =~ [yY] ]] && return 1
+        rm -f "$WENV_CFG/wenvs/$wenv"
+    fi
+
     mkdir -p $WENV_CFG/wenvs/$(dirname $wenv)
     cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=\"$wenv_dir\"|" "$template") > "$WENV_CFG/wenvs/$wenv"
 
