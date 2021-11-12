@@ -265,7 +265,10 @@ run_wenv_def() {
     local wenv="$1"
     unset_quiet -f wenv_def
     source $WENV_CFG/wenvs/$wenv >/dev/null 2>&1
-    function_exists wenv_def || return 1
+    if ! function_exists wenv_def; then
+        echo "wenv_def not defined for wenv '$1'" >&2
+        return 1
+    fi
     wenv_def
     unset_quiet -f wenv_def
 }
@@ -583,7 +586,10 @@ DESCRIPTION
     ! is_wenv "$1" && return 1
     local wenv="$1"
     run_wenv_def "$wenv"
-    ! function_exists bootstrap_wenv && return 0
+    if ! function_exists bootstrap_wenv; then
+        echo "bootstrap_wenv not defined for wenv '$1'" >&2
+        return 1
+    fi
     bootstrap_wenv
     unset_quiet -f bootstrap_wenv
 }
