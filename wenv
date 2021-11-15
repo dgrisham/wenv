@@ -265,7 +265,10 @@ run_wenv_def() {
     local wenv="$1"
     unset_quiet -f wenv_def
     source $WENV_CFG/wenvs/$wenv >/dev/null 2>&1
-    function_exists wenv_def || return 1
+    if ! function_exists wenv_def; then
+        echo "wenv_def not defined for wenv '$1'" >&2
+        return 1
+    fi
     wenv_def
     unset_quiet -f wenv_def
 }
@@ -309,6 +312,13 @@ OPTIONS
 
     [[ -z "$1" ]] && return 1
     local wenv="$1"
+
+    if is_wenv "$1"; then
+        echo "wenv '$wenv' already exists" >&2
+        printf "overwrite? [yN] " >&2
+        [[ ! $(read -e) =~ [yY] ]] && return 1
+        rm -f "$WENV_CFG/wenvs/$wenv"
+    fi
 
     mkdir -p $WENV_CFG/wenvs/$(dirname $wenv)
     cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=\"$wenv_dir\"|" "$template") > "$WENV_CFG/wenvs/$wenv"
@@ -447,7 +457,11 @@ DESCRIPTION
 source_wenvs_recursively() {
     local wenv
     for wenv in $@; do
-        ! is_wenv "$wenv" && { echo "error: '$wenv' is not a wenv" >&2 ; continue }
+        if ! is_wenv "$1"; then
+            echo "wenv '$1' doesn't exist" >&2
+            return 1
+        fi
+
         load_wenv_vars "$wenv"
         ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
         ((${#WENV_DEPS[@]} != 0)) && source_wenvs_recursively "${WENV_DEPS[@]}" && load_wenv_vars "$wenv"
@@ -497,7 +511,9 @@ DESCRIPTION
         ((flag_r == 1)) && tmux rename-window "$WENV"
         return 0
     fi
+
     if ! is_wenv "$1"; then
+        echo "wenv '$1' doesn't exist" >&2
         return 1
     fi
     local wenv="$1"
@@ -572,10 +588,17 @@ DESCRIPTION
         esac
     done
 
-    ! is_wenv "$1" && return 1
+    if ! is_wenv "$1"; then
+        echo "wenv '$1' doesn't exist" >&2
+        return 1
+    fi
     local wenv="$1"
+
     run_wenv_def "$wenv"
-    ! function_exists bootstrap_wenv && return 0
+    if ! function_exists bootstrap_wenv; then
+        echo "bootstrap_wenv not defined for wenv '$1'" >&2
+        return 1
+    fi
     bootstrap_wenv
     unset_quiet -f bootstrap_wenv
 }
