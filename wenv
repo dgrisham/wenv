@@ -130,8 +130,8 @@ OPTIONS
     (($# == 0)) && return 1
 
     # expand the $@ wenv args into an array here, handling globs/multiple wenvs/etc.
-    # the `sed` command prefixes every wenv with $WENV_CFG/wenvs, while the `eval echo` handles glob expansions
-    local wenv_files=($(eval echo $(sed "s|[^ ]* *|$WENV_CFG/wenvs/&|g" <<< $@)))
+    # the `perl` command prefixes every wenv with $WENV_CFG/wenvs, while the `eval echo` handles glob expansions
+    local wenv_files=($(eval echo $(perl -pe "s|([^ ]+)|$WENV_CFG/wenvs/\1|g" <<< $@)))
     (($(wc -w <<< $wenv_files) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
 
     for wenv_file in $wenv_files; do
@@ -149,7 +149,7 @@ OPTIONS
 
             mkdir -p /tmp/wenv
             # replace / with - for wenvs in subdirectories
-            local tmp_start_file="/tmp/wenv/start-$(echo $wenv | perl -pe 's|/|-|')"
+            local tmp_start_file="/tmp/wenv/start-$(perl -pe 's|/|-|' <<< $wenv)"
             [[ -f "$tmp_start_file" ]] && rm -f "$tmp_start_file"
             echo -e '
                 wenv_exec '"$wenv"' || return 1
