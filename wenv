@@ -131,7 +131,8 @@ OPTIONS
 
     # expand the $@ wenv args into an array here, handling globs/multiple wenvs/etc.
     # the `perl` command prefixes every wenv with $WENV_CFG/wenvs, while the `eval echo` handles glob expansions
-    local wenv_files=($(eval echo $(perl -pe "s|([^ ]+)|$WENV_CFG/wenvs/\1|g" <<< $@)))
+    local wenv_files
+    wenv_files=($(eval echo $(perl -pe "s|([^ ]+)|$WENV_CFG/wenvs/\1|g" <<< $@)))
     (($(wc -w <<< $wenv_files) > 1)) && flag_d=1 # if multiple wenvs were provided, don't attach to tmux session
 
     for wenv_file in $wenv_files; do
