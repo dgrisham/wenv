@@ -37,6 +37,8 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
     [[ $# == 0 ]] && { echo "$usage" >&2 ; return 1 }
+
+    local opt OPTIND
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -104,6 +106,8 @@ OPTIONS
     local flag_q=0
     local flag_i=1
     local flag_d=0
+
+    local opt OPTIND
     while getopts ":qidh" opt; do
         case $opt in
             q)
@@ -178,6 +182,8 @@ OPTIONS
 
 wenv_exec() {
     local flag_c=1
+
+    local opt OPTIND
     while getopts ":c" opt; do
         case $opt in
             c) flag_c=0 ;;
@@ -211,6 +217,8 @@ OPTIONS
 
     local flag_f=0
     local flag_s=1
+
+    local opt OPTIND
     while getopts ":fsh" opt; do
         case $opt in
             f)
@@ -287,6 +295,8 @@ OPTIONS
 
     local template="$WENV_CFG/template"
     local wenv_dir=$(pwd)
+
+    local opt OPTIND
     while getopts ":d:i:h" opt; do
         case $opt in
             d)
@@ -336,6 +346,7 @@ OPTIONS
   -h    Display this help message.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -363,6 +374,7 @@ OPTIONS
   -h        Display this help message.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -389,6 +401,7 @@ OPTIONS
   <rm_args> List of arguments to forward to \`rm\`.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -431,6 +444,7 @@ DESCRIPTION
   wenv in the argument list, as well as each wenv's dependencies.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -490,6 +504,8 @@ DESCRIPTION
 "
 
     local flag_r=0
+
+    local opt OPTIND
     while getopts ":rh" opt; do
         case $opt in
             r)
@@ -542,6 +558,7 @@ OPTIONS
   -h                    Display this help message.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -576,6 +593,7 @@ DESCRIPTION
   git repos, install relevant packages, create config files, etc.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case "$opt" in
             h)
@@ -621,6 +639,7 @@ DESCRIPTION
   Use  \`wenv extension <cmd> -h\` for more information on a given subcommand <cmd>.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case $opt in
             h)
@@ -672,6 +691,7 @@ DESCRIPTION
   extension in every shell of a wenv.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case $opt in
             h)
@@ -713,6 +733,7 @@ DESCRIPTION
   that doesn't already exist, the file will be created with a default shebang.
 "
 
+    local opt OPTIND
     while getopts ":h" opt; do
         case $opt in
             h)
@@ -753,6 +774,8 @@ DESCRIPTION
 "
 
     local flag_f=0
+
+    local opt OPTIND
     while getopts ":fh" opt; do
         case "$opt" in
             f)
