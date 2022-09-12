@@ -154,7 +154,7 @@ OPTIONS
 
             mkdir -p /tmp/wenv
             # replace / with - for wenvs in subdirectories
-            local tmp_start_file="/tmp/wenv/start-$(perl -pe 's|/|-|' <<< $wenv)"
+            local tmp_start_file="/tmp/wenv/start-$(perl -pe 's|/|-|g' <<< $wenv)"
             [[ -f "$tmp_start_file" ]] && rm -f "$tmp_start_file"
             echo -e '
                 wenv_exec '"$wenv"' || return 1
