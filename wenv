@@ -575,6 +575,11 @@ OPTIONS
     [[ $# != 2 ]] && return 1 && echo "ERROR: wenv rename requires two arguments"
     local old="$1"
     local new="$2"
+    local new_dir="$WENV_CFG/wenvs/${new%/*}"
+
+    if [[ ! -d  "$new_dir" ]]; then
+        mkdir -p $new_dir
+    fi
 
     mv "$WENV_CFG/wenvs/$old" "$WENV_CFG/wenvs/$new"
 }
