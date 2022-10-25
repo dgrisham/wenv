@@ -572,7 +572,7 @@ OPTIONS
         esac
     done
 
-    [[ $# != 2 ]] && return 1
+    [[ $# != 2 ]] && return 1 && echo "ERROR: wenv rename requires two arguments"
     local old="$1"
     local new="$2"
 
