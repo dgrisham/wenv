@@ -572,13 +572,15 @@ OPTIONS
         esac
     done
 
-    [[ $# != 2 ]] && return 1 && echo "ERROR: wenv rename requires two arguments"
+    [[ $# != 2 ]] && { echo "wenv rename requires two arguments" >&2 ; return 1 }
     local old="$1"
     local new="$2"
-    local new_dir="$WENV_CFG/wenvs/${new%/*}"
 
-    if [[ ! -d  "$new_dir" ]]; then
-        mkdir -p $new_dir
+    if [[ "$new" == *"/"* ]]; then
+        local new_dir="$WENV_CFG/wenvs/$(dirname $new)"
+        if [[ ! -d  "$new_dir" ]]; then
+            mkdir -p $new_dir
+        fi
     fi
 
     mv "$WENV_CFG/wenvs/$old" "$WENV_CFG/wenvs/$new"
