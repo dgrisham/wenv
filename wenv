@@ -194,8 +194,7 @@ wenv_exec() {
     [[ -z "$1" ]] && return 1
     export WENV="$1"
 
-    run_wenv_def "$WENV" || { echo "wenv_def() not defined for wenv '$WENV'" >&2 ; return 1 }
-    wenv_source "$WENV" || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
+    wenv_source || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
     ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
 
@@ -259,27 +258,20 @@ wenv_clean_up() {
     fi
 }
 
-load_wenv_vars() {
-    unset_wenv_vars
-    run_wenv_def "$@"
-    unset_quiet -f bootstrap_wenv,startup_wenv,shutdown_wenv
-}
-
 unset_wenv_vars() {
     unset_quiet WENV_{DIR,DEPS}
 }
 
-run_wenv_def() {
+source_wenv_and_run_wenv_def() {
     [[ -z "$1" ]] && return 1
     local wenv="$1"
     unset_quiet -f wenv_def
-    source $WENV_CFG/wenvs/$wenv >/dev/null 2>&1
+    source $WENV_CFG/wenvs/$wenv
     if ! function_exists wenv_def; then
         echo "wenv_def not defined for wenv '$1'" >&2
         return 1
     fi
     wenv_def
-    unset_quiet -f wenv_def
 }
 
 wenv_new() {
@@ -437,12 +429,10 @@ OPTIONS
   -h    Display this help message.
 
 DESCRIPTION
-  Calling \`wenv source\` with no arguments will source the active wenv's
-  aliases and its dependencies.
-
-  Calling as \`wenv source [<wenv>, ...]\` will source the aliases of every
-  wenv in the argument list, as well as each wenv's dependencies.
+  \`wenv source\` sources the active wenv's aliases and its dependencies.
 "
+
+    [[ -z "$WENV" ]] && { echo "error sourcing active wenv: \$WENV is empty" >&2 ; return 1 }
 
     local opt OPTIND
     while getopts ":h" opt; do
@@ -458,40 +448,32 @@ DESCRIPTION
         esac
     done
 
-    if (($# == 0)); then
-        source_wenvs_recursively "$WENV"
-        run_wenv_def "$WENV"
-    else
-        source_wenvs_recursively $@
-        [[ -n "$WENV" ]] && run_wenv_def "$WENV"
-    fi
+    eval "$(grep -Eho '^\s*WENV_(DIR|DEPS|EXTENSIONS)=(.*)' $WENV_CFG/wenvs/$WENV)"
+    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
+    ((${#WENV_DEPS[@]} != 0)) && source_wenv_dependencies_recursively "${WENV_DEPS[@]}"
+
+    source_wenv_and_run_wenv_def "$WENV"
 
     return 0
 }
 
-source_wenvs_recursively() {
+source_wenv_dependencies_recursively() {
     local wenv
     for wenv in $@; do
-        if ! is_wenv "$1"; then
-            echo "wenv '$1' doesn't exist" >&2
-            return 1
-        fi
-
-        load_wenv_vars "$wenv"
-        ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
-        ((${#WENV_DEPS[@]} != 0)) && source_wenvs_recursively "${WENV_DEPS[@]}" && load_wenv_vars "$wenv"
-        source "$WENV_CFG/wenvs/$wenv" >/dev/null
+        # grep for the WENV_DEPS for this wenv and recursively source those
+        eval source_wenv_dependencies_recursively "$(grep -Pho '^\s*WENV_DEPS=\(\K.*(?=\))' $WENV_CFG/wenvs/$wenv)"
+        # source this wenv now that its dependencies are loaded
+        source $WENV_CFG/wenvs/$wenv
+        unset wenv_def
     done
-    unset_wenv_vars
 }
 
 wenv_cd() {
     local usage="\
 USAGE
-  wenv cd [-r] [-h] <wenv> - cd into <wenv>'s base directory.
+  wenv cd [-h] <wenv> - cd into <wenv>'s base directory.
 
 OPTIONS
-  -r    Rename the current tmux window to the designated wenv's name (<wenv>).
   -h    Display this help message.
 
 DESCRIPTION
@@ -503,14 +485,9 @@ DESCRIPTION
   The base directory of a wenv is defined by its WENV_DIR value.
 "
 
-    local flag_r=0
-
     local opt OPTIND
-    while getopts ":rh" opt; do
+    while getopts ":h" opt; do
         case $opt in
-            r)
-               flag_r=1
-               ;;
             h)
                 echo "$usage"
                 return 0
@@ -525,7 +502,6 @@ DESCRIPTION
 
     if [[ -z "$1" ]]; then
         [[ ! -z "$WENV_DIR" ]] && cd "$WENV_DIR" &> /dev/null
-        ((flag_r == 1)) && tmux rename-window "$WENV"
         return 0
     fi
 
@@ -535,16 +511,7 @@ DESCRIPTION
     fi
     local wenv="$1"
 
-    # TODO: need a better way to do this
-    # load and cd to input wenv
-    load_wenv_vars "$wenv"
-    cd "$WENV_DIR"
-    unset_wenv_vars
-
-    # reload the wenv that was previously running
-    run_wenv_def "$WENV"
-
-    ((flag_r == 1)) && tmux rename-window "$wenv"
+    eval cd $(grep -Pho '^\s*WENV_DIR=\K.*' $WENV_CFG/wenvs/$wenv)
 
     return 0
 }
@@ -620,11 +587,15 @@ DESCRIPTION
     fi
     local wenv="$1"
 
-    run_wenv_def "$wenv"
+    # clear out bootstrap_wenv if we're in an active wenv
+    [[ -n "$WENV" ]] && unset_quiet -f bootstrap_wenv
+
+    source_wenv_and_run_wenv_def "$wenv"
     if ! function_exists bootstrap_wenv; then
         echo "bootstrap_wenv not defined for wenv '$1'" >&2
         return 1
     fi
+
     bootstrap_wenv
     unset_quiet -f bootstrap_wenv
 }
