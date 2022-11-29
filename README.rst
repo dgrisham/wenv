@@ -204,10 +204,11 @@ Usage
       start <wenv>          Start the working environment <wenv>.
       stop                  Stop the current working environment.
       new                   Create a new working environment.
+      list                  List all wenvs
       edit <wenv>           Edit the wenv file for <wenv>.
       rename <old> <new>    Rename wenv <old> to <new>.
       remove <wenv>         Delete the wenv file for <wenv>.
-      source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
+      source <wenv>         Source the wenv file for <wenv>.
       cd <wenv>             Change to <wenv>'s base directory.
       extension <cmd>       Interact with wenv extensions.
       bootstrap <wenv>      Run <wenv>'s bootstrap function.
@@ -221,17 +222,17 @@ See the Walkthrough_ for further elaboration and examples.
 
 **Variables**
 
--  `WENV_DIR`: The path to the base directory of this project.
--  `WENV_DEPS`: An array containing the names of the wenvs that this wenv is
+-  `wenv_dir`: The path to the base directory of this project.
+-  `wenv_deps`: An array containing the names of the wenvs that this wenv is
    dependent on.
--  `WENV_EXTENSIONS`: An array containing the names of the extensions to load
+-  `wenv_extensions`: An array containing the names of the extensions to load
    for the wenv.
 
 **Functions**
 
 -   `startup_wenv()` is run whenever you start the wenv. This function is good
     for starting up any necessary daemons, setting up a tmux layout, opening
-    programs (e.g. a text editor), etc. It will run inside `"$WENV_DIR"`.
+    programs (e.g. a text editor), etc. It will run inside `"$wenv_dir"`.
 -   `shutdown_wenv()` is run when you stop the wenv. This can be used to stop
     daemons started by `startup_wenv()`, and do any other cleanup.
 -   `bootstrap_wenv()` sets up the environment that the wenv expects to exist.
@@ -274,44 +275,47 @@ Here's an example that creates a wenv for a project called 'hello-world':
 The `wenv new` command will copy the wenv `template` file into a new wenv
 file called `hello-world`. The template file provides a base structure for a new
 wenv. On my machine, the above wenv command creates a new wenv file that starts
-with the following function, called `wenv_def()`:
+with the following lines:
 
 .. code-block:: zsh
 
-    wenv_def() {
-        WENV_DIR="/home/grish/hello-world"
-        WENV_DEPS=()
-        WENV_EXTENSIONS=()
+    wenv_dir=""
+    wenv_deps=()
+    wenv_extensions=('c')
 
-        startup_wenv() {}
-        bootstrap_wenv() {}
-        shutdown_wenv() {}
-    }
+    startup_wenv() {}
+    shutdown_wenv() {}
+    bootstrap_wenv() {}
 
-A given project's wenv has two primary parts: its wenv definition, and any shell
-aliases/functions that are specific to the project. A wenv's definition is
-represented by its `wenv_def()` function, and the wenv's Zsh aliases/functions
-are defined in the same file as its `wenv_def()`. When you initialize a new
-wenv, you'll notice that a few Zsh environment variables and functions are
+    ((only_load_wenv_vars == 1)) && return 0
 
-defined by default (more on those in `Predefined Functions`_).
+    # define all desired aliases/functions/etc. here
 
-The `wenv_dir()` function defines all of the parameters that the wenv framework
-can use to help us work on a project. Let's focus on `WENV_DIR` for now.
+Each project's wenv start with a set of variables and functions that make it a wenv,
+which are all of the variables and functions defined above. Below the above block
+is where any shell aliases/functions/etc. for the project should be defined.
 
-`WENV_DIR`
+A shell running a wenv will have environment variables exported that correspond to the
+variables defined in the wenv file:
+
+-   `WENV_DIR` will contain the value of `wenv_dir`.
+-   `WENV_DEPS` will contain the value of `wenv_deps`.
+-   `WENV_EXTENSIONS` will contain the value of `wenv_extensions`.
+
+The most important of these is `wenv_dir`, which we'll focus on first.
+
+`wenv_dir`
 ~~~~~~~~~~
 
-The `WENV_DIR` value represents the base directory of the project. When we
+The `wenv_dir` value represents the base directory of the project. When we
 start a wenv with e.g. `wenv start hello-world`, we'll automatically `cd` into
-the project's `WENV_DIR`. Further, whenever a wenv is active, we can run `wenv
+the project's `wenv_dir`. Further, whenever a wenv is active, we can run `wenv
 cd` (without an argument) to `cd` into its base directory from anywhere. If we
-want to `cd` into an inactive wenv's `WENV_DIR`, we can do so by passing the
+want to `cd` into an inactive wenv's `wenv_dir`, we can do so by passing the
 wenv name as an argument -- e.g. `wenv cd hello-world`.
 
-In the example in the previous section, `WENV_DIR`'s value was automatically
-populated with our current working directory. That's because we passed the `-d`
-flag to `wenv new` -- if we hadn't, the value would just be an empty string.
+In the example in the previous section, `wenv_dir`'s value was automatically populated
+with our current working directory (this may be overidden with the `-d` flag).
 
 `startup_wenv()`
 ~~~~~~~~~~~~~~~~
@@ -365,7 +369,7 @@ on the larger pane:
         tmux select-pane -U
     }
 
-Note that `wenv start` will `cd` into `"$WENV_DIR"` before
+Note that `wenv start` will `cd` into `"$wenv_dir"` before
 `startup_wenv()` is run, so you can assume you'll be in the wenv's base
 directory when writing your `startup_wenv()` functions. Additionally, your wenv
 aliases will be sourced once `startup_wenv()` is called, so can take advantage
@@ -389,18 +393,16 @@ Note, however, that the `wenv stop` command doesn't deactivate the wenv if
 `shutdown_wenv()` returns a non-zero exit code. You can always pass the `-f`
 flag to `wenv stop` to close the wenv even if `shutdown_wenv()` fails.
 
-`WENV_DEPS`
+`wenv_deps`
 ~~~~~~~~~~~
 
-`WENV_DEPS` is an array of wenvs that this wenv is dependent on. Essentially,
-every wenv in `WENV_DEPS` is sourced when starting the wenv. Let's take the
+`wenv_deps` is an array of wenvs that this wenv is dependent on. Essentially,
+every wenv in `wenv_deps` is sourced when starting the wenv. Let's take the
 example of a wenv for IPTB (which we'll call `iptb`):
 
 .. code-block:: zsh
 
-    wenv_def() {
-        # ...
-    }
+    # ...
 
     export IPTB_ROOT="$HOME/.iptb"
 
@@ -412,14 +414,11 @@ particularly maintainable -- e.g. if the IPTB developers decide to rename the
 `IPTB_ROOT` variable, all wenvs that use IPTB would have to update that
 variable's value. Alternatively, we could just source the `iptb` wenv and get
 all of its environment variables every time we start any wenv that uses IPTB. To
-do this, we'd add `iptb` to our `WENV_DEPS`:
+do this, we'd add `iptb` to our `wenv_deps`:
 
 .. code-block:: zsh
 
-    wenv_def() {
-        # ...
-        WENV_DEPS=('iptb')
-    }
+    wenv_deps=('iptb')
 
 Extensions
 ~~~~~~~~~~
@@ -427,16 +426,12 @@ Extensions
 Wenv extensions define shell code that may be reused across multiple wenvs. A
 wenv extension is nothing more than a shell file that you want to source in every
 shell of a wenv. Extensions are stored in `"$WENV_CFG/extensions"`. To load an
-extension, add its name to the `WENV_EXTENSIONS` array. For example, if we
-wanted to load the `c` and `edit` extensions, our `wenv_def()` would look
-like:
+extension, add its name to the `wenv_extensions` array. For example, if we
+wanted to load the `c` and `edit` extensions, we'd write:
 
 .. code-block:: zsh
 
-    wenv_def() {
-        # ...
-        WENV_EXTENSIONS=('c' 'edit')
-    }
+    wenv_extensions=('c' 'edit')
 
 Then the files `"$WENV_CFG/extensions/c"` and `"$WENV_CFG/extensions/edit"`
 would be sourced in every shell of our wenv. See the documentation for the `c`
