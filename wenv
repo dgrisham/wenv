@@ -490,7 +490,12 @@ DESCRIPTION
     fi
     local wenv="$1"
 
+    unset wenv_dir
     only_load_wenv_vars=1 source $WENV_CFG/wenvs/$wenv
+
+    [[ -z "$wenv_dir" ]] && { echo "wenv_dir not defined for wenv '$wenv'" >&2 ; return 1 }
+
+    cd $wenv_dir
 
     return 0
 }
