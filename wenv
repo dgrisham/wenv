@@ -86,6 +86,10 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
         bootstrap)
             wenv_bootstrap $@
             ;;
+        *)
+            echo "invalid command '$wenv_command'" >&2
+            return 1
+            ;;
     esac
 }
 alias wenv='noglob __wenv'
