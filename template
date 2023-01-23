@@ -1,14 +1,14 @@
 #!/usr/bin/env zsh
 
-wenv_def() {
-    WENV_DIR=""
-    WENV_DEPS=()
-    WENV_EXTENSIONS=('c')
+wenv_dir=""
+wenv_deps=()
+wenv_extensions=('c')
 
-    startup_wenv() {}
-    shutdown_wenv() {}
-    bootstrap_wenv() {}
-}
+startup_wenv() {}
+shutdown_wenv() {}
+bootstrap_wenv() {}
+
+((only_load_wenv_vars == 1)) && return 0
 
 # for c extension
 # declare -Ag wenv_dirs=()

@@ -1,14 +1,12 @@
 #!/usr/bin/env zsh
 
-wenv_def() {
-    WENV_DIR="$SRC/wenv"
-    WENV_DEPS=()
-    WENV_EXTENSIONS=('c')
+wenv_dir="$SRC/wenv"
+wenv_deps=()
+wenv_extensions=('c')
 
-    bootstrap_wenv() {}
-    startup_wenv() {}
-    shutdown_wenv() {}
-}
+bootstrap_wenv() {}
+startup_wenv() {}
+shutdown_wenv() {}
 
 export WENV_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
 
@@ -28,7 +26,7 @@ SUBCOMMANDS
   edit <wenv>           Edit the wenv file for <wenv>.
   rename <old> <new>    Rename wenv <old> to <new>.
   remove <wenv>         Delete the wenv file for <wenv>.
-  source <wenv>         Source <wenv>'s environment (excluding its wenv_def).
+  source <wenv>         Source the wenv file for <wenv>.
   cd <wenv>             Change to <wenv>'s base directory.
   extension <cmd>       Interact with wenv extensions.
   bootstrap <wenv>      Run <wenv>'s bootstrap function.
@@ -181,25 +179,69 @@ OPTIONS
 }
 
 wenv_exec() {
-    local flag_c=1
-
-    local opt OPTIND
-    while getopts ":c" opt; do
-        case $opt in
-            c) flag_c=0 ;;
-        esac
-    done
-    shift $((OPTIND-1))
-
     [[ -z "$1" ]] && return 1
     export WENV="$1"
 
-    run_wenv_def "$WENV" || { echo "wenv_def() not defined for wenv '$WENV'" >&2 ; return 1 }
-    wenv_source "$WENV" || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
+    wenv_source || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
-    ((flag_c == 1)) && cd "$WENV_DIR" &> /dev/null
+    cd "$wenv_dir" &> /dev/null
 
     return 0
+}
+
+wenv_source() {
+    local usage="\
+USAGE
+  wenv source [-h] [<wenv>, ...] - Source active wenv + its dependencies.
+
+OPTIONS
+  -h    Display this help message.
+
+DESCRIPTION
+  \`wenv source\` sources the active wenv's aliases and its dependencies.
+"
+
+    [[ -z "$WENV" ]] && { echo "error sourcing active wenv: \$WENV is empty" >&2 ; return 1 }
+
+    local opt OPTIND
+    while getopts ":h" opt; do
+        case "$opt" in
+            h)
+                echo "$usage"
+                return 0
+                ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    only_load_wenv_vars=1 source $WENV_CFG/wenvs/$WENV
+
+    export WENV_DIR=$wenv_dir
+    export WENV_DEPS=$wenv_deps
+    export WENV_EXTENSIONS=$wenv_extensions
+
+    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
+    ((${#WENV_DEPS[@]} != 0)) && source_wenv_dependencies_recursively "${WENV_DEPS[@]}"
+
+    source $WENV_CFG/wenvs/$WENV
+
+    return 0
+}
+
+source_wenv_dependencies_recursively() {
+    local wenv
+    for wenv in $@; do
+        unset_quiet wenv_deps
+
+        only_load_wenv_vars=1 source "$WENV_CFG/wenvs/$wenv"
+        eval source_wenv_dependencies_recursively $wenv_deps
+
+        # source this wenv now that its dependencies are loaded
+        source $WENV_CFG/wenvs/$wenv
+    done
 }
 
 wenv_stop() {
@@ -250,36 +292,13 @@ wenv_clean_up() {
     [[ -z "$WENV" ]] && return 1
 
     unset_quiet WENV
-    unset_wenv_vars
+    unset_quiet WENV_{DIR,DEPS,EXTENSIONS}
     unset_quiet -f {bootstrap,startup,shutdown}_wenv
 
     if [[ -n "$TMUX" ]]; then
         tmux set-environment WENV ''
         tmux rename-session $(tmux display-message -p '#{session_id}' | tr -d '$')
     fi
-}
-
-load_wenv_vars() {
-    unset_wenv_vars
-    run_wenv_def "$@"
-    unset_quiet -f bootstrap_wenv,startup_wenv,shutdown_wenv
-}
-
-unset_wenv_vars() {
-    unset_quiet WENV_{DIR,DEPS}
-}
-
-run_wenv_def() {
-    [[ -z "$1" ]] && return 1
-    local wenv="$1"
-    unset_quiet -f wenv_def
-    source $WENV_CFG/wenvs/$wenv >/dev/null 2>&1
-    if ! function_exists wenv_def; then
-        echo "wenv_def not defined for wenv '$1'" >&2
-        return 1
-    fi
-    wenv_def
-    unset_quiet -f wenv_def
 }
 
 wenv_new() {
@@ -332,7 +351,7 @@ OPTIONS
     fi
 
     mkdir -p $WENV_CFG/wenvs/$(dirname $wenv)
-    cat =(perl -pe "s|WENV_DIR=.*?$|WENV_DIR=\"$wenv_dir\"|" "$template") > "$WENV_CFG/wenvs/$wenv"
+    cat =(perl -pe "s|wenv_dir=.*?$|wenv_dir=\"$wenv_dir\"|" "$template") > "$WENV_CFG/wenvs/$wenv"
 
     wenv_edit "$wenv"
 }
@@ -428,70 +447,12 @@ OPTIONS
     eval "rm $rm_args $wenv_file"
 }
 
-wenv_source() {
-    local usage="\
-USAGE
-  wenv source [-h] [<wenv>, ...] - Source one or more wenvs + their dependencies.
-
-OPTIONS
-  -h    Display this help message.
-
-DESCRIPTION
-  Calling \`wenv source\` with no arguments will source the active wenv's
-  aliases and its dependencies.
-
-  Calling as \`wenv source [<wenv>, ...]\` will source the aliases of every
-  wenv in the argument list, as well as each wenv's dependencies.
-"
-
-    local opt OPTIND
-    while getopts ":h" opt; do
-        case "$opt" in
-            h)
-                echo "$usage"
-                return 0
-                ;;
-            \?)
-                echo "unknown option: -$OPTARG" >&2
-                return 1
-                ;;
-        esac
-    done
-
-    if (($# == 0)); then
-        source_wenvs_recursively "$WENV"
-        run_wenv_def "$WENV"
-    else
-        source_wenvs_recursively $@
-        [[ -n "$WENV" ]] && run_wenv_def "$WENV"
-    fi
-
-    return 0
-}
-
-source_wenvs_recursively() {
-    local wenv
-    for wenv in $@; do
-        if ! is_wenv "$1"; then
-            echo "wenv '$1' doesn't exist" >&2
-            return 1
-        fi
-
-        load_wenv_vars "$wenv"
-        ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
-        ((${#WENV_DEPS[@]} != 0)) && source_wenvs_recursively "${WENV_DEPS[@]}" && load_wenv_vars "$wenv"
-        source "$WENV_CFG/wenvs/$wenv" >/dev/null
-    done
-    unset_wenv_vars
-}
-
 wenv_cd() {
     local usage="\
 USAGE
-  wenv cd [-r] [-h] <wenv> - cd into <wenv>'s base directory.
+  wenv cd [-h] <wenv> - cd into <wenv>'s base directory.
 
 OPTIONS
-  -r    Rename the current tmux window to the designated wenv's name (<wenv>).
   -h    Display this help message.
 
 DESCRIPTION
@@ -500,17 +461,12 @@ DESCRIPTION
 
   Calling as \`wenv cd <wenv>\` will \`cd\` into <wenv>'s base directory.
 
-  The base directory of a wenv is defined by its WENV_DIR value.
+  The base directory of a wenv is defined by its \`wenv_dir\` value.
 "
 
-    local flag_r=0
-
     local opt OPTIND
-    while getopts ":rh" opt; do
+    while getopts ":h" opt; do
         case $opt in
-            r)
-               flag_r=1
-               ;;
             h)
                 echo "$usage"
                 return 0
@@ -524,8 +480,7 @@ DESCRIPTION
     shift $((OPTIND-1))
 
     if [[ -z "$1" ]]; then
-        [[ ! -z "$WENV_DIR" ]] && cd "$WENV_DIR" &> /dev/null
-        ((flag_r == 1)) && tmux rename-window "$WENV"
+        [[ -n "$WENV_DIR" ]] && cd "$WENV_DIR" &> /dev/null
         return 0
     fi
 
@@ -535,16 +490,12 @@ DESCRIPTION
     fi
     local wenv="$1"
 
-    # TODO: need a better way to do this
-    # load and cd to input wenv
-    load_wenv_vars "$wenv"
-    cd "$WENV_DIR"
-    unset_wenv_vars
+    unset wenv_dir
+    only_load_wenv_vars=1 source $WENV_CFG/wenvs/$wenv
 
-    # reload the wenv that was previously running
-    run_wenv_def "$WENV"
+    [[ -z "$wenv_dir" ]] && { echo "wenv_dir not defined for wenv '$wenv'" >&2 ; return 1 }
 
-    ((flag_r == 1)) && tmux rename-window "$wenv"
+    cd $wenv_dir
 
     return 0
 }
@@ -620,11 +571,15 @@ DESCRIPTION
     fi
     local wenv="$1"
 
-    run_wenv_def "$wenv"
+    # clear out bootstrap_wenv if we're in an active wenv
+    [[ -n "$WENV" ]] && unset_quiet -f bootstrap_wenv
+
+    only_load_wenv_vars=1 source $WENV_CFG/wenvs/$wenv
     if ! function_exists bootstrap_wenv; then
         echo "bootstrap_wenv not defined for wenv '$1'" >&2
         return 1
     fi
+
     bootstrap_wenv
     unset_quiet -f bootstrap_wenv
 }
@@ -694,7 +649,7 @@ ARGUMENTS
 DESCRIPTION
   This function sources the corresponding extension file at \$WENV_CFG/<extension>.
   This will only source the extension file in the current shell. See the
-  documentation on the WENV_EXTENSIONS environment variable for loading an
+  documentation on the \`wenv_extensions\` configuration variable for loading an
   extension in every shell of a wenv.
 "
 
