@@ -196,7 +196,7 @@ wenv_exec() {
 wenv_source() {
     local usage="\
 USAGE
-  wenv source [-h] [<wenv>, ...] - Source active wenv + its dependencies.
+  wenv source [-h] - Source active wenv + its dependencies.
 
 OPTIONS
   -h    Display this help message.
