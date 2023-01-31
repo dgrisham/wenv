@@ -224,8 +224,8 @@ DESCRIPTION
     only_load_wenv_vars=1 source $WENV_CFG/wenvs/$WENV
 
     export WENV_DIR=$wenv_dir
-    export WENV_DEPS=$wenv_deps
-    export WENV_EXTENSIONS=$wenv_extensions
+    export WENV_DEPS=("$wenv_deps[@]")
+    export WENV_EXTENSIONS=("${wenv_extensions[@]}")
 
     ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
     ((${#WENV_DEPS[@]} != 0)) && source_wenv_dependencies_recursively "${WENV_DEPS[@]}"
