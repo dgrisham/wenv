@@ -115,7 +115,7 @@ its contents instead of copying to make updates easier):
 
 1.  Clone this repository.
 2.  Create the directory `$XDG_CONFIG_HOME/wenv` (or `$HOME/.config/wenv`) and
-    put the `template` file there and `extensions` directory there. Also, create
+    put both the `template` file and `extensions` directory there. Also, create
     a directory inside of that `wenv` directory called `wenvs`, which will store
     the wenv files for all of your projects. If you're in this repository, you
     can run the following lines to complete this step:
