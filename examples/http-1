@@ -23,19 +23,19 @@
 # with main.js opened in your editor, and the second named 'http' that contains
 # a running python HTTP server.
 
-wenv_def() {
-    WENV_DIR="$HOME/scratch/webdev-practice"
-    WENV_DEPS=()
-    WENV_EXTENSIONS=('c' 'edit')
+wenv_dir="$HOME/scratch/webdev-practice"
+wenv_deps=()
+wenv_extensions=('c' 'edit')
 
-    startup_wenv() {
-        wenv_tmux_split -n http window 'python -m http.server'
-        tmux select-window -t 1
-        edit -r js
-    }
-    shutdown_wenv() {}
-    bootstrap_wenv() {}
+startup_wenv() {
+    wenv_tmux_split -n http window 'python -m http.server'
+    tmux select-window -t 1
+    edit -r js
 }
+shutdown_wenv() {}
+bootstrap_wenv() {}
+
+((only_load_wenv_vars == 1)) && return 0
 
 declare -Ag wenv_dirs
 wenv_dirs[js]='js'
