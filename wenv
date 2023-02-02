@@ -443,7 +443,7 @@ OPTIONS
     local rm_args=${@:1:$(($# - 1))}
 
     if ! is_wenv "$wenv"; then
-        echo "WENV $wenv does not exist."
+        echo "WENV '$wenv' does not exist."
         return 1
     fi
 
