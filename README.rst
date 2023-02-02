@@ -72,9 +72,8 @@ approach. For example, developing the aforementioned IPTB project required a
 running Docker daemon. I didn't want Docker to run unless I was working on the
 project, but I didn't want to have to think about starting processes like that
 when I was about to work. So, I thought it'd be nice if I could include something
-in the IPTB project file that would let me automatically run commands like `sudo
-systemctl start docker` when I started working on the project and `sudo
-systemctl stop docker` when I was finished.
+in the IPTB project file that would let me automatically run commands like `sudo systemctl start docker`
+when I started working on the project and `sudo systemctl stop docker` when I was finished.
 
 The wenv framework arose from this increasing complexity. However, it never left
 the realm of Zsh scripting. A project's wenv is defined by Zsh environment
