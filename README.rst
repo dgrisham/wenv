@@ -269,7 +269,7 @@ Here's an example that creates a wenv for a project called 'hello-world':
 
     $ mkdir hello-world
     $ cd hello-world
-    $ wenv new -d hello-world
+    $ wenv new hello-world
 
 The `wenv new` command will copy the wenv `template` file into a new wenv
 file called `hello-world`. The template file provides a base structure for a new
