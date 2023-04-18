@@ -97,7 +97,7 @@ alias wenv='noglob __wenv'
 wenv_start() {
     local usage="\
 USAGE
-  wenv start [-i] [-q] [-h] <wenv> - Start working environemnt <wenv>. If <wenv> is already running, attach to it.
+  wenv start [-i] [-d] [-h] <wenv> - Start working environemnt <wenv>. If <wenv> is already running, attach to it.
 
 OPTIONS
   -i    Run <wenv>'s startup function. Default: true.
@@ -105,16 +105,12 @@ OPTIONS
   -h    Display this help message.
 "
 
-    local flag_q=0
     local flag_i=1
     local flag_d=0
 
     local opt OPTIND
     while getopts ":qidh" opt; do
         case $opt in
-            q)
-                flag_q=1
-                ;;
             i)
                 flag_i=0
                 ;;
