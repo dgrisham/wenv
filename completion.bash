@@ -12,7 +12,7 @@ _show_wenvs() {
 
 _wenv_start() {
     if [[ $word == -* ]]; then
-        _wenv_comp "-t -q -i -d -h"
+        _wenv_comp "-i -d -h"
     else
         _show_wenvs
     fi
