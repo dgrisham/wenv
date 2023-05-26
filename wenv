@@ -179,12 +179,23 @@ OPTIONS
 }
 
 wenv_exec() {
+    # -c means "don't automatically cd into the wenv directory"
+    local flag_c=1
+
+    local opt OPTIND
+    while getopts ":c" opt; do
+        case $opt in
+            c) flag_c=0 ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
     [[ -z "$1" ]] && return 1
     export WENV="$1"
 
     wenv_source || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
 
-    cd "$wenv_dir" &> /dev/null
+    ((flag_c == 1)) && cd "$wenv_dir" &> /dev/null
 
     return 0
 }
