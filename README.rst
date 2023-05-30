@@ -126,20 +126,28 @@ its contents instead of copying to make updates easier):
         mkdir -p "$wenv_cfg/wenvs"
         ln -s <path-to-this-repo>/{template,extensions} "$wenv_cfg"
 
-3.  Put the `wenv` and `completion.bash` files wherever you like, and add the
-    following lines to source them in your `.zshrc`:
+3.  Put the `wenv` and `_wenv` files wherever you like, and add the following lines to your `zshrc`:
 
     .. code-block:: zsh
 
         # source wenv file
         source <path-to-wenv-file>
-        # enable bash completion functions
-        autoload -Uz compinit && compinit -u
-        autoload bashcompinit && bashcompinit
-        # source wenv completion file
-        source <path-to-completion.bash>
 
-4.  In order for wenvs to work with `tmux`, the following line should be added
+4.  To load the completions, you can move or symlink the `_wenv` file to a directory in your `fpath`.
+    For example, if the completion file is at `~/src/wenv/_wenv` and you store completions in
+    `$XDG_DATA_HOME/zsh/completions/`, you would run:
+
+    .. code-block:: zsh
+
+        ln -s `~/src/wenv/_wenv` `$XDG_DATA_HOME/zsh/completions/`
+
+    Then ensure the path is in your `fpath` by adding this to your `zshrc`:
+
+    .. code-block:: zsh
+
+        fpath=$(XDG_DATA_HOME/zsh/completions $fpath)
+
+5.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
 
     .. code-block:: zsh
