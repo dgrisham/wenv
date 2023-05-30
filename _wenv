@@ -1,0 +1,74 @@
+#compdef wenv
+
+local state
+integer ret=1
+
+list_wenvs() {
+    find "$WENV_CFG/wenvs" ! -name ".gitignore" ! -path '*/\.git/*' ! -type d | perl -pe "s|$WENV_CFG/wenvs/||"
+}
+
+list_extensions() {
+    find "$WENV_CFG/extensions/" ! -type d | perl -pe "s|$WENV_CFG/extensions/||"
+}
+
+_arguments -C \
+    ':command:(start stop cd new edit rm mv source extension bootstrap exec)' \
+    '*::arg:->args' && ret=0
+
+case "$line[1]" in
+    start)
+        # _arguments "-i[Do not run wenv's startup function]" "-d[Do not attach to wenv's tmux session]" "-h[Show help message]" "*::wenvs:->wenv" && ret=0
+        _arguments "-i[Do not run wenv's startup function]" "-d[Do not attach to wenv's tmux session]" "-h[Show help message]" "*:wenvs:($(list_wenvs))" && ret=0
+        ;;
+    stop)
+        _arguments "-f[Force shutdown even if shutdown_wenv fails]" "-s[Do not run shutdown function]" "-h[Show help message]" && ret=0
+        ;;
+    cd)
+        _arguments "-h[Show help message]" && ret=0
+        ;;
+    new)
+        _arguments "-d[Wenv's base directory]:directory" "-i[Initial wenv to copy]:initial_wenv:->wenv" "-h[Show help message]" && ret=0
+        case $state in
+            wenv) _describe 'command' "($(list_wenvs))" ;;
+        esac
+        ;;
+    edit)
+        _arguments "-h[Show help message]" "1: :->wenv" && ret=0
+        case $state in
+            wenv) _describe 'command' "($(list_wenvs))" ;;
+        esac
+        ;;
+    rm)
+        _arguments "-h[Show help message]" "1: :->wenv" && ret=0
+        case $state in
+            wenv) _describe 'command' "($(list_wenvs))" ;;
+        esac
+        ;;
+    mv)
+        _arguments "-h[Show help message]" "1:src:->wenv" "2:dst:->wenv" && ret=0
+        case $state in
+            wenv) _describe 'command' "($(list_wenvs))" ;;
+        esac
+        ;;
+    source)
+        _arguments "-h[Show help message]" && ret=0
+        ;;
+    extension)
+        _arguments -C \
+            "-h[Show help message]" \
+            ':command:(edit load rm)' \
+            '*::arg:->args' && ret=0
+
+        (($#line == 2)) && case "$line[1]" in
+            edit|load|rm) _describe 'command' "($(list_extensions))" ;;
+        esac
+        ;;
+    bootstrap)
+        _arguments "-h[Show help message]" && ret=0
+        ;;
+    exec)
+        _arguments "-h[Show help message]" && ret=0
+        ;;
+esac
+
+return $ret
