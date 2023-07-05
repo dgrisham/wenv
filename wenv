@@ -418,7 +418,7 @@ OPTIONS
         esac
     done
 
-    find "$WENV_CFG/wenvs" ! -type d | perl -pe "s|$WENV_CFG/wenvs/||" | sort
+    find "$WENV_CFG/wenvs/$1" ! -type d | perl -pe "s|$WENV_CFG/wenvs/||" | sort
 }
 
 wenv_remove() {

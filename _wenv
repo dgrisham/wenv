@@ -38,6 +38,12 @@ case "$line[1]" in
             wenv) _describe 'command' "($(list_wenvs))" ;;
         esac
         ;;
+    ls|list)
+        _arguments "-h[Show help message]" "1: :->wenv" && ret=0
+        case $state in
+            wenv) _describe 'command' "($(list_wenvs))" ;;
+        esac
+        ;;
     rm)
         _arguments "-h[Show help message]" "1: :->wenv" && ret=0
         case $state in
