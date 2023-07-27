@@ -24,7 +24,7 @@ case "$line[1]" in
         _arguments "-f[Force shutdown even if shutdown_wenv fails]" "-s[Do not run shutdown function]" "-h[Show help message]" && ret=0
         ;;
     cd)
-        _arguments "-h[Show help message]" && ret=0
+        _arguments "-h[Show help message]" "*:wenvs:($(list_wenvs))" && ret=0
         ;;
     new)
         _arguments "-d[Wenv's base directory]:directory" "-i[Initial wenv to copy]:initial_wenv:->wenv" "-h[Show help message]" && ret=0
