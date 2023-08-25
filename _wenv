@@ -27,7 +27,7 @@ case "$line[1]" in
         _arguments "-h[Show help message]" "*:wenvs:($(list_wenvs))" && ret=0
         ;;
     new)
-        _arguments "-d[Wenv's base directory]:directory" "-i[Initial wenv to copy]:initial_wenv:->wenv" "-h[Show help message]" && ret=0
+        _arguments "-d[Wenv's base directory]:directory" "-i[Initial wenv to copy]:initial_wenv:->wenv" "-h[Show help message]" "1: :->wenv" && ret=0
         case $state in
             wenv) _describe 'command' "($(list_wenvs))" ;;
         esac
