@@ -145,7 +145,7 @@ its contents instead of copying to make updates easier):
 
     .. code-block:: zsh
 
-        fpath=$(XDG_DATA_HOME/zsh/completions $fpath)
+        fpath=($XDG_DATA_HOME/zsh/completions $fpath)
 
 5.  In order for wenvs to work with `tmux`, the following line should be added
     to your `zshrc`:
