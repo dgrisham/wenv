@@ -17,7 +17,6 @@ _arguments -C \
 
 case "$line[1]" in
     start)
-        # _arguments "-i[Do not run wenv's startup function]" "-d[Do not attach to wenv's tmux session]" "-h[Show help message]" "*::wenvs:->wenv" && ret=0
         _arguments "-i[Do not run wenv's startup function]" "-d[Do not attach to wenv's tmux session]" "-h[Show help message]" "*:wenvs:($(list_wenvs))" && ret=0
         ;;
     stop)
