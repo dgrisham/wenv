@@ -19,7 +19,7 @@ _wenv_start() {
 }
 
 _wenv_stop() {
-    _wenv_comp "-s -h"
+    _wenv_comp "-s -h -f"
 }
 
 _wenv_cd() {
