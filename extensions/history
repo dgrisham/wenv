@@ -12,18 +12,18 @@ fi
 # hook to update the wenv-specific history file every time the general history is updated
 _update_wenv_history() {
     print -sr -- ${1%%$'\n'}
-    fc -p $WENV_HISTFILE
+    fc -pa $WENV_HISTFILE
 }
-add-zsh-hook zshaddhistory _update_wenv_history
+# add-zsh-hook zshaddhistory _update_wenv_history
 
 # zsh widget to search the wenv-specific history
 _search_wenv_history() {
-    fc -p
-    fc -R $WENV_HISTFILE
+    fc -pa $WENV_HISTFILE
+    # fc -R
     bindkey "^T" history-incremental-search-backward
     zle history-incremental-search-backward
     bindkey "^T" _search_wenv_history
-    fc -P
+    # fc -P
 }
 zle -N _search_wenv_history
 bindkey "^T" _search_wenv_history
