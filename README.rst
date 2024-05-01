@@ -288,7 +288,7 @@ with the following lines:
 
     wenv_dir=""
     wenv_deps=()
-    wenv_extensions=('wd' 'history')
+    wenv_extensions=('wd')
 
     startup_wenv() {}
     shutdown_wenv() {}
