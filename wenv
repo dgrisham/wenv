@@ -2,7 +2,7 @@
 
 wenv_dir="$SRC/wenv"
 wenv_deps=()
-wenv_extensions=('c' 'history')
+wenv_extensions=('c')
 
 bootstrap_wenv() {}
 startup_wenv() {}
