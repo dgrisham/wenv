@@ -1,5 +1,9 @@
 #!/usr/bin/env zsh
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !This extension might be broken + delete your history if you use it. WIP !
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 export WENV_HISTDIR="${XDG_CACHE_HOME:-$HOME/.cache}/wenv/history"
 export WENV_HISTFILE=$WENV_HISTDIR/$(sed 's/\//-/g' <<< $WENV)
 
