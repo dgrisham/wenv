@@ -288,7 +288,7 @@ with the following lines:
 
     wenv_dir=""
     wenv_deps=()
-    wenv_extensions=('c')
+    wenv_extensions=('wd' 'history')
 
     startup_wenv() {}
     shutdown_wenv() {}
@@ -434,14 +434,12 @@ Wenv extensions define shell code that may be reused across multiple wenvs. A
 wenv extension is nothing more than a shell file that you want to source in every
 shell of a wenv. Extensions are stored in `"$WENV_CFG/extensions"`. To load an
 extension, add its name to the `wenv_extensions` array. For example, if we
-wanted to load the `c` and `edit` extensions, we'd write:
+wanted to load the `wd` and `edit` extensions, we'd write:
 
 .. code-block:: zsh
 
-    wenv_extensions=('c' 'edit')
+    wenv_extensions=('wd' 'edit')
 
-Then the files `"$WENV_CFG/extensions/c"` and `"$WENV_CFG/extensions/edit"`
-would be sourced in every shell of our wenv. See the documentation for the `c`
-and `edit` wenvs for more information on their usage -- this can easily be done
-by running e.g. `wenv extension load c` then `c -h`, which will work
-regardless of whether you're in an active wenv.
+Then the files `"$WENV_CFG/extensions/wd"` and `"$WENV_CFG/extensions/edit"` would
+be sourced in every shell of our wenv. See the `wd` and `edit` extension files for more
+information on their usage.
