@@ -1,0 +1,67 @@
+#!/usr/bin/env zsh
+
+# `wd` is a function for easier access to the `wenv_dirs` associative array defined in your wenvs.
+# It takes one argument, a key to `wenv_dirs`, and outputs the corresponding value.
+#
+# For example, you might define `wenv_dirs` as:
+# ```
+# define -Ag wenv_dirs
+# wenv_dirs[tmp]="/tmp"
+# ```
+#
+# Then `wd` would output the following:
+# ```
+# $ wd tmp
+# /tmp
+# ```
+#
+# If you don't pass an argument, `wd` will output `WENV_DIR`.
+#
+# The `_wd` completion function lets you tab-complete the keys of wenv_dirs.
+#
+# `wd` and `_wd` can easily be wrapped so that any function can leverage your `wenv_dirs` directories.
+# The quintessential example is `c`, which is an easy way to `cd` into any of the directories by their key.
+# In the above example, running `c tmp` would change to the /tmp directory.
+#
+# See the bottom of this file for additional `wd` wrapper function examples.
+
+wd() {
+    (($# != 1)) && { echo "$WENV_DIR" ; return 0 }
+    local input="$1"
+    shift
+
+    [ "${wenv_dirs[$input]+0}" ] || { echo "no entry '$input'" >&2 ; return 1 }
+    dir="${wenv_dirs[$input]}"
+
+    local abs
+    if [[ $dir != /* ]]; then
+        abs=$(realpath "$WENV_DIR/$dir")
+    else
+        abs=$dir
+    fi
+    echo "$abs"
+}
+_wd() {
+    COMPREPLY=()
+    complete +o default
+
+    local word="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
+        COMPREPLY=( $(compgen -W "-h" -- ${word}) )
+    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
+        local opts="${(k)wenv_dirs[@]}"
+        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    fi
+}
+complete -F _wd wd
+
+c() { cd `wd $@` }
+complete -F _wd c
+
+lfwd() { lf `wd $@` }
+complete -F _wd lfwd
+
+lfc() { lfcd `wd $@` }
+complete -F _wd lfc
