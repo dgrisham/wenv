@@ -57,11 +57,11 @@ _wd() {
 }
 complete -F _wd wd
 
-c() { cd `wd $@` }
+c() { dir=$(wd $@) || return $? ; cd $dir }
 complete -F _wd c
 
-lfwd() { lf `wd $@` }
+lfwd() { dir=$(wd $@) || return $? ; lf $dir }
 complete -F _wd lfwd
 
-lfc() { lfcd `wd $@` }
+lfc() { dir=$(wd $@) || return $? ; lfcd $dir }
 complete -F _wd lfc
