@@ -93,6 +93,8 @@ Run \`wenv <cmd> -h\` for more information on a given subcommand <cmd>.
     esac
 }
 alias wenv='noglob __wenv'
+# for some reason the above alias breaks completions sometimes. this seems to fix it
+compdef _wenv __wenv
 
 wenv_start() {
     local usage="\
