@@ -214,7 +214,8 @@ DESCRIPTION
   \`wenv source\` sources the active wenv's aliases and its dependencies.
 "
 
-    [[ -z "$WENV" ]] && { echo "error sourcing active wenv: \$WENV is empty" >&2 ; return 1 }
+    local wenv="${1:-${WENV}}"
+    [[ -z "$wenv" ]] && { echo "error sourcing wenv: no wenv arg provided and \$WENV is empty" >&2 ; return 1 }
 
     local opt OPTIND
     while getopts ":h" opt; do
@@ -230,7 +231,7 @@ DESCRIPTION
         esac
     done
 
-    only_load_wenv_vars=1 source $WENV_CFG/wenvs/$WENV
+    only_load_wenv_vars=1 source $WENV_CFG/wenvs/$wenv
 
     export WENV_DIR=$wenv_dir
     export WENV_DEPS=("$wenv_deps[@]")
@@ -239,7 +240,7 @@ DESCRIPTION
     ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
     ((${#WENV_DEPS[@]} != 0)) && source_wenv_dependencies_recursively "${WENV_DEPS[@]}"
 
-    source $WENV_CFG/wenvs/$WENV
+    source $WENV_CFG/wenvs/$wenv
 
     return 0
 }
