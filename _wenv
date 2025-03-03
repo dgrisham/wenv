@@ -56,7 +56,7 @@ case "$line[1]" in
         esac
         ;;
     source)
-        _arguments "-h[Show help message]" && ret=0
+        _arguments "-h[Show help message]" "-c[Stay in WENV_DIR after running]" && ret=0
         ;;
     extension)
         _arguments -C \
