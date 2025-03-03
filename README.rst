@@ -152,7 +152,7 @@ its contents instead of copying to make updates easier):
 
     .. code-block:: zsh
 
-        [[ -n "$WENV" ]] && wenv_exec -c "$WENV"
+        [[ -n "$WENV" ]] && wenv_source -c "$WENV"
 
     This makes it so that the wenv associated with a given tmux session can be
     loaded whenever a new pane or window is opened within that session.

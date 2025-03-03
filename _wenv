@@ -12,7 +12,7 @@ list_extensions() {
 }
 
 _arguments -C \
-    ':command:(start stop cd new edit rm mv source extension bootstrap exec)' \
+    ':command:(start stop cd new edit rm mv source extension bootstrap)' \
     '*::arg:->args' && ret=0
 
 case "$line[1]" in
@@ -69,9 +69,6 @@ case "$line[1]" in
         esac
         ;;
     bootstrap)
-        _arguments "-h[Show help message]" && ret=0
-        ;;
-    exec)
         _arguments "-h[Show help message]" && ret=0
         ;;
 esac
