@@ -180,6 +180,11 @@ OPTIONS
     return 0
 }
 
+wenv_exec() {
+    echo "wenv_exec has been deprecated! change the call \`wenv_exec\` in your zshrc/zsh startup to \`wenv_source -c\` instead" >&2
+    return 1
+}
+
 wenv_source() {
     local usage="\
 USAGE
