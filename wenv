@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+#!/usr/bin/zsh
 
 wenv_dir="$SRC/wenv"
 wenv_deps=()
@@ -157,7 +157,7 @@ OPTIONS
             local tmp_start_file="/tmp/wenv/start-$(perl -pe 's|/|-|g' <<< $wenv)"
             [[ -f "$tmp_start_file" ]] && rm -f "$tmp_start_file"
             echo -e '
-                wenv_exec '"$wenv"' || return 1
+                wenv_source -c '"$wenv"' || { echo "failed to source wenv '$wenv'" >&2 ; return 1 }
                 tmux set-environment WENV "$WENV"
                 (('"$flag_i"' == 1)) && startup_wenv
                 clear
@@ -181,25 +181,8 @@ OPTIONS
 }
 
 wenv_exec() {
-    # -c means "don't automatically cd into the wenv directory"
-    local flag_c=1
-
-    local opt OPTIND
-    while getopts ":c" opt; do
-        case $opt in
-            c) flag_c=0 ;;
-        esac
-    done
-    shift $((OPTIND-1))
-
-    [[ -z "$1" ]] && return 1
-    export WENV="$1"
-
-    wenv_source || { echo "failed to source wenv '$WENV'" >&2 ; return 1 }
-
-    ((flag_c == 1)) && cd "$wenv_dir" &> /dev/null
-
-    return 0
+    echo "wenv_exec has been deprecated! change the call \`wenv_exec\` in your zshrc/zsh startup to \`wenv_source -c\` instead" >&2
+    return 1
 }
 
 wenv_source() {
@@ -209,27 +192,32 @@ USAGE
 
 OPTIONS
   -h    Display this help message.
+  -c    Stay in the wenv's base directory after loading the wenv, rather than changing back to the caller's original working directory. Default: false.
 
 DESCRIPTION
   \`wenv source\` sources the active wenv's aliases and its dependencies.
 "
 
-    local wenv="${1:-${WENV}}"
-    [[ -z "$wenv" ]] && { echo "error sourcing wenv: no wenv arg provided and \$WENV is empty" >&2 ; return 1 }
+    # -c means "don't change back to the original working directory after cd'ing into the wenv's base directory"
+    local stay_in_wenv_dir_after_running=0
 
     local opt OPTIND
-    while getopts ":h" opt; do
-        case "$opt" in
-            h)
-                echo "$usage"
-                return 0
-                ;;
-            \?)
-                echo "unknown option: -$OPTARG" >&2
+    while getopts ":hc" opt; do
+        case $opt in
+            c) stay_in_wenv_dir_after_running=1
+            ;;
+            h) echo "$usage"
+               return 0
+            ;;
+            \?) echo "unknown option: -$OPTARG" >&2
                 return 1
-                ;;
+            ;;
         esac
     done
+    shift $((OPTIND-1))
+
+    local wenv="${1:-${WENV}}"
+    [[ -z "$wenv" ]] && { echo "error sourcing wenv: no wenv arg provided and \$WENV is empty" >&2 ; return 1 }
 
     only_load_wenv_vars=1 source $WENV_CFG/wenvs/$wenv
 
@@ -240,7 +228,14 @@ DESCRIPTION
     ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
     ((${#WENV_DEPS[@]} != 0)) && source_wenv_dependencies_recursively "${WENV_DEPS[@]}"
 
-    source $WENV_CFG/wenvs/$wenv
+    if ((stay_in_wenv_dir_after_running == 1)); then
+        cd "$WENV_DIR" &> /dev/null
+        source $WENV_CFG/wenvs/$wenv
+    else
+        pushd "$WENV_DIR" &> /dev/null
+        source $WENV_CFG/wenvs/$wenv
+        popd &> /dev/null
+    fi
 
     return 0
 }
