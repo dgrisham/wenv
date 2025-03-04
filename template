@@ -11,7 +11,7 @@ bootstrap_wenv() {}
 ((only_load_wenv_vars == 1)) && return 0
 
 # for c extension
-# declare -Ag wenv_dirs=()
+# declare -Ag wenv_dirs
 
 # for edit extension
-# declare -Ag wenv_files=()
+# declare -Ag wenv_files
