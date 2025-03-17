@@ -157,6 +157,7 @@ OPTIONS
             local tmp_start_file="/tmp/wenv/start-$(perl -pe 's|/|-|g' <<< $wenv)"
             [[ -f "$tmp_start_file" ]] && rm -f "$tmp_start_file"
             echo -e '
+                export WENV='"$wenv"'
                 wenv_source -c '"$wenv"' || { echo "failed to source wenv '$wenv'" >&2 ; return 1 }
                 tmux set-environment WENV "$WENV"
                 (('"$flag_i"' == 1)) && startup_wenv
