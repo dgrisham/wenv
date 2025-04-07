@@ -42,35 +42,27 @@ wd() {
     echo "$abs"
 }
 _wd() {
-    COMPREPLY=()
-    complete +o default
-
-    local word="${COMP_WORDS[COMP_CWORD]}"
-    local prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    if (( COMP_CWORD == 1 )) && [[ ${word} == -* ]]; then
-        COMPREPLY=( $(compgen -W "-h" -- ${word}) )
-    elif (( COMP_CWORD == 1 )) || { ((COMP_CWORD == 2 )) && [[ ${prev} == -* ]]; }; then
-        local opts="${(k)wenv_dirs[@]}"
-        COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
+    (( ${#wenv_dirs} == 0 )) && return 0
+    if ((CURRENT == 2)); then
+        compadd -- "${(k)wenv_dirs[@]}"
     fi
 }
-complete -F _wd wd
+compdef _wd wd
 
 c() {
     dir=$(wd $@) || return $?
     cd $dir
 }
-complete -F _wd c
+compdef _wd c
 
 lfwd() {
     dir=$(wd $@) || return $?
     lf $dir
 }
-complete -F _wd lfwd
+compdef _wd lfwd
 
 lfc() {
     dir=$(wd $@) || return $?
     lfcd $dir
 }
-complete -F _wd lfc
+compdef _wd lfc
