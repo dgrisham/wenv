@@ -10,7 +10,7 @@ __add-worktree() {
 alias add-worktree='noglob __add-worktree'
 
 __remove-worktree() {
-    for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES" | grep $1); do
+    for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES/$1"); do
         branch=${worktree_dir#"${GIT_WORKTREES}/"}
         printf "remove worktree '%s'? [yN] " $branch >&2
         [[ ! $(read -e) =~ [yY] ]] && return 1
