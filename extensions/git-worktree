@@ -1,0 +1,29 @@
+#!/usr/bin/env zsh
+
+__add-worktree() {
+    wenv cd
+    for b in $(git branch --format='%(refname:short)' --list "$1"); do
+        git worktree add $GIT_WORKTREES/$b $b
+        wenv_dirs[worktree/$b]=$GIT_WORKTREES/$b
+    done
+}
+alias add-worktree='noglob __add-worktree'
+
+__remove-worktree() {
+    for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES" | grep $1); do
+        branch=${worktree_dir#"${GIT_WORKTREES}/"}
+        printf "remove worktree '%s'? [yN] " $branch >&2
+        [[ ! $(read -e) =~ [yY] ]] && return 1
+        git worktree remove --force $worktree_dir
+        unset "wenv_dirs[worktree/$branch]" || true
+    done
+    git worktree prune
+}
+alias remove-worktree='noglob __remove-worktree'
+
+add-worktrees-to-wenv-dirs() {
+    for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES"); do
+        branch=${worktree_dir#"${GIT_WORKTREES}/"}
+        wenv_dirs[worktree/$branch]=$worktree_dir
+    done
+}
