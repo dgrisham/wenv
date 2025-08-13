@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 
 __add-worktree() {
-    wenv cd
     for b in $(git branch --format='%(refname:short)' --list "$1"); do
         git worktree add $GIT_WORKTREES/$b $b
         wenv_dirs[worktree/$b]=$GIT_WORKTREES/$b
