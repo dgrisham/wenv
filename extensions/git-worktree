@@ -20,6 +20,14 @@ __remove-worktree() {
 }
 alias remove-worktree='noglob __remove-worktree'
 
+_remove-worktree() {
+    (( ${#wenv_dirs} == 0 )) && return 0
+    if ((CURRENT == 2)); then
+        compadd -- ${(k)wenv_dirs[(I)worktree/*]}
+    fi
+}
+compdef _remove-worktree __remove-worktree
+
 add-worktrees-to-wenv-dirs() {
     for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES"); do
         branch=${worktree_dir#"${GIT_WORKTREES}/"}
