@@ -114,14 +114,6 @@ _wenv_bootstrap() {
     fi
 }
 
-_wenv_exec() {
-    if [[ $word == -* ]]; then
-        _wenv_comp "-c -n -h"
-    else
-        _show_wenvs
-    fi
-}
-
 _wenv() {
     COMPREPLY=()
     complete +o default # Disable default to not deny completion, see: http://stackoverflow.com/a/19062943/1216348
@@ -134,7 +126,7 @@ _wenv() {
             if [[ $word == -* ]]; then
                 _wenv_comp '-h'
             else
-                local opts="start stop cd new edit rm mv source extension bootstrap exec"
+                local opts="start stop cd new edit rm mv source extension bootstrap"
                 COMPREPLY=( $(compgen -W "${opts}" -- ${word}) )
             fi
             ;;
