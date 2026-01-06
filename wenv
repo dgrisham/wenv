@@ -423,11 +423,10 @@ OPTIONS
 wenv_remove() {
     local usage="\
 USAGE
-  wenv remove [-h] [<rm_opts>] <wenv> - Delete <wenv>'s wenv file.
+  wenv remove [-h] <wenv> - Delete <wenv>'s wenv file.
 
 OPTIONS
   -h        Display this help message.
-  <rm_opts> List of options to forward to \`rm\`.
 "
 
     local opt OPTIND
@@ -437,24 +436,17 @@ OPTIONS
                 echo "$usage"
                 return 0
             ;;
-            *) # forward the rest of the opts to rm
-                break
-            ;;
         esac
     done
 
-    # last passed argument is wenv to remove (usually quoted string)
-    local wenv="${@[$#]}"
-    # all other opts are passed to rm
-    local rm_opts=${@:1:$(($# - 1))}
-
-    if ! is_wenv "$wenv"; then
-        echo "WENV '$wenv' does not exist."
+    if ! is_wenv "$1"; then
+        echo "wenv '$1' doesn't exist" >&2
         return 1
     fi
+    local wenv="$1"
 
     local wenv_file="$WENV_CFG/wenvs/$wenv"
-    eval "rm $rm_opts $wenv_file"
+    rm $wenv_file
 }
 
 wenv_cd() {
