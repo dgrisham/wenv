@@ -1,0 +1,14 @@
+#!/usr/bin/env zsh
+
+# should be loaded *after* the `edit` extension, if a wenv is using both
+
+export NOTES_DIR="$SCRATCH/notes/$WENV"
+
+mkdir -p $NOTES_DIR
+
+active-notes() {
+    echo $NOTES_DIR/notes.md
+}
+
+# add active notes path to wenv_files if it's defined (which is true when the `edit` extension is loaded)
+declare -p wenv_files >/dev/null 2>&1 && wenv_files[notes]="$(active-notes)"

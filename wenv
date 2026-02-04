@@ -2,7 +2,7 @@
 
 wenv_dir="$SRC/wenv"
 wenv_deps=()
-wenv_extensions=('c')
+wenv_extensions=('c' 'notes')
 
 bootstrap_wenv() {}
 startup_wenv() {}
@@ -226,8 +226,8 @@ DESCRIPTION
     export WENV_DEPS=("$wenv_deps[@]")
     export WENV_EXTENSIONS=("${wenv_extensions[@]}")
 
-    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
     ((${#WENV_DEPS[@]} != 0)) && source_wenv_dependencies_recursively "${WENV_DEPS[@]}"
+    ((${#WENV_EXTENSIONS[@]} != 0)) && wenv_extension_load "${WENV_EXTENSIONS[@]}"
 
     if ((stay_in_wenv_dir_after_running == 1)); then
         cd "$WENV_DIR" &> /dev/null
