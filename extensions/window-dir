@@ -1,0 +1,14 @@
+#!/bin/zsh
+
+# NOTE: currently the user has to call this manually, after only_load_wenv_vars is checked.
+# For this to be automatic, I think we'd need something like 'hooks' for extensions that're
+# run at a specific place by startup_wenv/etc. Could be excessive/this is fine for now.
+cd-to-window-dir-if-defined() {
+    local window_dir=$(tmux display-message -p -t $TMUX_PANE "#{@window_dir}")
+    [[ -d "$window_dir" ]] && cd $window_dir
+}
+
+new-window-with-dir() {
+    tmux new-window -n $1
+    tmux set-option -w @window_dir $2
+}
