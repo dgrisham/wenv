@@ -58,7 +58,7 @@ its contents instead of copying to make updates easier):
 
     .. code-block:: zsh
 
-        ln -s `~/src/wenv/_wenv` `$XDG_DATA_HOME/zsh/completions/`
+        ln -s ~/src/wenv/_wenv $XDG_DATA_HOME/zsh/completions/
 
     Then ensure the path is in your `fpath` by adding this to your `zshrc`:
 
