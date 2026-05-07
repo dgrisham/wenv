@@ -508,7 +508,7 @@ USAGE
   wenv rename [-h] <old> <new> - Rename wenv <old> to <new>.
 
 OPTIONS
-  -h                    Display this help message.
+  -h    Display this help message.
 "
 
     local opt OPTIND
@@ -526,17 +526,46 @@ OPTIONS
     done
 
     [[ $# != 2 ]] && { echo "wenv rename requires two arguments" >&2 ; return 1 }
-    local old="$1"
-    local new="$2"
+    local old=$WENV_CFG/wenvs/$1
+    local new=$WENV_CFG/wenvs/$2
 
-    if [[ "$new" == *"/"* ]]; then
-        local new_dir="$WENV_CFG/wenvs/$(dirname $new)"
-        if [[ ! -d  "$new_dir" ]]; then
-            mkdir -p $new_dir
+    [[ ! -f $old ]] && { echo "wenv '$1' does not exist" >&2 ; return 1 }
+
+    if [[ -d $new && $old == $new/* ]]; then # old lives somewhere inside new (any depth); collapse intermediate dirs
+        local old_tmp=$(mktemp -u ${new}.XXXXXX)
+        mv $old $old_tmp
+        # delete all empty subdirectories nested within $new that we can
+        find $new -depth -type d -empty -delete 2>/dev/null
+        if [[ -e $new ]]; then
+            echo "directory '$2' is not empty - cannot move" >&2
+            mkdir -p $(dirname $old)
+            mv $old_tmp $old
+            return 1
+        fi
+        old=$old_tmp
+    elif [[ $(dirname $new) == $old || $(dirname $new) == $old/* ]]; then # new lives inside old (any depth)
+        local old_tmp=$(mktemp -u ${old}.XXXXXX)
+        mv $old $old_tmp
+        old=$old_tmp
+    else
+        # we don't need to do these checks this in the above branches because:
+        #   1. if we selected the first branch then we already called `rmdir $new`, and
+        #   2. if we selected the second branch then we already moved $new since it was inside of $old (which is now $old_tmp)
+        if [[ -d $new ]]; then
+            # delete all empty subdirectories nested within $new that we can
+            find $new -depth -type d -empty -delete 2>/dev/null
+            [[ -e $new ]] && { echo "directory '$2' is not empty - cannot move" >&2 ; return 1 }
+        elif [[ -e $new ]]; then
+            echo "wenv '$2' already exists" >&2
+            return 1
         fi
     fi
+    mkdir -p $(dirname $new)
 
-    mv "$WENV_CFG/wenvs/$old" "$WENV_CFG/wenvs/$new"
+    if ! mv $old $new; then
+        [[ -n $old_tmp ]] && echo "move failed - original wenv saved at $old" >&2
+        return 1
+    fi
 }
 
 wenv_bootstrap() {
