@@ -350,14 +350,18 @@ OPTIONS
     done
     shift $((OPTIND-1))
 
-    [[ -z "$1" ]] && return 1
-    local wenv="$1"
+    [[ -z $1 ]] && return 1
+    local wenv=$1
+    local wenv_path=$WENV_CFG/wenvs/$wenv
 
     if is_wenv "$1"; then
         echo "wenv '$wenv' already exists" >&2
         printf "overwrite? [yN] " >&2
         [[ ! $(read -e) =~ [yY] ]] && return 1
-        rm -f "$WENV_CFG/wenvs/$wenv"
+        rm -f $wenv_path
+    elif [[ -d $wenv_path ]]; then
+        find $wenv_path -depth -type d -empty -delete 2>/dev/null
+        [[ -e $wenv_path ]] && { echo "directory '$wenv_path' is not empty - cannot create wenv" >&2 ; return 1 }
     fi
 
     mkdir -p $WENV_CFG/wenvs/$(dirname $wenv)
