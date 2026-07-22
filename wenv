@@ -10,6 +10,8 @@ shutdown_wenv() {}
 
 export WENV_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/wenv"
 
+export NOTES_DIR="$SCRATCH/notes/wenv"
+
 __wenv() {
     local usage="\
 USAGE
