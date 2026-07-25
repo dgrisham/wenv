@@ -227,7 +227,8 @@ export def --env "wenv start" [
         let running = ($sessions.stdout | str contains $"($wenv):")
 
         if not $running {
-            tmux new-session -d -s $wenv /opt/homebrew/bin/nu --login --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
+            let nu_bin = (which nu | first | get path)
+            tmux new-session -d -s $wenv $nu_bin --login --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
 
             mkdir /tmp/wenv
             let tmp_name = ($wenv | str replace --all "/" "-")
