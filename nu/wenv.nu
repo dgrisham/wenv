@@ -3,6 +3,7 @@
 
 $env.WENV_CFG = ($env | get -o XDG_CONFIG_HOME | default $"($env.HOME)/.config" | path join "wenv")
 $env.WENV_EXT = $"($env.SRC)/wenv/nu/extensions"
+$env.NOTES_DIR = $"($env.SCRATCH)/notes/wenv"
 
 # ---- helpers ----
 
@@ -136,11 +137,57 @@ export def "wenv rm" [name: string@wenv-complete-names] {
 export def "wenv mv" [old: string@wenv-complete-names, new: string] {
     let old_file = $"($env.WENV_CFG)/nu-wenvs/($old).nu"
     let new_file = $"($env.WENV_CFG)/nu-wenvs/($new).nu"
-    let new_dir = ($new_file | path dirname)
-    if not ($new_dir | path exists) {
-        mkdir $new_dir
+
+    if not ($old_file | path exists) {
+        error make { msg: $"wenv '($old)' does not exist" }
     }
-    mv $old_file $new_file
+
+    mut actual_old = $old_file
+
+    if ($new_file | path dirname | path exists) and ($new_file | path dirname | path type) == "dir" {
+        let new_dir = ($new_file | path dirname)
+        # check if old lives inside new's directory path — collapse intermediate dirs
+        if ($old_file | str starts-with $"($new_dir)/") or ($old_file | str starts-with $"($new_file)/") {
+            let old_tmp = $"($new_file).tmp"
+            mv $old_file $old_tmp
+            # clean empty subdirs
+            do { ^find $new_dir -depth -type d -empty -delete } | complete
+            if ($new_file | path exists) {
+                mkdir ($old_file | path dirname)
+                mv $old_tmp $old_file
+                error make { msg: $"directory '($new)' is not empty - cannot move" }
+            }
+            $actual_old = $old_tmp
+        } else if ($new_file | path dirname) == $old_file or (($new_file | path dirname) | str starts-with $"($old_file)/") {
+            # new lives inside old — move old to temp first
+            let old_tmp = $"($old_file).tmp"
+            mv $old_file $old_tmp
+            $actual_old = $old_tmp
+        }
+    }
+
+    if ($new_file | path exists) and ($new_file | path type) == "dir" {
+        do { ^find ($new_file) -depth -type d -empty -delete } | complete
+        if ($new_file | path exists) {
+            if $actual_old != $old_file {
+                # restore from temp
+                mkdir ($old_file | path dirname)
+                mv $actual_old $old_file
+            }
+            error make { msg: $"directory '($new)' is not empty - cannot move" }
+        }
+    } else if ($new_file | path exists) {
+        error make { msg: $"wenv '($new)' already exists" }
+    }
+
+    mkdir ($new_file | path dirname)
+    let result = (do { mv $actual_old $new_file } | complete)
+    if $result.exit_code != 0 {
+        if $actual_old != $old_file {
+            print -e $"move failed - original wenv saved at ($actual_old)"
+        }
+        error make { msg: "move failed" }
+    }
 }
 
 export def "wenv new" [
@@ -148,10 +195,17 @@ export def "wenv new" [
     --dir (-d): string
     --init (-i): string
 ] {
+    let wenv_path = $"($env.WENV_CFG)/nu-wenvs/($name).nu"
+
     if (wenv-is-wenv $name) {
         let answer = (input $"wenv '($name)' already exists. overwrite? [yN] ")
         if ($answer !~ '^[yY]') { return }
-        rm -f $"($env.WENV_CFG)/nu-wenvs/($name).nu"
+        rm -f $wenv_path
+    } else if ($wenv_path | path exists) and ($wenv_path | path type) == "dir" {
+        do { ^find $wenv_path -depth -type d -empty -delete } | complete
+        if ($wenv_path | path exists) {
+            error make { msg: $"directory '($wenv_path)' is not empty - cannot create wenv" }
+        }
     }
 
     let wenv_dir = ($dir | default (pwd))
@@ -161,15 +215,14 @@ export def "wenv new" [
         $"($env.WENV_CFG)/template.nu"
     }
 
-    let wenv_file = $"($env.WENV_CFG)/nu-wenvs/($name).nu"
-    let parent = ($wenv_file | path dirname)
+    let parent = ($wenv_path | path dirname)
     if not ($parent | path exists) {
         mkdir $parent
     }
 
     open $template
     | str replace --regex 'WENV_DIR = .*' $'WENV_DIR = "($wenv_dir)"'
-    | save -f $wenv_file
+    | save -f $wenv_path
 
     wenv edit $name
 }
