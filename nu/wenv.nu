@@ -1,9 +1,16 @@
 # wenv — working environment manager for Nushell
 # Ported from the zsh version
 
+$env.WENV_DIR = $"($env.SRC)/wenv"
 $env.WENV_CFG = ($env | get -o XDG_CONFIG_HOME | default $"($env.HOME)/.config" | path join "wenv")
 $env.WENV_EXT = $"($env.SRC)/wenv/nu/extensions"
 $env.NOTES_DIR = $"($env.SCRATCH)/notes/wenv"
+
+def startup_wenv [] {}
+def shutdown_wenv [] {}
+def bootstrap_wenv [] {}
+
+if ($env | get -o only_load_wenv_vars | default false) { return }
 
 # ---- helpers ----
 
@@ -66,8 +73,9 @@ def wenv-generate-source-script [name: string, --startup] {
 
     if $startup {
         $lines = ($lines | append [
+            $"cd ($config.dir)"
             "tmux set-environment WENV $env.WENV"
-            "startup_wenv"
+            "try { startup_wenv }"
             "clear"
         ])
     }
@@ -181,10 +189,12 @@ export def "wenv mv" [old: string@wenv-complete-names, new: string] {
     }
 
     mkdir ($new_file | path dirname)
-    let result = (do { mv $actual_old $new_file } | complete)
-    if $result.exit_code != 0 {
-        if $actual_old != $old_file {
-            print -e $"move failed - original wenv saved at ($actual_old)"
+    let _actual_old = $actual_old
+    try {
+        mv $_actual_old $new_file
+    } catch {
+        if $_actual_old != $old_file {
+            print -e $"move failed - original wenv saved at ($_actual_old)"
         }
         error make { msg: "move failed" }
     }
@@ -326,10 +336,15 @@ export def --env "wenv stop" [
     wenv cd
 
     if not $no_shutdown {
-        do { shutdown_wenv }
+        try { shutdown_wenv }
     }
 
-    # Clear source script so new panes don't load the stopped wenv
+    hide-env -i WENV WENV_DIR WENV_DEPS WENV_EXTENSIONS
+
+    if ($env | get -o TMUX | is-not-empty) {
+        ^tmux set-environment -u WENV
+    }
+
     "# no active wenv\n" | save -f ~/.config/wenv/_source.nu
 }
 
