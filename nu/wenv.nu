@@ -101,6 +101,26 @@ export def wenv-complete-extensions [] {
 
 # ---- subcommands ----
 
+export def "wenv" [...args: string] {
+    if ($args | is-not-empty) {
+        print -e $"unknown command: wenv ($args | str join ' ')"
+    }
+    print "Usage: wenv <command>
+
+Commands:
+  ls                List all wenvs
+  start <wenv>      Start a wenv (tmux session)
+  stop              Stop the current wenv
+  source <wenv>     Source a wenv in the current shell
+  cd [wenv]         cd into a wenv's directory
+  edit [wenv]       Edit a wenv file
+  new <name>        Create a new wenv
+  rm <wenv>         Remove a wenv
+  mv <old> <new>    Rename a wenv
+  bootstrap <wenv>  Run a wenv's bootstrap function
+  extension         Manage extensions (load/edit/remove)"
+}
+
 export def "wenv ls" [] {
     glob $"($env.WENV_CFG)/nu-wenvs/**/*.nu" --no-dir
     | each { str replace $"($env.WENV_CFG)/nu-wenvs/" "" | str replace '.nu' '' }
@@ -116,11 +136,13 @@ export def --env "wenv cd" [name?: string@wenv-complete-names] {
         return
     }
     if not (wenv-is-wenv $wenv) {
-        error make { msg: $"wenv '($wenv)' doesn't exist" }
+        print -e $"wenv '($wenv)' doesn't exist"
+        return
     }
     let config = (wenv-load-vars $wenv)
     if ($config.dir | is-empty) {
-        error make { msg: $"WENV_DIR not defined for wenv '($wenv)'" }
+        print -e $"WENV_DIR not defined for wenv '($wenv)'"
+        return
     }
     cd $config.dir
 }
@@ -131,13 +153,14 @@ export def "wenv edit" [name?: string@wenv-complete-names] {
     if ($file | path exists) {
         run-external $env.EDITOR $file
     } else {
-        error make { msg: $"wenv '($wenv)' doesn't exist" }
+        print -e $"wenv '($wenv)' doesn't exist"
     }
 }
 
 export def "wenv rm" [name: string@wenv-complete-names] {
     if not (wenv-is-wenv $name) {
-        error make { msg: $"wenv '($name)' doesn't exist" }
+        print -e $"wenv '($name)' doesn't exist"
+        return
     }
     rm $"($env.WENV_CFG)/nu-wenvs/($name).nu"
 }
@@ -147,7 +170,8 @@ export def "wenv mv" [old: string@wenv-complete-names, new: string] {
     let new_file = $"($env.WENV_CFG)/nu-wenvs/($new).nu"
 
     if not ($old_file | path exists) {
-        error make { msg: $"wenv '($old)' does not exist" }
+        print -e $"wenv '($old)' does not exist"
+        return
     }
 
     mut actual_old = $old_file
@@ -163,7 +187,8 @@ export def "wenv mv" [old: string@wenv-complete-names, new: string] {
             if ($new_file | path exists) {
                 mkdir ($old_file | path dirname)
                 mv $old_tmp $old_file
-                error make { msg: $"directory '($new)' is not empty - cannot move" }
+                print -e $"directory '($new)' is not empty - cannot move"
+                return
             }
             $actual_old = $old_tmp
         } else if ($new_file | path dirname) == $old_file or (($new_file | path dirname) | str starts-with $"($old_file)/") {
@@ -182,10 +207,12 @@ export def "wenv mv" [old: string@wenv-complete-names, new: string] {
                 mkdir ($old_file | path dirname)
                 mv $actual_old $old_file
             }
-            error make { msg: $"directory '($new)' is not empty - cannot move" }
+            print -e $"directory '($new)' is not empty - cannot move"
+            return
         }
     } else if ($new_file | path exists) {
-        error make { msg: $"wenv '($new)' already exists" }
+        print -e $"wenv '($new)' already exists"
+        return
     }
 
     mkdir ($new_file | path dirname)
@@ -196,7 +223,7 @@ export def "wenv mv" [old: string@wenv-complete-names, new: string] {
         if $_actual_old != $old_file {
             print -e $"move failed - original wenv saved at ($_actual_old)"
         }
-        error make { msg: "move failed" }
+        print -e "move failed"
     }
 }
 
@@ -214,7 +241,8 @@ export def "wenv new" [
     } else if ($wenv_path | path exists) and ($wenv_path | path type) == "dir" {
         do { ^find $wenv_path -depth -type d -empty -delete } | complete
         if ($wenv_path | path exists) {
-            error make { msg: $"directory '($wenv_path)' is not empty - cannot create wenv" }
+            print -e $"directory '($wenv_path)' is not empty - cannot create wenv"
+            return
         }
     }
 
@@ -237,18 +265,19 @@ export def "wenv new" [
     wenv edit $name
 }
 
-# Generate source script for a wenv. Since nushell can't dynamically source
-# files at runtime, this writes the script and prints the command to run.
+# Generate source script for a wenv and source it via tmux send-keys.
 export def --env "wenv source" [
     name?: string@wenv-complete-names
     --cd (-c)
 ] {
     let wenv = ($name | default ($env | get -o WENV | default ""))
     if ($wenv | is-empty) {
-        error make { msg: "no wenv arg provided and $env.WENV is empty" }
+        print -e "no wenv arg provided and $env.WENV is empty"
+        return
     }
     if not (wenv-is-wenv $wenv) {
-        error make { msg: $"wenv '($wenv)' doesn't exist" }
+        print -e $"wenv '($wenv)' doesn't exist"
+        return
     }
 
     let script = (wenv-generate-source-script $wenv)
@@ -259,16 +288,15 @@ export def --env "wenv source" [
         $script
     }
 
-    $script_with_cd | save -f ~/.config/wenv/_source.nu
+    mkdir /tmp/wenv
+    let tmp_name = ($wenv | str replace --all "/" "-")
+    let tmp_file = $"/tmp/wenv/source-($tmp_name).nu"
+    $script_with_cd | save -f $tmp_file
 
-    # Set env vars that don't require source (these take effect immediately)
-    let config = (wenv-load-vars $wenv)
-    $env.WENV = $wenv
-    $env.WENV_DIR = $config.dir
-    $env.WENV_DEPS = $config.deps
-    $env.WENV_EXTENSIONS = $config.extensions
-
-    print "source ~/.config/wenv/_source.nu"
+    # Send the source command to the current pane via tmux so it executes
+    # at the REPL top level (a def can't source into its caller's scope).
+    let pane = (^tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}' | str trim)
+    ^tmux send -t $pane $"source ($tmp_file)" Enter
 }
 
 export def --env "wenv start" [
@@ -295,7 +323,7 @@ export def --env "wenv start" [
 
             mkdir /tmp/wenv
             let tmp_name = ($wenv | str replace --all "/" "-")
-            let tmp_start = $"/tmp/wenv/start-($tmp_name).nu"
+            let tmp_start = $"/tmp/wenv/source-($tmp_name).nu"
 
             let script = if $no_init {
                 wenv-generate-source-script $wenv
@@ -304,8 +332,18 @@ export def --env "wenv start" [
             }
             $script | save -f $tmp_start
 
-            # Send source command to the tmux pane (space prefix to avoid history)
-            tmux send -t $wenv $" source ($tmp_start)" ENTER
+            # Also write a non-startup version for new panes (no startup_wenv/clear)
+            let pane_script = (wenv-generate-source-script $wenv)
+            let pane_start = $"/tmp/wenv/pane-($tmp_name).nu"
+            $pane_script | save -f $pane_start
+
+            # Set tmux hooks so new panes/windows in this session auto-source the wenv
+            let send_cmd = $"send-keys 'source ($pane_start); clear' Enter"
+            tmux set-hook -t $wenv after-split-window $send_cmd
+            tmux set-hook -t $wenv after-new-window $send_cmd
+
+            # Send source command to the first pane
+            tmux send -t $wenv $"source ($tmp_start)" ENTER
 
             if $flag_d {
                 print $"started wenv '($wenv)'"
@@ -339,18 +377,24 @@ export def --env "wenv stop" [
         try { shutdown_wenv }
     }
 
-    hide-env -i WENV WENV_DIR WENV_DEPS WENV_EXTENSIONS
-
+    # Clean up per-session tmux hooks and source files
     if ($env | get -o TMUX | is-not-empty) {
+        do { ^tmux set-hook -u -t $wenv after-split-window } | complete
+        do { ^tmux set-hook -u -t $wenv after-new-window } | complete
         ^tmux set-environment -u WENV
     }
 
-    "# no active wenv\n" | save -f ~/.config/wenv/_source.nu
+    let tmp_name = ($wenv | str replace --all "/" "-")
+    rm -f $"/tmp/wenv/source-($tmp_name).nu"
+    rm -f $"/tmp/wenv/pane-($tmp_name).nu"
+
+    hide-env -i WENV WENV_DIR WENV_DEPS WENV_EXTENSIONS
 }
 
 export def "wenv bootstrap" [name: string@wenv-complete-names] {
     if not (wenv-is-wenv $name) {
-        error make { msg: $"wenv '($name)' doesn't exist" }
+        print -e $"wenv '($name)' doesn't exist"
+        return
     }
     let file = $"($env.WENV_CFG)/nu-wenvs/($name).nu"
     # Run bootstrap in subprocess since we can't source dynamically
@@ -365,12 +409,14 @@ export def "wenv extension load" [...extensions: string@wenv-complete-extensions
     for ext in $extensions {
         let file = $"($env.WENV_EXT)/($ext).nu"
         if not ($file | path exists) {
-            error make { msg: $"'($ext)' not found in ($env.WENV_EXT)" }
+            print -e $"'($ext)' not found in ($env.WENV_EXT)"
+            return
         }
         $lines = ($lines | append $"source ($file)")
     }
-    $lines | str join "\n" | save -f ~/.config/wenv/_source.nu
-    print "source ~/.config/wenv/_source.nu"
+    let tmp_file = "/tmp/wenv/ext-load.nu"
+    $lines | str join "\n" | save -f $tmp_file
+    print $"source ($tmp_file)"
 }
 
 export def "wenv extension edit" [...extensions: string@wenv-complete-extensions] {
@@ -392,7 +438,8 @@ export def "wenv extension remove" [
     for ext in $extensions {
         let file = $"($env.WENV_EXT)/($ext).nu"
         if not ($file | path exists) {
-            error make { msg: $"Extension '($ext)' does not exist" }
+            print -e $"Extension '($ext)' does not exist"
+            return
         }
         if $force { rm -f $file } else { rm $file }
     }
