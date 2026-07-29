@@ -24,7 +24,7 @@ def wenv-load-vars [name: string] {
     let cmd = ([
         "$env.only_load_wenv_vars = true"
         $"source ($file)"
-        "{dir: $env.WENV_DIR, deps: ($env | get -o wenv_deps | default []), extensions: ($env | get -o wenv_extensions | default [])} | to nuon"
+        "{dir: $env.WENV_DIR, deps: ($env | get -o wenv_deps | default []), extensions: ($env | get -o wenv_extensions | default []), sources: ($env | get -o wenv_sources | default [])} | to nuon"
     ] | str join "; ")
     nu --no-config-file -c $cmd | from nuon
 }
@@ -68,6 +68,11 @@ def wenv-generate-source-script [name: string, --startup] {
     ]
 
     for src in $sources {
+        $lines = ($lines | append $"source ($src)")
+    }
+
+    # Include wenv_sources (for new panes/first load — no staleness issue)
+    for src in $config.sources {
         $lines = ($lines | append $"source ($src)")
     }
 
@@ -265,7 +270,8 @@ export def "wenv new" [
     wenv edit $name
 }
 
-# Generate source script for a wenv and source it via tmux send-keys.
+# Reload a wenv. Sends each source as a separate top-level REPL command
+# so edits to the wenv file and wenv_sources are always picked up.
 export def --env "wenv source" [
     name?: string@wenv-complete-names
     --cd (-c)
@@ -280,23 +286,32 @@ export def --env "wenv source" [
         return
     }
 
-    let script = (wenv-generate-source-script $wenv)
-    let script_with_cd = if $cd {
-        let config = (wenv-load-vars $wenv)
-        $"cd ($config.dir)\n($script)"
-    } else {
-        $script
-    }
+    let config = (wenv-load-vars $wenv)
 
+    # Regenerate pane file (for new panes via tmux hooks)
     mkdir /tmp/wenv
     let tmp_name = ($wenv | str replace --all "/" "-")
-    let tmp_file = $"/tmp/wenv/source-($tmp_name).nu"
-    $script_with_cd | save -f $tmp_file
+    let pane_file = $"/tmp/wenv/pane-($tmp_name).nu"
+    (wenv-generate-source-script $wenv) | save -f $pane_file
 
-    # Send the source command to the current pane via tmux so it executes
-    # at the REPL top level (a def can't source into its caller's scope).
+    # Build args for a single send-keys call: "cmd1" Enter "cmd2" Enter ...
     let pane = (^tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}' | str trim)
-    ^tmux send -t $pane $"source ($tmp_file)" Enter
+    let wenv_file = $"($env.WENV_CFG)/nu-wenvs/($wenv).nu"
+
+    mut cmds = []
+    if $cd {
+        $cmds = ($cmds | append $"cd ($config.dir)")
+    }
+    $cmds = ($cmds | append $"source ($wenv_file)")
+    for src in $config.sources {
+        $cmds = ($cmds | append $"source ($src)")
+    }
+    $cmds = ($cmds | append "clear -k")
+
+    # Join as semicolons on one line (all top-level in a single REPL entry)
+    # Leading space prevents it from being saved to history
+    let cmd = " " + ($cmds | str join "; ")
+    ^tmux send -t $pane $cmd Enter
 }
 
 export def --env "wenv start" [
@@ -317,34 +332,33 @@ export def --env "wenv start" [
         let sessions = (do { tmux list-sessions } | complete)
         let running = ($sessions.stdout | str contains $"($wenv):")
 
+        # Always regenerate source files and hooks (even if session exists)
+        mkdir /tmp/wenv
+        let tmp_name = ($wenv | str replace --all "/" "-")
+        let pane_file = $"/tmp/wenv/pane-($tmp_name).nu"
+        (wenv-generate-source-script $wenv) | save -f $pane_file
+
         if not $running {
             let nu_bin = (which nu | first | get path)
             tmux new-session -d -s $wenv $nu_bin --login --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
 
-            mkdir /tmp/wenv
-            let tmp_name = ($wenv | str replace --all "/" "-")
-            let tmp_start = $"/tmp/wenv/source-($tmp_name).nu"
-
-            let script = if $no_init {
-                wenv-generate-source-script $wenv
+            # Generate startup script (includes cd, startup_wenv, clear)
+            let start_file = $"/tmp/wenv/source-($tmp_name).nu"
+            if $no_init {
+                (wenv-generate-source-script $wenv) | save -f $start_file
             } else {
-                wenv-generate-source-script $wenv --startup
+                (wenv-generate-source-script $wenv --startup) | save -f $start_file
             }
-            $script | save -f $tmp_start
 
-            # Also write a non-startup version for new panes (no startup_wenv/clear)
-            let pane_script = (wenv-generate-source-script $wenv)
-            let pane_start = $"/tmp/wenv/pane-($tmp_name).nu"
-            $pane_script | save -f $pane_start
+            tmux send -t $wenv $"source ($start_file)" ENTER
+        }
 
-            # Set tmux hooks so new panes/windows in this session auto-source the wenv
-            let send_cmd = $"send-keys 'source ($pane_start); clear' Enter"
-            tmux set-hook -t $wenv after-split-window $send_cmd
-            tmux set-hook -t $wenv after-new-window $send_cmd
+        # Set tmux hooks so new panes auto-source the wenv
+        let hook_cmd = $"send-keys 'source ($pane_file); clear -k' Enter"
+        tmux set-hook -t $wenv after-split-window $hook_cmd
+        tmux set-hook -t $wenv after-new-window $hook_cmd
 
-            # Send source command to the first pane
-            tmux send -t $wenv $"source ($tmp_start)" ENTER
-
+        if not $running {
             if $flag_d {
                 print $"started wenv '($wenv)'"
                 continue
