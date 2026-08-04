@@ -14,6 +14,27 @@ if ($env | get -o only_load_wenv_vars | default false) { return }
 
 # ---- helpers ----
 
+# Resolve wenv_sources entries: expand globs, resolve relative paths against wenv dir
+# Returns {files: list<string>, errors: list<string>}
+def wenv-resolve-source-entries [entries: list<string>, dir: string] {
+    mut resolved = []
+    mut errors = []
+    for entry in $entries {
+        let full = if ($entry | str starts-with "/") { $entry } else { $"($dir)/($entry)" }
+        if ($full =~ '[*?\[]') {
+            let result = (try { glob $full | to nuon } catch { "ERROR" })
+            if ($result == "ERROR") {
+                $errors = ($errors | append $"failed to expand glob '($entry)' \(($full)\)")
+            } else {
+                $resolved = ($resolved | append ($result | from nuon))
+            }
+        } else {
+            $resolved = ($resolved | append $full)
+        }
+    }
+    {files: $resolved, errors: $errors}
+}
+
 def wenv-is-wenv [name: string] {
     ($"($env.WENV_CFG)/nu-wenvs/($name).nu" | path exists)
 }
@@ -24,7 +45,7 @@ def wenv-load-vars [name: string] {
     let cmd = ([
         "$env.only_load_wenv_vars = true"
         $"source ($file)"
-        "{dir: $env.WENV_DIR, deps: ($env | get -o wenv_deps | default []), extensions: ($env | get -o wenv_extensions | default []), sources: ($env | get -o wenv_sources | default [])} | to nuon"
+        "{dir: $env.WENV_DIR, deps: ($env | get -o wenv_deps | default []), extensions: ($env | get -o wenv_extensions | default []), sources: ($env | get -o wenv_sources | default []), overlays: ($env | get -o wenv_overlays | default [])} | to nuon"
     ] | str join "; ")
     nu --no-config-file -c $cmd | from nuon
 }
@@ -71,9 +92,28 @@ def wenv-generate-source-script [name: string, --startup] {
         $lines = ($lines | append $"source ($src)")
     }
 
-    # Include wenv_sources (for new panes/first load — no staleness issue)
-    for src in $config.sources {
-        $lines = ($lines | append $"source ($src)")
+    # Include wenv_sources — resolve relative paths and expand globs
+    let source_result = (wenv-resolve-source-entries $config.sources $config.dir)
+    if ($source_result.errors | is-not-empty) {
+        for err in $source_result.errors {
+            let escaped = ($err | str replace --all '"' '\"')
+            $lines = ($lines | append $"print -e \"wenv_sources: ($escaped)\"")
+        }
+    } else {
+        for src in $source_result.files {
+            $lines = ($lines | append $"source ($src)")
+        }
+    }
+
+    # Include wenv_overlays — overlay use with --reload
+    for entry in $config.overlays {
+        let file = if ($entry.file | str starts-with "/") { $entry.file } else { $"($config.dir)/($entry.file)" }
+        let alias = ($entry | get -o as | default "")
+        if ($alias | is-not-empty) {
+            $lines = ($lines | append $"overlay use ($file) as ($alias) --prefix --reload")
+        } else {
+            $lines = ($lines | append $"overlay use ($file) --reload")
+        }
     }
 
     if $startup {
@@ -81,8 +121,12 @@ def wenv-generate-source-script [name: string, --startup] {
             $"cd ($config.dir)"
             "tmux set-environment WENV $env.WENV"
             "try { startup_wenv }"
-            "clear"
         ])
+        if ($source_result.errors | is-empty) {
+            $lines = ($lines | append "clear")
+        }
+    } else if ($source_result.errors | is-empty) {
+        $lines = ($lines | append "clear -k")
     }
 
     $lines | str join "\n"
@@ -270,8 +314,8 @@ export def "wenv new" [
     wenv edit $name
 }
 
-# Reload a wenv. Sends each source as a separate top-level REPL command
-# so edits to the wenv file and wenv_sources are always picked up.
+# Reload a wenv. Regenerates pane file and sources it.
+# For reloading updated defs in specific files, use `wenv reload`.
 export def --env "wenv source" [
     name?: string@wenv-complete-names
     --cd (-c)
@@ -286,32 +330,118 @@ export def --env "wenv source" [
         return
     }
 
-    let config = (wenv-load-vars $wenv)
-
-    # Regenerate pane file (for new panes via tmux hooks)
+    # Regenerate pane file
     mkdir /tmp/wenv
     let tmp_name = ($wenv | str replace --all "/" "-")
     let pane_file = $"/tmp/wenv/pane-($tmp_name).nu"
     (wenv-generate-source-script $wenv) | save -f $pane_file
 
-    # Build args for a single send-keys call: "cmd1" Enter "cmd2" Enter ...
     let pane = (^tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}' | str trim)
-    let wenv_file = $"($env.WENV_CFG)/nu-wenvs/($wenv).nu"
+    let config = (wenv-load-vars $wenv)
 
+    # Build commands: all lines from pane file as direct REPL entries (so defs reload)
+    let pane_content = (open $pane_file | lines | where { |l| ($l | str trim) != "" and ($l | str trim) != "clear -k" and ($l | str trim) != "clear" })
     mut cmds = []
     if $cd {
         $cmds = ($cmds | append $"cd ($config.dir)")
     }
-    $cmds = ($cmds | append $"source ($wenv_file)")
-    for src in $config.sources {
-        $cmds = ($cmds | append $"source ($src)")
-    }
-    $cmds = ($cmds | append "clear -k")
+    $cmds = ($cmds | append $pane_content)
+    # Overlays are already in the pane file, no need to add again
 
-    # Join as semicolons on one line (all top-level in a single REPL entry)
-    # Leading space prevents it from being saved to history
-    let cmd = " " + ($cmds | str join "; ")
-    ^tmux send -t $pane $cmd Enter
+    # Paste all commands atomically using bracket paste mode (-p)
+    $cmds = ($cmds | append "clear -k")
+    let joined = (" " + ($cmds | str join "; "))
+    let reload_script = $"/tmp/wenv/source-cmd-($tmp_name).sh"
+    let buf_file = $"/tmp/wenv/source-buf-($tmp_name).txt"
+    let buf_name = $"wenv-($tmp_name)"
+    $joined | save -f $buf_file
+    let lines = [
+        "#!/bin/sh"
+        "sleep 0.05"
+        $"tmux load-buffer -b '($buf_name)' '($buf_file)'"
+        $"tmux paste-buffer -p -b '($buf_name)' -t '($pane)'"
+        $"tmux send-keys -t '($pane)' Enter"
+    ]
+    ($lines | str join "\n") | save -f $reload_script
+    ^chmod +x $reload_script
+    ^tmux run-shell -b $reload_script
+}
+
+# Completer for wenv reload: returns expanded wenv_sources relative to WENV_DIR
+def wenv-complete-sources [] {
+    let dir = ($env | get -o WENV_DIR | default "")
+    if ($dir | is-empty) { return [] }
+    let sources = ($env | get -o wenv_sources | default [])
+    let result = (wenv-resolve-source-entries $sources $dir)
+    $result.files | each { |f|
+        let rel = ($f | str replace $"($dir)/" "")
+        $rel
+    }
+}
+
+# Reload specific source files to pick up updated defs.
+# Each file is sourced as a separate REPL entry so defs are replaced.
+export def --env "wenv reload" [
+    ...patterns: string@wenv-complete-sources
+] {
+    let dir = ($env | get -o WENV_DIR | default "")
+    if ($dir | is-empty) {
+        print -e "no active wenv"
+        return
+    }
+
+    # Resolve patterns to files
+    mut files = []
+    if ($patterns | is-empty) {
+        # No args = reload all wenv_sources
+        let sources = ($env | get -o wenv_sources | default [])
+        let result = (wenv-resolve-source-entries $sources $dir)
+        if ($result.errors | is-not-empty) {
+            for err in $result.errors { print -e $"wenv reload: ($err)" }
+            return
+        }
+        $files = $result.files
+    } else {
+        for pat in $patterns {
+            let full = if ($pat | str starts-with "/") { $pat } else { $"($dir)/($pat)" }
+            if ($full =~ '[*?\[]') {
+                let result = (try { glob $full | to nuon } catch { "ERROR" })
+                if ($result == "ERROR") {
+                    print -e $"wenv reload: failed to expand glob '($pat)'"
+                    return
+                }
+                $files = ($files | append ($result | from nuon))
+            } else {
+                $files = ($files | append $full)
+            }
+        }
+    }
+
+    if ($files | is-empty) {
+        print -e "no files to reload"
+        return
+    }
+
+    let pane = (^tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}' | str trim)
+    let tmp_name = ($env.WENV | str replace --all "/" "-")
+
+    # Batch all source commands + clear into one paste-buffer
+    let cmds = ($files | each { |f| $"source ($f)" } | append "clear -k")
+    let joined = (" " + ($cmds | str join "; "))
+    let reload_script = $"/tmp/wenv/reload-($tmp_name).sh"
+    let buf_file = $"/tmp/wenv/reload-buf-($tmp_name).txt"
+    let buf_name = $"wenv-reload-($tmp_name)"
+    $joined | save -f $buf_file
+    let lines = [
+        "#!/bin/sh"
+        "sleep 0.05"
+        $"tmux load-buffer -b '($buf_name)' '($buf_file)'"
+        $"tmux paste-buffer -p -b '($buf_name)' -t '($pane)'"
+        $"tmux send-keys -t '($pane)' Enter"
+    ]
+    ($lines | str join "\n") | save -f $reload_script
+    ^chmod +x $reload_script
+    ^tmux run-shell -b $reload_script
 }
 
 export def --env "wenv start" [
@@ -329,6 +459,8 @@ export def --env "wenv start" [
             continue
         }
 
+        let config = (wenv-load-vars $wenv)
+
         let sessions = (do { tmux list-sessions } | complete)
         let running = ($sessions.stdout | str contains $"($wenv):")
 
@@ -338,8 +470,26 @@ export def --env "wenv start" [
         let pane_file = $"/tmp/wenv/pane-($tmp_name).nu"
         (wenv-generate-source-script $wenv) | save -f $pane_file
 
+        # Generate a standalone regen script (runs with nu --no-config-file)
+        let regen_file = $"/tmp/wenv/regen-($tmp_name).nu"
+        let xdg = ($env | get -o XDG_CONFIG_HOME | default "")
+        mut regen_lines = [
+            $"$env.HOME = '($env.HOME)'"
+            $"$env.SRC = '($env.SRC)'"
+            $"$env.SCRATCH = '($env.SCRATCH)'"
+        ]
+        if ($xdg | is-not-empty) {
+            $regen_lines = ($regen_lines | append $"$env.XDG_CONFIG_HOME = '($xdg)'")
+        }
+        $regen_lines = ($regen_lines | append [
+            $"source ($env.SRC)/wenv/nu/wenv.nu"
+            $"\(wenv-generate-source-script '($wenv)'\) | save -f ($pane_file)"
+        ])
+        ($regen_lines | str join "\n") | save -f $regen_file
+
+        let nu_bin = (which nu | first | get path)
+
         if not $running {
-            let nu_bin = (which nu | first | get path)
             tmux new-session -d -s $wenv $nu_bin --login --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
 
             # Generate startup script (includes cd, startup_wenv, clear)
@@ -354,9 +504,16 @@ export def --env "wenv start" [
         }
 
         # Set tmux hooks so new panes auto-source the wenv
-        let hook_cmd = $"send-keys 'source ($pane_file); clear -k' Enter"
-        tmux set-hook -t $wenv after-split-window $hook_cmd
-        tmux set-hook -t $wenv after-new-window $hook_cmd
+        # Use a wrapper script so run-shell gets a single clean argument
+        let hook_script = $"/tmp/wenv/hook-($tmp_name).sh"
+        ([
+            "#!/bin/sh"
+            $"($nu_bin) --no-config-file ($regen_file) 2>/dev/null"
+            $"tmux send-keys -t \"$TMUX_PANE\" 'source ($pane_file)' Enter"
+        ] | str join "\n") | save -f $hook_script
+        ^chmod +x $hook_script
+        tmux set-hook -t $wenv after-split-window $"run-shell ($hook_script)"
+        tmux set-hook -t $wenv after-new-window $"run-shell ($hook_script)"
 
         if not $running {
             if $flag_d {
