@@ -5,6 +5,11 @@ $env.WENV_DIR = $"($env.SRC)/wenv"
 $env.WENV_CFG = ($env | get -o XDG_CONFIG_HOME | default $"($env.HOME)/.config" | path join "wenv")
 $env.WENV_EXT = $"($env.SRC)/wenv/nu/extensions"
 $env.NOTES_DIR = $"($env.SCRATCH)/notes/wenv"
+# Generated scripts (pane/hook/regen files) live here rather than /tmp: tmux hooks
+# reference these paths for the life of the tmux session, but /tmp is subject to
+# periodic OS cleanup — if a referenced file gets swept, `run-shell` fails with
+# "returned 127" on every new pane until `wenv start` re-registers the hook.
+$env.WENV_CACHE = ($env | get -o XDG_CACHE_HOME | default $"($env.HOME)/.cache" | path join "wenv")
 
 def startup_wenv [] {}
 def shutdown_wenv [] {}
@@ -50,36 +55,73 @@ def wenv-load-vars [name: string] {
     nu --no-config-file -c $cmd | from nuon
 }
 
-# Recursively resolve all dependencies, returning a flat list of file paths to source (in order)
-def wenv-resolve-sources [name: string] {
+# Recursively resolve a wenv + its dependencies (depth-first), returning:
+#   cmds:     ordered list of nushell command strings to run (source/overlay use/errors)
+#   sources:  flat list of every resolved wenv_sources file (own + all deps)
+#   overlays: flat list of every resolved wenv_overlays entry (own + all deps)
+#   has_errors: whether any wenv_sources glob failed to resolve, anywhere in the chain
+def wenv-resolve-config [name: string] {
     let config = (wenv-load-vars $name)
-    mut sources = []
+    mut cmds = []
+    mut all_sources = []
+    mut all_overlays = []
+    mut has_errors = false
 
-    # Resolve deps first (depth-first)
+    # Resolve deps first (depth-first) — each dep's own sources/overlays are included too
     for dep in $config.deps {
-        let dep_sources = (wenv-resolve-sources $dep)
-        $sources = ($sources | append $dep_sources)
+        let dep_result = (wenv-resolve-config $dep)
+        $cmds = ($cmds | append $dep_result.cmds)
+        $all_sources = ($all_sources | append $dep_result.sources)
+        $all_overlays = ($all_overlays | append $dep_result.overlays)
+        $has_errors = ($has_errors or $dep_result.has_errors)
     }
 
     # Add extensions
     for ext in $config.extensions {
         let ext_file = $"($env.WENV_EXT)/($ext).nu"
         if ($ext_file | path exists) {
-            $sources = ($sources | append $ext_file)
+            $cmds = ($cmds | append $"source ($ext_file)")
         }
     }
 
     # Add the wenv itself
-    $sources = ($sources | append $"($env.WENV_CFG)/nu-wenvs/($name).nu")
+    $cmds = ($cmds | append $"source ($env.WENV_CFG)/nu-wenvs/($name).nu")
 
-    $sources
+    # Include this wenv's own wenv_sources — resolve relative paths and expand globs
+    let source_result = (wenv-resolve-source-entries $config.sources $config.dir)
+    if ($source_result.errors | is-not-empty) {
+        $has_errors = true
+        for err in $source_result.errors {
+            let escaped = ($err | str replace --all '"' '\"')
+            $cmds = ($cmds | append $"print -e \"wenv_sources: ($escaped)\"")
+        }
+    } else {
+        $all_sources = ($all_sources | append $source_result.files)
+        for src in $source_result.files {
+            $cmds = ($cmds | append $"source ($src)")
+        }
+    }
+
+    # Include this wenv's own wenv_overlays — overlay use with --reload
+    for entry in $config.overlays {
+        let file = if ($entry.file | str starts-with "/") { $entry.file } else { $"($config.dir)/($entry.file)" }
+        let alias = ($entry | get -o as | default "")
+        $all_overlays = ($all_overlays | append {file: $file, as: $alias})
+        if ($alias | is-not-empty) {
+            $cmds = ($cmds | append $"overlay use ($file) as ($alias) --prefix --reload")
+        } else {
+            $cmds = ($cmds | append $"overlay use ($file) --reload")
+        }
+    }
+
+    {cmds: $cmds, sources: $all_sources, overlays: $all_overlays, has_errors: $has_errors}
 }
 
 # Generate a source script that loads a wenv + deps + extensions
 def wenv-generate-source-script [name: string, --startup] {
-    mkdir /tmp/wenv
-    let sources = (wenv-resolve-sources $name)
+    mkdir $env.WENV_CACHE
     let config = (wenv-load-vars $name)
+    let resolved = (wenv-resolve-config $name)
 
     mut lines = [
         $"$env.WENV = '($name)'"
@@ -88,33 +130,11 @@ def wenv-generate-source-script [name: string, --startup] {
         $"$env.WENV_EXTENSIONS = ($config.extensions | to nuon)"
     ]
 
-    for src in $sources {
-        $lines = ($lines | append $"source ($src)")
-    }
+    $lines = ($lines | append $resolved.cmds)
 
-    # Include wenv_sources — resolve relative paths and expand globs
-    let source_result = (wenv-resolve-source-entries $config.sources $config.dir)
-    if ($source_result.errors | is-not-empty) {
-        for err in $source_result.errors {
-            let escaped = ($err | str replace --all '"' '\"')
-            $lines = ($lines | append $"print -e \"wenv_sources: ($escaped)\"")
-        }
-    } else {
-        for src in $source_result.files {
-            $lines = ($lines | append $"source ($src)")
-        }
-    }
-
-    # Include wenv_overlays — overlay use with --reload
-    for entry in $config.overlays {
-        let file = if ($entry.file | str starts-with "/") { $entry.file } else { $"($config.dir)/($entry.file)" }
-        let alias = ($entry | get -o as | default "")
-        if ($alias | is-not-empty) {
-            $lines = ($lines | append $"overlay use ($file) as ($alias) --prefix --reload")
-        } else {
-            $lines = ($lines | append $"overlay use ($file) --reload")
-        }
-    }
+    # Reflect the fully-merged (own + deps) sources/overlays so `wenv reload` can see all of them
+    $lines = ($lines | append $"$env.wenv_sources = ($resolved.sources | to nuon)")
+    $lines = ($lines | append $"$env.wenv_overlays = ($resolved.overlays | to nuon)")
 
     if $startup {
         $lines = ($lines | append [
@@ -122,10 +142,10 @@ def wenv-generate-source-script [name: string, --startup] {
             "tmux set-environment WENV $env.WENV"
             "try { startup_wenv }"
         ])
-        if ($source_result.errors | is-empty) {
+        if not $resolved.has_errors {
             $lines = ($lines | append "clear")
         }
-    } else if ($source_result.errors | is-empty) {
+    } else if not $resolved.has_errors {
         $lines = ($lines | append "clear -k")
     }
 
@@ -331,9 +351,9 @@ export def --env "wenv source" [
     }
 
     # Regenerate pane file
-    mkdir /tmp/wenv
+    mkdir $env.WENV_CACHE
     let tmp_name = ($wenv | str replace --all "/" "-")
-    let pane_file = $"/tmp/wenv/pane-($tmp_name).nu"
+    let pane_file = $"($env.WENV_CACHE)/pane-($tmp_name).nu"
     (wenv-generate-source-script $wenv) | save -f $pane_file
 
     let pane = (^tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}' | str trim)
@@ -351,8 +371,8 @@ export def --env "wenv source" [
     # Paste all commands atomically using bracket paste mode (-p)
     $cmds = ($cmds | append "clear -k")
     let joined = (" " + ($cmds | str join "; "))
-    let reload_script = $"/tmp/wenv/source-cmd-($tmp_name).sh"
-    let buf_file = $"/tmp/wenv/source-buf-($tmp_name).txt"
+    let reload_script = $"($env.WENV_CACHE)/source-cmd-($tmp_name).sh"
+    let buf_file = $"($env.WENV_CACHE)/source-buf-($tmp_name).txt"
     let buf_name = $"wenv-($tmp_name)"
     $joined | save -f $buf_file
     let lines = [
@@ -428,8 +448,8 @@ export def --env "wenv reload" [
     # Batch all source commands + clear into one paste-buffer
     let cmds = ($files | each { |f| $"source ($f)" } | append "clear -k")
     let joined = (" " + ($cmds | str join "; "))
-    let reload_script = $"/tmp/wenv/reload-($tmp_name).sh"
-    let buf_file = $"/tmp/wenv/reload-buf-($tmp_name).txt"
+    let reload_script = $"($env.WENV_CACHE)/reload-($tmp_name).sh"
+    let buf_file = $"($env.WENV_CACHE)/reload-buf-($tmp_name).txt"
     let buf_name = $"wenv-reload-($tmp_name)"
     $joined | save -f $buf_file
     let lines = [
@@ -465,14 +485,15 @@ export def --env "wenv start" [
         let running = ($sessions.stdout | str contains $"($wenv):")
 
         # Always regenerate source files and hooks (even if session exists)
-        mkdir /tmp/wenv
+        mkdir $env.WENV_CACHE
         let tmp_name = ($wenv | str replace --all "/" "-")
-        let pane_file = $"/tmp/wenv/pane-($tmp_name).nu"
+        let pane_file = $"($env.WENV_CACHE)/pane-($tmp_name).nu"
         (wenv-generate-source-script $wenv) | save -f $pane_file
 
         # Generate a standalone regen script (runs with nu --no-config-file)
-        let regen_file = $"/tmp/wenv/regen-($tmp_name).nu"
+        let regen_file = $"($env.WENV_CACHE)/regen-($tmp_name).nu"
         let xdg = ($env | get -o XDG_CONFIG_HOME | default "")
+        let xdg_cache = ($env | get -o XDG_CACHE_HOME | default "")
         mut regen_lines = [
             $"$env.HOME = '($env.HOME)'"
             $"$env.SRC = '($env.SRC)'"
@@ -480,6 +501,9 @@ export def --env "wenv start" [
         ]
         if ($xdg | is-not-empty) {
             $regen_lines = ($regen_lines | append $"$env.XDG_CONFIG_HOME = '($xdg)'")
+        }
+        if ($xdg_cache | is-not-empty) {
+            $regen_lines = ($regen_lines | append $"$env.XDG_CACHE_HOME = '($xdg_cache)'")
         }
         $regen_lines = ($regen_lines | append [
             $"source ($env.SRC)/wenv/nu/wenv.nu"
@@ -493,7 +517,7 @@ export def --env "wenv start" [
             tmux new-session -d -s $wenv $nu_bin --login --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
 
             # Generate startup script (includes cd, startup_wenv, clear)
-            let start_file = $"/tmp/wenv/source-($tmp_name).nu"
+            let start_file = $"($env.WENV_CACHE)/source-($tmp_name).nu"
             if $no_init {
                 (wenv-generate-source-script $wenv) | save -f $start_file
             } else {
@@ -505,7 +529,7 @@ export def --env "wenv start" [
 
         # Set tmux hooks so new panes auto-source the wenv
         # Use a wrapper script so run-shell gets a single clean argument
-        let hook_script = $"/tmp/wenv/hook-($tmp_name).sh"
+        let hook_script = $"($env.WENV_CACHE)/hook-($tmp_name).sh"
         ([
             "#!/bin/sh"
             $"($nu_bin) --no-config-file ($regen_file) 2>/dev/null"
@@ -556,8 +580,8 @@ export def --env "wenv stop" [
     }
 
     let tmp_name = ($wenv | str replace --all "/" "-")
-    rm -f $"/tmp/wenv/source-($tmp_name).nu"
-    rm -f $"/tmp/wenv/pane-($tmp_name).nu"
+    rm -f $"($env.WENV_CACHE)/source-($tmp_name).nu"
+    rm -f $"($env.WENV_CACHE)/pane-($tmp_name).nu"
 
     hide-env -i WENV WENV_DIR WENV_DEPS WENV_EXTENSIONS
 }
@@ -575,7 +599,7 @@ export def "wenv bootstrap" [name: string@wenv-complete-names] {
 export def "wenv extension load" [...extensions: string@wenv-complete-extensions] {
     if ($extensions | is-empty) { return }
     # Generate source script for extensions
-    mkdir /tmp/wenv
+    mkdir $env.WENV_CACHE
     mut lines = []
     for ext in $extensions {
         let file = $"($env.WENV_EXT)/($ext).nu"
@@ -585,7 +609,7 @@ export def "wenv extension load" [...extensions: string@wenv-complete-extensions
         }
         $lines = ($lines | append $"source ($file)")
     }
-    let tmp_file = "/tmp/wenv/ext-load.nu"
+    let tmp_file = $"($env.WENV_CACHE)/ext-load.nu"
     $lines | str join "\n" | save -f $tmp_file
     print $"source ($tmp_file)"
 }
