@@ -39,3 +39,4 @@ add-worktrees-to-wenv-dirs() {
         wenv_dirs[worktree/$branch]=$worktree_dir
     done
 }
+add-worktrees-to-wenv-dirs
