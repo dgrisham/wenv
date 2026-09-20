@@ -1,10 +1,66 @@
 #!/usr/bin/env zsh
 
 __add-worktree() {
-    for b in $(git branch --format='%(refname:short)' --list "$1"); do
-        git worktree add $GIT_WORKTREES/$b $b
-        wenv_dirs[worktree/$b]=$GIT_WORKTREES/$b
+    local usage="\
+USAGE
+  add-worktree [-b <base>] [-B] [-h] <branch> [<branch> ...] - Create a git worktree for each <branch>.
+
+OPTIONS
+  -b <base>    Base branch/ref to create new branches from. Default: the current branch.
+  -B           Create <branch> if it doesn't already exist.
+  -h           Display this help message.
+"
+
+    local base=''
+    local flag_B=0
+
+    local opt OPTIND
+    while getopts ":b:Bh" opt; do
+        case $opt in
+            b)
+                base="$OPTARG"
+            ;;
+            B)
+                flag_B=1
+            ;;
+            h)
+                echo "$usage"
+                return 0
+            ;;
+            :)
+                echo "unknown option: $OPTARG requires an argument" >&2
+                return 1
+            ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+            ;;
+        esac
     done
+    shift $((OPTIND-1))
+
+    [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
+
+    local arg
+    for arg in "$@"; do
+        local branches=($(git branch --format='%(refname:short)' --list "$arg"))
+
+        if (($#branches == 0)); then
+            if ((flag_B == 0)); then
+                echo "branch '$arg' doesn't exist (use -B to create it)" >&2
+                continue
+            fi
+            git branch "$arg" $base || continue
+            branches=("$arg")
+        fi
+
+        local b
+        for b in $branches; do
+            git worktree add $GIT_WORKTREES/$b $b
+        done
+    done
+
+    add-worktrees-to-wenv-dirs
 }
 alias add-worktree='noglob __add-worktree'
 
@@ -14,12 +70,49 @@ _add-worktree() {
 compdef _add-worktree __add-worktree
 
 __remove-worktree() {
+    local usage="\
+USAGE
+  remove-worktree [-f] [-D] [-h] <branch-glob> - Remove worktrees for branches matching <branch-glob>.
+
+OPTIONS
+  -f    Remove without confirmation.
+  -D    Also delete the branch (\`git branch -D\`).
+  -h    Display this help message.
+"
+
+    local flag_f=0
+    local flag_D=0
+
+    local opt OPTIND
+    while getopts ":fDh" opt; do
+        case $opt in
+            f)
+                flag_f=1
+            ;;
+            D)
+                flag_D=1
+            ;;
+            h)
+                echo "$usage"
+                return 0
+            ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+            ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
     for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES/$1"); do
         branch=${worktree_dir#"${GIT_WORKTREES}/"}
-        printf "remove worktree '%s'? [yN] " $branch >&2
-        [[ ! $(read -e) =~ [yY] ]] && return 1
+        if ((flag_f == 0)); then
+            printf "remove worktree '%s'? [yN] " $branch >&2
+            [[ ! $(read -e) =~ [yY] ]] && return 1
+        fi
         git worktree remove --force $worktree_dir
-        unset "wenv_dirs[worktree/$branch]" || true
+        [[ -n "${wenv_dirs[worktree/$branch]+0}" ]] && unset "wenv_dirs[worktree/$branch]"
+        ((flag_D == 1)) && git branch -D $branch
     done
     git worktree prune
 }
@@ -34,6 +127,8 @@ _remove-worktree() {
 compdef _remove-worktree __remove-worktree
 
 add-worktrees-to-wenv-dirs() {
+    declare -Ag wenv_dirs
+
     for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES"); do
         branch=${worktree_dir#"${GIT_WORKTREES}/"}
         wenv_dirs[worktree/$branch]=$worktree_dir
