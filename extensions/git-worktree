@@ -41,7 +41,7 @@ OPTIONS
 
     [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
 
-    local arg
+    local arg b
     for arg in "$@"; do
         local branches=($(git branch --format='%(refname:short)' --list "$arg"))
 
@@ -54,7 +54,6 @@ OPTIONS
             branches=("$arg")
         fi
 
-        local b
         for b in $branches; do
             git worktree add $GIT_WORKTREES/$b $b
         done
