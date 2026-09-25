@@ -118,6 +118,8 @@ or another extension declares with `declare -Ag`. Load order in `wenv_extensions
 
 - **`git-worktree`** — see below.
 
+- **`jj-workspace`** — see below.
+
 - **`history`** — swaps in a per-wenv history file (`$XDG_CACHE_HOME/wenv/history/<wenv>`) via
   `fc -pa` and rebinds `^T` to search it. Its own header flags it as WIP and possibly
   history-destroying — don't treat it as a pattern to copy.
@@ -192,6 +194,62 @@ worktrees for their respective repos organized under a common root, keyed by ser
   `$SCRATCH/myorg/service-b`, etc.) without `base` needing to know about any specific project.
 - There's no validation: a dependent wenv that forgets to set `SERVICE` before pulling in `base`
   just silently gets `$SCRATCH/myorg/` (empty `$SERVICE`) instead of a per-project directory.
+
+### `jj-workspace`: the same idea, for Jujutsu (`jj`)
+
+A parallel to `git-worktree` for repos using [Jujutsu](https://jj-vcs.dev) instead of (or
+alongside) git. Deliberately a *separate* extension/variable/key-namespace rather than a
+drop-in replacement, because jj's model doesn't map 1:1 onto git's:
+
+- **jj workspaces and bookmarks are independent concepts.** `jj workspace add` doesn't need or
+  create a bookmark at all — a workspace is just another working-copy directory backed by the
+  same repo. This extension imposes a bookmark-per-workspace convention on top (mirroring git's
+  branch-per-worktree model) because that's what maps cleanly onto `wenv_dirs`, not because jj
+  requires it.
+- **`jj workspace add`/`forget` are jj's original, long-standing workspace mechanism** — nothing
+  to do with jj's newer (unreleased as of this writing) `--colocate` git-worktree-interop work.
+  Workspaces created this way have no `.git` in them; plain `git`/`gh` commands won't find a
+  repo there. `jj git push --bookmark <name>` still works fine from any workspace (it's a
+  jj-level operation against the shared store), but anything needing literal `git`/`gh` (e.g.
+  opening a PR) has to run from the primary, git-colocated workspace instead.
+
+It provides the same three-function shape as `git-worktree`, using jj's own vocabulary:
+
+- **`add-workspace [-r <base>] [-B] [-h] <name> [<name> ...]`** — for each `<name>`, matches an
+  existing bookmark (`jj bookmark list <name>`, glob-capable) or, with `-B`, creates one at
+  `-r <base>` (default `@`, jj's current-working-copy-commit shorthand). Then
+  `jj workspace add --name <name> -r <name> $JJ_WORKSPACES/<name>` for each. Ends with one call to
+  `add-workspaces-to-wenv-dirs`.
+- **`remove-workspace [-f] [-D] [-h] <bookmark-glob>`** — finds workspaces under `$JJ_WORKSPACES`
+  whose name matches the glob; confirms (`[yN]`, skippable with `-f`), `jj workspace forget`s it,
+  and **explicitly `rm -rf`s the directory** — unlike `git worktree remove`, `jj workspace forget`
+  only stops tracking the workspace and never touches the filesystem, so the extension has to do
+  that cleanup itself. `-D` also runs `jj bookmark delete`.
+- **`add-workspaces-to-wenv-dirs`** — `declare -Ag wenv_dirs`, then registers every
+  `jj workspace list` entry under `$JJ_WORKSPACES` as `wenv_dirs[workspace/<name>]`. Uses a
+  template (`self.name() ++ ":" ++ self.root()`) rather than parsing path text, since jj hands you
+  the workspace name directly (git's version has to strip a path prefix to recover the branch
+  name).
+
+Keyed off `$JJ_WORKSPACES` (a distinct variable from `$GIT_WORKTREES`, wired into a `base`-style
+wenv the same way — see the hypothetical example above), and registers into `wenv_dirs` under a
+`workspace/<name>` prefix (distinct from `git-worktree`'s `worktree/<name>`), so both extensions
+can be loaded in the same wenv without colliding.
+
+**Two zsh gotchas this surfaced** (found by actually running the code — jj commands don't touch
+git, so unlike `git-worktree` this extension could be tested end-to-end against a real jj repo):
+
+- `path` is a special zsh variable (the tied array form of `$PATH`). `local path=...` for a
+  workspace root collides with it (`inconsistent type for assignment`) — use a different name
+  (this extension uses `dir`).
+- `local varname` with **no assignment**, executed again on a later loop iteration while
+  `varname` is already a local left over with a non-empty value from the previous iteration,
+  prints `varname=value` to stdout as a side effect — a real, reproducible zsh behavior, not a
+  typo or debug leftover. Declare such loop variables once, before the loop, not inside it. This
+  exact pattern (`local bookmark` inside the outer loop in `add-workspace`) triggered it here, and the
+  same shape already existed in `git-worktree`'s `add-worktree` (`local b`) — both are fixed now,
+  but it's worth remembering as a pattern to avoid when writing new loops in these extensions:
+  `local i j` before the loop, never `local i` on each iteration.
 
 ## Developing/testing changes
 

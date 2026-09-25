@@ -1,0 +1,148 @@
+#!/usr/bin/env zsh
+
+__add-workspace() {
+    local usage="\
+USAGE
+  add-workspace [-r <base>] [-B] [-h] <name> [<name> ...] - Create a jj workspace for each bookmark <name>.
+
+OPTIONS
+  -r <base>    Revision to create new bookmarks at. Default: @ (the current working-copy commit).
+  -B           Create <name> as a new bookmark if it doesn't already exist.
+  -h           Display this help message.
+"
+
+    local base='@'
+    local flag_B=0
+
+    local opt OPTIND
+    while getopts ":r:Bh" opt; do
+        case $opt in
+            r)
+                base="$OPTARG"
+            ;;
+            B)
+                flag_B=1
+            ;;
+            h)
+                echo "$usage"
+                return 0
+            ;;
+            :)
+                echo "unknown option: $OPTARG requires an argument" >&2
+                return 1
+            ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+            ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
+
+    local arg bookmark
+    for arg in "$@"; do
+        local bookmarks=($(jj bookmark list "$arg" -T 'name ++ "\n"'))
+
+        if (($#bookmarks == 0)); then
+            if ((flag_B == 0)); then
+                echo "bookmark '$arg' doesn't exist (use -B to create it)" >&2
+                continue
+            fi
+            jj bookmark create "$arg" -r "$base" || continue
+            bookmarks=("$arg")
+        fi
+
+        for bookmark in $bookmarks; do
+            jj workspace add --name $bookmark -r $bookmark $JJ_WORKSPACES/$bookmark
+        done
+    done
+
+    add-workspaces-to-wenv-dirs
+}
+alias add-workspace='noglob __add-workspace'
+
+_add-workspace() {
+    compadd "${(@f)$(jj bookmark list -T 'name ++ "\n"')}"
+}
+compdef _add-workspace __add-workspace
+
+__remove-workspace() {
+    local usage="\
+USAGE
+  remove-workspace [-f] [-D] [-h] <bookmark-glob> - Remove jj workspaces for bookmarks matching <bookmark-glob>.
+
+OPTIONS
+  -f    Remove without confirmation.
+  -D    Also delete the bookmark (\`jj bookmark delete\`).
+  -h    Display this help message.
+"
+
+    local flag_f=0
+    local flag_D=0
+
+    local opt OPTIND
+    while getopts ":fDh" opt; do
+        case $opt in
+            f)
+                flag_f=1
+            ;;
+            D)
+                flag_D=1
+            ;;
+            h)
+                echo "$usage"
+                return 0
+            ;;
+            \?)
+                echo "unknown option: -$OPTARG" >&2
+                return 1
+            ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local pattern="${1:-*}"
+
+    local entry
+    for entry in $(jj workspace list -T 'self.name() ++ ":" ++ self.root() ++ "\n"'); do
+        local name=${entry%%:*}
+        local dir=${entry#*:}
+
+        [[ $dir == "$JJ_WORKSPACES"/* ]] || continue
+        [[ $name == ${~pattern} ]] || continue
+
+        if ((flag_f == 0)); then
+            printf "remove workspace '%s'? [yN] " $name >&2
+            [[ ! $(read -e) =~ [yY] ]] && return 1
+        fi
+        jj workspace forget $name
+        rm -rf $dir
+        [[ -n "${wenv_dirs[workspace/$name]+0}" ]] && unset "wenv_dirs[workspace/$name]"
+        ((flag_D == 1)) && jj bookmark delete $name
+    done
+}
+alias remove-workspace='noglob __remove-workspace'
+
+_remove-workspace() {
+    (( ${#wenv_dirs} == 0 )) && return 0
+    if ((CURRENT == 2)); then
+        compadd -- ${(k)wenv_dirs[(I)workspace/*]/workspace\//}
+    fi
+}
+compdef _remove-workspace __remove-workspace
+
+add-workspaces-to-wenv-dirs() {
+    declare -Ag wenv_dirs
+
+    local entry
+    for entry in $(jj workspace list -T 'self.name() ++ ":" ++ self.root() ++ "\n"'); do
+        local name=${entry%%:*}
+        local dir=${entry#*:}
+
+        [[ $dir == "$JJ_WORKSPACES"/* ]] || continue
+        wenv_dirs[workspace/$name]=$dir
+    done
+}
+add-workspaces-to-wenv-dirs
