@@ -147,12 +147,12 @@ error to stderr and `return 1`):
   doesn't exist just prints `branch '<branch>' doesn't exist (use -B to create it)` and moves on
   to the next argument rather than aborting the whole call. Ends with a single call to
   `add-worktrees-to-wenv-dirs` (see below) to register everything just created.
-- **`remove-worktree [-f] [-D] [-h] <branch-glob>`** — finds existing worktrees under
-  `$GIT_WORKTREES` matching the glob; for each, confirms with the codebase's `[yN]` prompt unless
-  `-f` is given, `git worktree remove --force`s it, un-registers `wenv_dirs[worktree/<branch>]` if
-  that key is actually set, and (with `-D`) also runs `git branch -D <branch>`. Declining a
-  confirmation aborts the whole loop (matches the original, pre-`-f` behavior) rather than just
-  skipping that one worktree.
+- **`remove-worktree [-f] [-D] [-h] [<branch-glob> ...]`** — finds existing worktrees under
+  `$GIT_WORKTREES` matching any of the given globs (all of them if none are given); for each,
+  confirms with the codebase's `[yN]` prompt unless `-f` is given, `git worktree remove --force`s
+  it, un-registers `wenv_dirs[worktree/<branch>]` if that key is actually set, and (with `-D`)
+  also runs `git branch -D <branch>`. Declining a confirmation aborts the whole call (matches the
+  original, pre-`-f` behavior) rather than just skipping that one worktree.
 - **`add-worktrees-to-wenv-dirs`** — ensures `wenv_dirs` exists (`declare -Ag wenv_dirs`, so it's
   created fresh if nothing declared it, or left alone/reused if something already did — see the
   gotcha below), then scans `git worktree list` for worktrees already living under
@@ -220,11 +220,12 @@ It provides the same three-function shape as `git-worktree`, using jj's own voca
   `-r <base>` (default `@`, jj's current-working-copy-commit shorthand). Then
   `jj workspace add --name <name> -r <name> $JJ_WORKSPACES/<name>` for each. Ends with one call to
   `add-workspaces-to-wenv-dirs`.
-- **`remove-workspace [-f] [-D] [-h] <bookmark-glob>`** — finds workspaces under `$JJ_WORKSPACES`
-  whose name matches the glob; confirms (`[yN]`, skippable with `-f`), `jj workspace forget`s it,
-  and **explicitly `rm -rf`s the directory** — unlike `git worktree remove`, `jj workspace forget`
-  only stops tracking the workspace and never touches the filesystem, so the extension has to do
-  that cleanup itself. `-D` also runs `jj bookmark delete`.
+- **`remove-workspace [-f] [-D] [-h] [<bookmark-glob> ...]`** — finds workspaces under
+  `$JJ_WORKSPACES` whose name matches any of the given globs (all of them if none are given);
+  confirms (`[yN]`, skippable with `-f`), `jj workspace forget`s it, and **explicitly `rm -rf`s the
+  directory** — unlike `git worktree remove`, `jj workspace forget` only stops tracking the
+  workspace and never touches the filesystem, so the extension has to do that cleanup itself.
+  `-D` also runs `jj bookmark delete`.
 - **`add-workspaces-to-wenv-dirs`** — `declare -Ag wenv_dirs`, then registers every
   `jj workspace list` entry under `$JJ_WORKSPACES` as `wenv_dirs[workspace/<name>]`. Uses a
   template (`self.name() ++ ":" ++ self.root()`) rather than parsing path text, since jj hands you
