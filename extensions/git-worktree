@@ -71,7 +71,7 @@ compdef _add-worktree __add-worktree
 __remove-worktree() {
     local usage="\
 USAGE
-  remove-worktree [-f] [-D] [-h] <branch-glob> - Remove worktrees for branches matching <branch-glob>.
+  remove-worktree [-f] [-D] [-h] [<branch-glob> ...] - Remove worktrees for branches matching any <branch-glob> (all worktrees under \$GIT_WORKTREES if none given).
 
 OPTIONS
   -f    Remove without confirmation.
@@ -103,15 +103,21 @@ OPTIONS
     done
     shift $((OPTIND-1))
 
-    for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES/$1"); do
-        branch=${worktree_dir#"${GIT_WORKTREES}/"}
-        if ((flag_f == 0)); then
-            printf "remove worktree '%s'? [yN] " $branch >&2
-            [[ ! $(read -e) =~ [yY] ]] && return 1
-        fi
-        git worktree remove --force $worktree_dir
-        [[ -n "${wenv_dirs[worktree/$branch]+0}" ]] && unset "wenv_dirs[worktree/$branch]"
-        ((flag_D == 1)) && git branch -D $branch
+    local args=("$@")
+    (($#args == 0)) && args=('')
+
+    local arg
+    for arg in $args; do
+        for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES/$arg"); do
+            branch=${worktree_dir#"${GIT_WORKTREES}/"}
+            if ((flag_f == 0)); then
+                printf "remove worktree '%s'? [yN] " $branch >&2
+                [[ ! $(read -e) =~ [yY] ]] && return 1
+            fi
+            git worktree remove --force $worktree_dir
+            [[ -n "${wenv_dirs[worktree/$branch]+0}" ]] && unset "wenv_dirs[worktree/$branch]"
+            ((flag_D == 1)) && git branch -D $branch
+        done
     done
     git worktree prune
 }
@@ -128,7 +134,7 @@ compdef _remove-worktree __remove-worktree
 add-worktrees-to-wenv-dirs() {
     declare -Ag wenv_dirs
 
-    for worktree_dir in $(git worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES"); do
+    for worktree_dir in $(git -C "$WENV_DIR" worktree list | cut -d' ' -f1 | grep "$GIT_WORKTREES"); do
         branch=${worktree_dir#"${GIT_WORKTREES}/"}
         wenv_dirs[worktree/$branch]=$worktree_dir
     done
