@@ -143,7 +143,7 @@ add-workspaces-to-wenv-dirs() {
     declare -Ag wenv_dirs
 
     local entry
-    for entry in $(jj workspace list -T 'self.name() ++ ":" ++ self.root() ++ "\n"'); do
+    for entry in $(jj -R "$WENV_DIR" workspace list -T 'self.name() ++ ":" ++ self.root() ++ "\n"'); do
         local name=${entry%%:*}
         local dir=${entry#*:}
 
