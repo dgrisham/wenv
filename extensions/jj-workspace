@@ -55,6 +55,7 @@ OPTIONS
         fi
 
         for bookmark in $bookmarks; do
+            mkdir -p "${JJ_WORKSPACES}/${bookmark:h}"
             jj workspace add --name $bookmark -r $bookmark $JJ_WORKSPACES/$bookmark
         done
     done
