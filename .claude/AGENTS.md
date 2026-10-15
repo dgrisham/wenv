@@ -206,43 +206,51 @@ drop-in replacement, because jj's model doesn't map 1:1 onto git's:
   same repo. This extension imposes a bookmark-per-workspace convention on top (mirroring git's
   branch-per-worktree model) because that's what maps cleanly onto `wenv_dirs`, not because jj
   requires it.
-- **`jj workspace add`/`forget` are jj's original, long-standing workspace mechanism** — nothing
-  to do with jj's newer (unreleased as of this writing) `--colocate` git-worktree-interop work.
-  Workspaces created this way have no `.git` in them; plain `git`/`gh` commands won't find a
-  repo there. `jj git push --bookmark <name>` still works fine from any workspace (it's a
-  jj-level operation against the shared store), but anything needing literal `git`/`gh` (e.g.
-  opening a PR) has to run from the primary, git-colocated workspace instead.
+- **Every workspace is colocated (`--colocate`), i.e. also a real `git worktree`.** This requires
+  jj **0.46.0+** (released 2026-10-07 — `--colocate`/`--no-colocate` on `jj workspace add`, and
+  `jj workspace remove`, are both new in that release; check `jj --version` if either is
+  missing). Before 0.46.0 this extension deliberately used plain, non-colocated workspaces
+  (colocation was unreleased), which meant no `.git` in a workspace at all — plain `git`/`gh`
+  couldn't be run there, and neither could anything git-specific like submodules. Colocating
+  doesn't make jj itself manage submodules (that's still unsupported in jj generally, colocated
+  or not — it preserves a submodule's gitlink but won't fetch/update it), but it does mean a real
+  `.git` exists in every workspace now, so `git submodule update --init` (or any other git
+  command) works there exactly as it would in the primary workspace — confirmed directly: a
+  colocated workspace shows up in the primary's own `git worktree list`, and plain `git status`
+  runs fine inside it.
 
 It provides the same three-function shape as `git-worktree`, using jj's own vocabulary:
 
 - **`add-workspace [-r <base>] [-B] [-h] <name> [<name> ...]`** — for each `<name>`, matches an
   existing bookmark (`jj bookmark list <name>`, glob-capable) or, with `-B`, creates one at
   `-r <base>` (default `@`, jj's current-working-copy-commit shorthand). Then
-  `jj workspace add --name <name> -r <name> $JJ_WORKSPACES/<name>` for each (preceded by
-  `mkdir -p` of the destination's parent — see the jj-vs-git gotcha right below). Ends with one
-  call to `add-workspaces-to-wenv-dirs`.
+  `jj workspace add --colocate --name <name> -r <name> $JJ_WORKSPACES/<name>` for each, preceded
+  by `mkdir -p` of the destination's *parent* directory — see the jj-vs-git gotcha below; this is
+  unrelated to colocation and still needed. Ends with one call to `add-workspaces-to-wenv-dirs`.
 - **`remove-workspace [-f] [-D] [-h] [<bookmark-glob> ...]`** — finds workspaces under
   `$JJ_WORKSPACES` whose name matches any of the given globs (all of them if none are given);
-  confirms (`[yN]`, skippable with `-f`), `jj workspace forget`s it, and **explicitly `rm -rf`s the
-  directory** — unlike `git worktree remove`, `jj workspace forget` only stops tracking the
-  workspace and never touches the filesystem, so the extension has to do that cleanup itself.
-  (It doesn't currently clean up a now-empty parent directory left behind by a `/`-nested
-  bookmark name, unlike `wenv_new`/`wenv_rename`'s own empty-dir cleanup in `wenv` itself —
-  worth revisiting if that starts being annoying in practice.)
+  confirms (`[yN]`, skippable with `-f`), then runs `jj workspace remove <name>`, which (as of
+  0.46.0, for a colocated workspace) removes the git worktree registration *and* deletes the
+  directory from disk in one step — no more manual `rm -rf` needed (that was only ever required
+  because the older `jj workspace forget` never touched the filesystem; `remove` is a distinct,
+  newer command that does both). `-D` also runs `jj bookmark delete`. Doesn't currently clean up
+  a now-empty parent directory left behind by a `/`-nested bookmark name, unlike
+  `wenv_new`/`wenv_rename`'s own empty-dir cleanup in `wenv` itself — worth revisiting if that
+  starts being annoying in practice.
+- **`add-workspaces-to-wenv-dirs`** — `declare -Ag wenv_dirs`, then registers every
+  `jj workspace list` entry under `$JJ_WORKSPACES` as `wenv_dirs[workspace/<name>]`. Uses a
+  template (`self.name() ++ ":" ++ self.root()`) rather than parsing path text, since jj hands you
+  the workspace name directly (git's version has to strip a path prefix to recover the branch
+  name).
 
 **Another jj-vs-git difference worth knowing, since it bit a real bookmark name**: `git worktree
 add <path> <branch>` creates every missing directory in `<path>`, parent and leaf alike — a
 nested branch name like `bif1-624/adr` just works. `jj workspace add` does **not**: it needs the
 destination's *parent* directory to already exist (it only creates the leaf itself), so the
 same nested bookmark name fails with `Cannot access .../adr: No such file or directory` unless
-something `mkdir -p`s the parent first — which is exactly what `add-workspace` now does before
-calling `jj workspace add`. Confirmed by testing both directly against real nested names.
-  `-D` also runs `jj bookmark delete`.
-- **`add-workspaces-to-wenv-dirs`** — `declare -Ag wenv_dirs`, then registers every
-  `jj workspace list` entry under `$JJ_WORKSPACES` as `wenv_dirs[workspace/<name>]`. Uses a
-  template (`self.name() ++ ":" ++ self.root()`) rather than parsing path text, since jj hands you
-  the workspace name directly (git's version has to strip a path prefix to recover the branch
-  name).
+something `mkdir -p`s the parent first — which is exactly what `add-workspace` does before
+calling `jj workspace add`. Confirmed by testing both directly against real nested names; this
+is unrelated to (and unaffected by) colocation.
 
 Keyed off `$JJ_WORKSPACES` (a distinct variable from `$GIT_WORKTREES`, wired into a `base`-style
 wenv the same way — see the hypothetical example above), and registers into `wenv_dirs` under a
