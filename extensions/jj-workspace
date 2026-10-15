@@ -56,7 +56,7 @@ OPTIONS
 
         for bookmark in $bookmarks; do
             mkdir -p "${JJ_WORKSPACES}/${bookmark:h}"
-            jj workspace add --name $bookmark -r $bookmark $JJ_WORKSPACES/$bookmark
+            jj workspace add --colocate --name $bookmark -r $bookmark $JJ_WORKSPACES/$bookmark
         done
     done
 
@@ -124,8 +124,7 @@ OPTIONS
             printf "remove workspace '%s'? [yN] " $name >&2
             [[ ! $(read -e) =~ [yY] ]] && return 1
         fi
-        jj workspace forget $name
-        rm -rf $dir
+        jj workspace remove $name
         [[ -n "${wenv_dirs[workspace/$name]+0}" ]] && unset "wenv_dirs[workspace/$name]"
         ((flag_D == 1)) && jj bookmark delete $name
     done
