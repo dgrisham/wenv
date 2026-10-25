@@ -229,12 +229,15 @@ It provides the same three-function shape as `git-worktree`, using jj's own voca
   unrelated to colocation and still needed. Ends with one call to `add-workspaces-to-wenv-dirs`.
 - **`remove-workspace [-f] [-D] [-h] [<bookmark-glob> ...]`** — finds workspaces under
   `$JJ_WORKSPACES` whose name matches any of the given globs (all of them if none are given);
-  confirms (`[yN]`, skippable with `-f`), then runs `jj workspace remove <name>`, which (as of
-  0.46.0, for a colocated workspace) removes the git worktree registration *and* deletes the
-  directory from disk in one step — no more manual `rm -rf` needed (that was only ever required
-  because the older `jj workspace forget` never touched the filesystem; `remove` is a distinct,
-  newer command that does both). `-D` also runs `jj bookmark delete`. Doesn't currently clean up
-  a now-empty parent directory left behind by a `/`-nested bookmark name, unlike
+  confirms (`[yN]`, skippable with `-f`), then runs `jj workspace update-stale -R <dir>` (see the
+  stale-workspace gotcha below) followed by `jj workspace remove <name>`, which (as of 0.46.0, for
+  a colocated workspace) removes the git worktree registration *and* deletes the directory from
+  disk in one step — no more manual `rm -rf` needed (that was only ever required because the
+  older `jj workspace forget` never touched the filesystem; `remove` is a distinct, newer command
+  that does both). If `remove` still fails for any reason, that workspace is skipped (`||
+  continue`) rather than falling through to unregister `wenv_dirs`/delete the bookmark for a
+  workspace that's actually still there. `-D` also runs `jj bookmark delete`. Doesn't currently
+  clean up a now-empty parent directory left behind by a `/`-nested bookmark name, unlike
   `wenv_new`/`wenv_rename`'s own empty-dir cleanup in `wenv` itself — worth revisiting if that
   starts being annoying in practice.
 - **`add-workspaces-to-wenv-dirs`** — `declare -Ag wenv_dirs`, then registers every
@@ -251,6 +254,22 @@ same nested bookmark name fails with `Cannot access .../adr: No such file or dir
 something `mkdir -p`s the parent first — which is exactly what `add-workspace` does before
 calling `jj workspace add`. Confirmed by testing both directly against real nested names; this
 is unrelated to (and unaffected by) colocation.
+
+**Stale workspaces**: a workspace's on-disk state can fall out of sync with the repo (e.g. after
+a `jj operation restore`/`jj undo`-style history rewrite, or another workspace abandoning the
+commit this one has checked out) — jj calls this "stale." Confirmed directly: once a workspace is
+stale, `jj workspace remove <name>` refuses to remove it (`Error: The working copy is stale...`,
+exit 1), *even when run from a different, perfectly healthy workspace/directory* — the staleness
+check is against the target workspace's own on-disk state, not the caller's cwd. Since this
+extension's loops have no `errexit` set, that failure wouldn't abort the whole `remove-workspace`
+call, but it would leave that one workspace un-removed while still being reported as if it needed
+attention. `jj workspace remove <name> --ignore-working-copy` is **not** a way around this —
+confirmed it's rejected outright (`Error: This command must be able to update the working copy.`,
+with jj's own hint pointing at `jj workspace forget` instead, which is the old command this
+extension deliberately moved away from since it never touches disk). The actual fix: run
+`jj workspace update-stale -R <dir>` on the target first — confirmed safe to run unconditionally
+(it's a harmless no-op, `Attempted recovery, but the working copy is not stale.`, exit 0, when the
+workspace isn't actually stale) — before calling `jj workspace remove`.
 
 Keyed off `$JJ_WORKSPACES` (a distinct variable from `$GIT_WORKTREES`, wired into a `base`-style
 wenv the same way — see the hypothetical example above), and registers into `wenv_dirs` under a

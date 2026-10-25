@@ -124,7 +124,8 @@ OPTIONS
             printf "remove workspace '%s'? [yN] " $name >&2
             [[ ! $(read -e) =~ [yY] ]] && return 1
         fi
-        jj workspace remove $name
+        jj workspace update-stale -R "$dir" >/dev/null 2>&1
+        jj workspace remove $name || continue
         [[ -n "${wenv_dirs[workspace/$name]+0}" ]] && unset "wenv_dirs[workspace/$name]"
         ((flag_D == 1)) && jj bookmark delete $name
     done
