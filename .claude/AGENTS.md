@@ -227,6 +227,21 @@ It provides the same three-function shape as `git-worktree`, using jj's own voca
   `jj workspace add --colocate --name <name> -r <name> $JJ_WORKSPACES/<name>` for each, preceded
   by `mkdir -p` of the destination's *parent* directory — see the jj-vs-git gotcha below; this is
   unrelated to colocation and still needed. Ends with one call to `add-workspaces-to-wenv-dirs`.
+  If a *literal* `<name>` (not a glob) has no local match, before falling through to `-B`/the
+  not-found error it checks for an untracked remote bookmark `<name>@$JJ_WORKSPACE_REMOTE`
+  (`jj bookmark list --remote "$remote" "$name"`, default remote `origin`) and, if found, runs
+  `jj bookmark track` on it and proceeds as if that had been the local match all along. This
+  exists because `jj git fetch` brings new remote bookmarks in as *untracked* — there's no local
+  bookmark of that name yet, and `-B` would be the wrong fallback (it creates a brand-new, empty
+  bookmark at `-r <base>`, unrelated to the remote one, landing the workspace on an empty commit
+  instead of the branch's actual content). A glob `<name>` skips this check entirely (confirmed:
+  `jj bookmark track` itself accepts globs and would happily track *every* untracked remote
+  bookmark matching the glob in one shot, which isn't something to do silently off a
+  workspace-creation call) — it still goes through the old `-B`/error path, same as before this
+  existed. `_add-workspace` completion offers untracked remote bookmark names (via
+  `jj bookmark list --remote "$remote" -T 'name ++ "\n"'`, names only, no `@remote` suffix)
+  alongside local ones, deduped against the local list with zsh's `${array:|array2}` set-minus so
+  an already-tracked name isn't offered twice.
 - **`remove-workspace [-f] [-D] [-h] [<bookmark-glob> ...]`** — finds workspaces under
   `$JJ_WORKSPACES` whose name matches any of the given globs (all of them if none are given);
   confirms (`[yN]`, skippable with `-f`), then runs `jj workspace update-stale -R <dir>` (see the
@@ -274,7 +289,10 @@ workspace isn't actually stale) — before calling `jj workspace remove`.
 Keyed off `$JJ_WORKSPACES` (a distinct variable from `$GIT_WORKTREES`, wired into a `base`-style
 wenv the same way — see the hypothetical example above), and registers into `wenv_dirs` under a
 `workspace/<name>` prefix (distinct from `git-worktree`'s `worktree/<name>`), so both extensions
-can be loaded in the same wenv without colliding.
+can be loaded in the same wenv without colliding. `$JJ_WORKSPACE_REMOTE` is a separate, optional
+variable (default `origin` if unset) naming the remote `add-workspace`'s untracked-remote-bookmark
+fallback (above) checks against — unlike `$JJ_WORKSPACES`, there's no requirement that a wenv set
+this; it only matters if a repo's remote isn't named `origin`.
 
 **Two zsh gotchas this surfaced** (found by actually running the code — jj commands don't touch
 git, so unlike `git-worktree` this extension could be tested end-to-end against a real jj repo):

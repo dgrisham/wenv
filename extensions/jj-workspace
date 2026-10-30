@@ -9,6 +9,9 @@ OPTIONS
   -r <base>    Revision to create new bookmarks at. Default: @ (the current working-copy commit).
   -B           Create <name> as a new bookmark if it doesn't already exist.
   -h           Display this help message.
+
+If a literal (non-glob) <name> has no matching local bookmark but an untracked remote bookmark exists,
+that remote bookmark is tracked automatically (regardless of whether -B was passed).
 "
 
     local base='@'
@@ -41,17 +44,27 @@ OPTIONS
 
     [[ -z "$@" ]] && { echo "$usage" >&2 ; return 1 }
 
-    local arg bookmark
+    local remote="${JJ_WORKSPACE_REMOTE:-origin}"
+
+    local arg bookmark remote_match
     for arg in "$@"; do
         local bookmarks=($(jj bookmark list "$arg" -T 'name ++ "\n"'))
 
         if (($#bookmarks == 0)); then
-            if ((flag_B == 0)); then
+            remote_match=""
+            [[ "$arg" != *[][*?]* ]] && remote_match=$(jj bookmark list --remote "$remote" "$arg" -T 'name ++ "\n"' 2>/dev/null)
+
+            if [[ -n "$remote_match" ]]; then
+                jj bookmark track "${arg}@${remote}" || continue
+                echo "tracked remote bookmark '${arg}@${remote}'" >&2
+                bookmarks=("$arg")
+            elif ((flag_B == 1)); then
+                jj bookmark create "$arg" -r "$base" || continue
+                bookmarks=("$arg")
+            else
                 echo "bookmark '$arg' doesn't exist (use -B to create it)" >&2
                 continue
             fi
-            jj bookmark create "$arg" -r "$base" || continue
-            bookmarks=("$arg")
         fi
 
         for bookmark in $bookmarks; do
@@ -65,7 +78,10 @@ OPTIONS
 alias add-workspace='noglob __add-workspace'
 
 _add-workspace() {
-    compadd "${(@f)$(jj bookmark list -T 'name ++ "\n"')}"
+    local -a local_bookmarks remote_bookmarks
+    local_bookmarks=("${(@f)$(jj bookmark list -T 'name ++ "\n"')}")
+    remote_bookmarks=("${(@f)$(jj bookmark list --remote "${JJ_WORKSPACE_REMOTE:-origin}" -T 'name ++ "\n"' 2>/dev/null)}")
+    compadd -- "${local_bookmarks[@]}" "${(@)remote_bookmarks:|local_bookmarks}"
 }
 compdef _add-workspace __add-workspace
 

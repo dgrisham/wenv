@@ -120,15 +120,21 @@ jj itself, workspaces and bookmarks are independent concepts; this extension imp
 bookmark-per-workspace convention on top so it maps cleanly onto `wenv_dirs`, mirroring git's
 model). `-r <base>` is the revision new bookmarks are created at (default `@`, the current
 working-copy commit). Workspaces live under `$JJ_WORKSPACES` (parallel convention to
-`$GIT_WORKTREES`). One real difference worth knowing: `jj workspace forget` (what
-`remove-workspace` uses) never touches the filesystem, so `remove-workspace` does an explicit
-`rm -rf` of the directory too — if you're ever doing this by hand with raw `jj` commands, don't
-forget that step.
+`$GIT_WORKTREES`).
 
-Because jj repos created without `--colocate` have no `.git` at all, `git`/`gh` commands won't
-work inside a jj workspace directory — `jj git push --bookmark <name>` still works fine from
-any workspace (it talks to the shared store, not the filesystem), but anything needing literal
-`git`/`gh` (opening a PR, say) needs to run from the project's primary, git-colocated directory.
+Every workspace is colocated (also a real `git worktree`; requires jj **0.46.0+**), so plain
+`git`/`gh` commands work inside a workspace directory exactly as in the project's primary
+directory — no need to route git-specific work back through the primary checkout.
+`remove-workspace` uses `jj workspace remove`, which deletes both the workspace registration and
+the on-disk directory in one step (no separate `rm -rf` needed); if the target workspace is
+"stale" (its on-disk state fell behind the repo, e.g. after a history rewrite elsewhere),
+`remove-workspace` resolves that itself (`jj workspace update-stale`) before removing it.
+
+If `<name>` matches no local bookmark but an untracked remote bookmark `<name>@origin` exists
+(the normal state right after `jj git fetch` pulls in a new branch — fetch doesn't create a local
+bookmark for it), `add-workspace` tracks that remote bookmark and uses it, rather than erroring or
+(with `-B`) creating an unrelated, empty new bookmark. Set `$JJ_WORKSPACE_REMOTE` if the repo's
+remote isn't named `origin`.
 
 ## If you're asked to add/remove a worktree or jj workspace
 
